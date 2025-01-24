@@ -1,0 +1,8 @@
+{% extends "layouts/web_app_layouts/web_app_base.html" %} {% block app_styles %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('ToDo.static', filename='css/todo.css') }}"
+/>
+{% endblock %} {% block content %}
+<h4>Der ToDoContainer</h4>
+{% endblock %}
