@@ -4,5 +4,24 @@
   href="{{ url_for('ToDo.static', filename='css/todo.css') }}"
 />
 {% endblock %} {% block content %}
-<h4>Der ToDoContainer</h4>
+<div class="todo-container">
+  <div class="todo-header">
+    <h2>Meine Aufgaben</h2>
+    <button class="btn btn-success">
+      <i class="bi bi-plus-lg"></i> Neue Aufgabe
+    </button>
+  </div>
+
+  <div class="todo-filters">
+    <button class="filter-btn active">Heute</button>
+    <button class="filter-btn">Morgen</button>
+    <button class="filter-btn">Nächste 7 Tage</button>
+    <button class="filter-btn">Diesen Monat</button>
+    <button class="filter-btn">Alle</button>
+  </div>
+
+  <div class="tasks-container">
+    <div class="task-list">{% for task in my_todos %} {% endfor %}</div>
+  </div>
+</div>
 {% endblock %}

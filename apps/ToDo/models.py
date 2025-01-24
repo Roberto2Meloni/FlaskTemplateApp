@@ -9,7 +9,8 @@ def get_current_time():
 
 class ToDo(db.Model):
     id = db.Column(db.Integer, primary_key=True, default=get_current_time)
-    user = db.Column(db.String(255))
-    task = db.Column(db.String(255))
+    user = db.Column(db.Integer)
+    task = db.Column(db.Text())
     state = db.Column(db.Integer)
     created_at = db.Column(db.DateTime, default=get_current_time)
+    to_do_date = db.Column(db.DateTime, default=get_current_time)

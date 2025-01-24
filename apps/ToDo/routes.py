@@ -8,11 +8,13 @@ from app import db
 
 
 config = Config()
-print("ToDo app 0.0.1")
 
 
 @blueprint.route("/ToDo_index", methods=["GET"])
 @admin_required
 def ToDo_index():
     app.logger.info("ToDo page accessed")
-    return render_template("todo.html", user=current_user, config=config)
+    my_todos = ToDo.query.filter_by(user=current_user.id).all()
+    return render_template(
+        "todo.html", user=current_user, config=config, my_todos=my_todos
+    )

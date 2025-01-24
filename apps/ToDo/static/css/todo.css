@@ -1,0 +1,20 @@
+body {
+    margin: 0;
+    padding: 0;
+
+}
+
+.todo-container {
+    background-color: rgba(255, 255, 255, 0.7);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 0 auto;
+    width: 80%;
+    /* Nimmt mindestens 80% der Breite ein */
+    max-width: 80%;
+    /* Begrenzt die maximale Breite */
+    min-width: 300px;
+    /* Optional: Definiert eine minimale Breite */
+    box-sizing: border-box;
+    /* Berücksichtigt Padding in der Breitenberechnung */
+}
