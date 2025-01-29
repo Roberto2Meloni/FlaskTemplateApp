@@ -1,20 +1,47 @@
-body {
-    margin: 0;
-    padding: 0;
-
+.todo-container {
+    /* Dunkler, transparenter Hintergrund */
+    background-color: rgba(33, 37, 41, 0.85);
+    /* Weiche Kanten */
+    border-radius: 12px;
+    /* Zentrierung und volle Breite */
+    margin: 0 auto;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    /* Subtiler Schatten für Tiefe */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    /* Geschmeidiger Übergang für Hover-Effekte */
+    transition: all 0.3s ease;
+    color: #FFB5C2;
+    /* Baby Boomer Pink */
 }
 
-.todo-container {
-    background-color: rgba(255, 255, 255, 0.7);
-    border-radius: 10px;
-    padding: 20px;
-    margin: 0 auto;
-    width: 80%;
-    /* Nimmt mindestens 80% der Breite ein */
-    max-width: 80%;
-    /* Begrenzt die maximale Breite */
-    min-width: 300px;
-    /* Optional: Definiert eine minimale Breite */
-    box-sizing: border-box;
-    /* Berücksichtigt Padding in der Breitenberechnung */
+.todo-main-header {
+    align-items: center;
+    /* Baby Boomer Pink Border */
+    padding: 10px;
+    /* Abstand zum Border */
+    margin-bottom: 15px;
+    /* Abstand zum nächsten Element */
+}
+
+.todo-past-task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #FFB5C2;
+    /* Baby Boomer Pink Border */
+    padding: 10px;
+    /* Abstand zum Border */
+    margin-bottom: 15px;
+    /* Abstand zum nächsten Element */
+}
+
+.todo-main-header h4,
+.todo-main-header p,
+.todo-past-task-header p {
+    color: #FFB5C2;
+    /* Baby Boomer Pink für alle Textelemente */
+    margin: 0;
+    /* Entfernt Standard-Margins */
 }
