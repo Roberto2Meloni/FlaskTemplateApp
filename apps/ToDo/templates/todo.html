@@ -8,15 +8,48 @@
   <div class="todo-main-wrapper">
     <div class="todo-main-header">
       <h4>Heute</h4>
-      <p>x Aufgaben</p>
+      <p>{{ count_task }} Aufgaben</p>
     </div>
-    <div class="todo-past-task-header">
-      <p>Überfällig</p>
-      <i class="bi bi-chevron-down"></i>
+
+    <!-- Überfällige Aufgaben Sektion -->
+    <div class="todo-section">
+      <div class="todo-past-task-header">
+        <p>Überfällig</p>
+        <i class="bi bi-chevron-down"></i>
+      </div>
+      <div class="tasks-container">
+        <div class="task-list">{% for task in my_todos %} {% endfor %}</div>
+      </div>
+    </div>
+
+    <!-- Aktuelle Aufgaben Sektion -->
+    <div class="todo-section">
+      <div class="todo-current-task-header">
+        <p>{{ current_date.strftime('%d %b. - %A') }}</p>
+        <i class="bi bi-chevron-down"></i>
+      </div>
+      <div class="tasks-container">
+        <div class="task-list">{% for task in my_todos %} {% endfor %}</div>
+      </div>
     </div>
   </div>
-  <div class="tasks-container">
-    <div class="task-list">{% for task in my_todos %} {% endfor %}</div>
+
+  <div class="todo-buttons-bottem-wraper">
+    <div class="todo-buttons-bottem">
+      <div class="calendar-icon">
+        <div class="calendar-day">{{ current_date.strftime('%d') }}</div>
+      </div>
+      <small>Heute</small>
+    </div>
+    <div class="todo-buttons-bottem">
+      <small>Anstehend</small>
+    </div>
+    <div class="todo-buttons-bottem">
+      <small>Suchen</small>
+    </div>
+    <div class="todo-buttons-bottem">
+      <small>Archiv</small>
+    </div>
   </div>
 </div>
 {% endblock %}
