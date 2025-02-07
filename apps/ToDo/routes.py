@@ -21,13 +21,29 @@ def get_information(user_id):
     return count_task, current_date, current_task
 
 
-@blueprint.route("/ToDo_index", methods=["GET"])
-@admin_required
+def create_task(user, data):
+    try:
+        new_task = ToDo(
+            user=user.username, task=data["taskTitle"], to_do_date=data["taskDate"]
+        )
+        db.session.add(new_task)
+        db.session.commit()
+    except Exception as e:
+        print(f"Fehler beim Erstellen: {e}")
+        db.session.rollback()
+        raise
+
+
+@blueprint.route("/ToDo_index", methods=["GET", "POST"])
 def ToDo_index():
     app.logger.info("ToDo page accessed")
 
     # Hole die Informationen vom Benutzer
     count_task, current_date, current_task = get_information(current_user.id)
+
+    if request.method == "POST":
+        data = request.form
+        create_task(current_user, data)
 
     print("---LOG---")
     print(f"Anzahl Aufgaben: {count_task}")

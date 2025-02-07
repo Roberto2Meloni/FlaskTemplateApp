@@ -4,11 +4,72 @@
   href="{{ url_for('ToDo.static', filename='css/todo.css') }}"
 />
 {% endblock %} {% block content %}
+<!-- Modal -->
+<div class="modal fade" id="taskModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Neue Aufgabe erstellen</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form
+          id="taskForm"
+          method="POST"
+          action="{{ url_for('ToDo.ToDo_index') }}"
+        >
+          <div class="mb-3">
+            <label for="taskTitle" class="form-label">Aufgabe</label>
+            <input
+              type="text"
+              class="form-control"
+              id="taskTitle"
+              name="taskTitle"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label for="taskDate" class="form-label">Fälligkeitsdatum</label>
+            <input
+              type="date"
+              class="form-control"
+              id="taskDate"
+              name="taskDate"
+              value="{{ current_date.strftime('%Y-%m-%d') }}"
+            />
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Abbrechen
+        </button>
+        <button type="submit" form="taskForm" class="btn btn-primary">
+          Speichern
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="todo-container">
   <div class="todo-main-wrapper">
     <div class="todo-main-header">
-      <h4>Heute</h4>
-      <p>{{ count_task }} Aufgaben</p>
+      <div>
+        <h4>Heute</h4>
+        <p>{{ count_task }} Aufgaben</p>
+      </div>
+      <button
+        class="btn btn-success"
+        data-bs-toggle="modal"
+        data-bs-target="#taskModal"
+      >
+        <i class="bi bi-plus"></i>
+        Neue Aktivität
+      </button>
     </div>
 
     <!-- Überfällige Aufgaben Sektion -->
