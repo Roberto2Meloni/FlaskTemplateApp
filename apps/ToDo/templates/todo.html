@@ -79,7 +79,22 @@
         <i class="bi bi-chevron-down"></i>
       </div>
       <div class="tasks-container">
-        <div class="task-list">{% for task in my_todos %} {% endfor %}</div>
+        <div class="task-list">
+          {% for task in current_task %}
+          <p>Ein Task</p>
+          {% if task.to_do_date.date() < current_date.date() %}
+          <div class="task-item d-flex align-items-center p-2 mb-2 bg-dark">
+            <input type="checkbox" class="me-2" {% if task.state == 1
+            %}checked{% endif %}>
+            <div>
+              <div>{{ task.task }}</div>
+              <small class="text-danger"
+                >{{ task.to_do_date.strftime('%d.%m.%Y') }}</small
+              >
+            </div>
+          </div>
+          {% endif %} {% endfor %}
+        </div>
       </div>
     </div>
 
@@ -90,7 +105,16 @@
         <i class="bi bi-chevron-down"></i>
       </div>
       <div class="tasks-container">
-        <div class="task-list">{% for task in my_todos %} {% endfor %}</div>
+        <div class="task-list">
+          {% for task in current_task %} {% if task.to_do_date.date() ==
+          current_date.date() %}
+          <div class="task-item d-flex align-items-center p-2 mb-2 bg-dark">
+            <input type="checkbox" class="me-2" {% if task.state == 1
+            %}checked{% endif %}>
+            <div>{{ task.task }}</div>
+          </div>
+          {% endif %} {% endfor %}
+        </div>
       </div>
     </div>
   </div>

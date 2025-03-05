@@ -16,7 +16,7 @@ def get_information(user_id):
     # aktuelles Datum
     # Aufgaben bis heute
     count_task = ToDo.query.filter_by(user=user_id).count()
-    current_date = datetime.now()  # Hier das reine datetime-Objekt
+    current_date = datetime.now(timezone("Europe/Zurich"))  # Mit Zeitzone
     current_task = ToDo.query.filter_by(user=user_id).all()
 
     return count_task, current_date, current_task
@@ -28,21 +28,21 @@ def create_task(user, data):
         task_date_str = data["taskDate"]
         task_date = datetime.strptime(task_date_str, "%Y-%m-%d")
 
-        # Zeitzone hinzufügen, da deine get_current_time() Funktion auch eine Zeitzone verwendet
+        # Zeitzone hinzufügen
         zurich_tz = timezone("Europe/Zurich")
         task_date = zurich_tz.localize(task_date)
 
         new_task = ToDo(
-            user=user.id,  # Beachte: Hier sollte die user.id verwendet werden, nicht username
+            user=user.id,
             task=data["taskTitle"],
-            state=0,  # Ein Standardwert für den Status, z.B. 0 für "offen"
+            state=0,  # 0 für offen
             to_do_date=task_date,
         )
         db.session.add(new_task)
         db.session.commit()
         return True, None
     except Exception as e:
-        print(f"Fehler beim Erstellen: {e}")
+        app.logger.error(f"Fehler beim Erstellen der Aufgabe: {e}")
         db.session.rollback()
         return False, str(e)
 
@@ -54,13 +54,11 @@ def ToDo_index():
     # Hole die Informationen vom Benutzer
     count_task, current_date, current_task = get_information(current_user.id)
 
-    error_message = None
     if request.method == "POST":
         data = request.form
         success, error = create_task(current_user, data)
         if not success:
-            error_message = f"Fehler beim Erstellen der Aufgabe: {error}"
-            app.logger.error(error_message)
+            app.logger.error(f"Fehler beim Erstellen der Aufgabe: {error}")
         else:
             # Nach erfolgreicher Erstellung die Daten aktualisieren
             count_task, current_date, current_task = get_information(current_user.id)
@@ -71,6 +69,4 @@ def ToDo_index():
         config=config,
         count_task=count_task,
         current_date=current_date,
-        current_task=current_task,
-        error_message=error_message,
     )
