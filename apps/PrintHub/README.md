@@ -1,0 +1,23 @@
+# cli
+
+## App Information
+
+Name: PrintHub
+
+Author: Karatekti_123
+
+Createt: 16.07.2025
+
+Last Update: 16.07.2025
+
+Last Version: 0.0.0
+
+Description: Mitels dieser App kannst du deine 3D Druck Aufträge und Kostenberechnungen durchführen
+
+Category: App
+
+Tags: 3D Print
+
+Repository URL: https://github.com/Roberto2Meloni/FlaskSystemApps_DEV
+
+Other: Keine weiteren Informationen.
