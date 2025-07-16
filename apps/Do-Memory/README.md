@@ -18,6 +18,6 @@ Category: fun
 
 Tags: fun,
 
-Repository URL: https://github.com/Roberto2Meloni/FlaskSystemApps_DEV
+Repository URL: https://github.com/Roberto2Meloni/FlaskTemplateApp
 
 Other: Keine Weiteren Informationen

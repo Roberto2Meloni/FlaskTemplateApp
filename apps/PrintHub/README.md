@@ -18,6 +18,6 @@ Category: App
 
 Tags: 3D Print
 
-Repository URL: https://github.com/Roberto2Meloni/FlaskSystemApps_DEV
+Repository URL: https://github.com/Roberto2Meloni/FlaskTemplateApp
 
 Other: Keine weiteren Informationen.
