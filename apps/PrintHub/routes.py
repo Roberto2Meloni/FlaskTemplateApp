@@ -18,8 +18,15 @@ running_commands = {}
 print("PrintHub 0.0.0")
 
 
-@blueprint.route("/PrintHub_index", methods=["GET"])
+@blueprint.route("/printHub_index", methods=["GET"])
 @admin_required
+# nur hier ist der Name gross!!
 def PrintHub_index():
     app.logger.info("PrintHub page accessed")
     return render_template("PrintHub.html", user=current_user, config=config)
+
+
+@blueprint.route("/printHub_filaments", methods=["GET"])
+@admin_required
+def printHub_filaments():
+    return render_template("PrintHubFilaments.html", user=current_user, config=config)

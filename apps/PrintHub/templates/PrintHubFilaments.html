@@ -1,0 +1,259 @@
+{% extends "layouts/web_app_layouts/web_app_base.html" %} {% block app_styles %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('PrintHub.static', filename='css/PrintHub.css') }}"
+/>
+
+{% endblock %} {% block content %}
+<div class="printhub-container">
+  <!-- Sidebar -->
+  {% include "layouts/web_app_layouts/PrintHubSidebar.html" %}
+
+  <!-- Main Content -->
+  <div class="printhub-content">
+    <div class="content-header">
+      <h1><i class="fas fa-spool"></i> Filament-Verwaltung</h1>
+      <p class="lead">
+        Verwalten Sie Ihre 3D-Druck Filamente und deren Eigenschaften
+      </p>
+    </div>
+
+    <!-- Filament hinzufügen Form -->
+    <div class="filament-form-container">
+      <h3 class="text-prusa-orange mb-4">
+        <i class="fas fa-plus-circle"></i> Neues Filament hinzufügen
+      </h3>
+
+      <form id="filamentForm" method="POST">
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group mb-3">
+              <label for="filament_type">
+                <i class="fas fa-tags"></i> Filament-Typ
+              </label>
+              <select
+                class="form-control"
+                id="filament_type"
+                name="filament_type"
+                required
+              >
+                <option value="">-- Typ auswählen --</option>
+                <option value="PLA">PLA (Polylactic Acid)</option>
+                <option value="PETG">
+                  PETG (Polyethylene Terephthalate Glycol)
+                </option>
+                <option value="TPU">TPU (Thermoplastic Polyurethane)</option>
+                <option value="ABS">
+                  ABS (Acrylonitrile Butadiene Styrene)
+                </option>
+                <option value="WOOD">WOOD (Holz-Filament)</option>
+                <option value="CARBON">CARBON (Carbon-Filament)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="form-group mb-3">
+              <label for="filament_name">
+                <i class="fas fa-font"></i> Name/Bezeichnung
+              </label>
+              <input
+                type="text"
+                class="form-control"
+                id="filament_name"
+                name="filament_name"
+                placeholder="z.B. Premium PLA Matt Schwarz"
+                required
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group mb-3">
+              <label for="filament_manufacturer">
+                <i class="fas fa-industry"></i> Hersteller
+              </label>
+              <input
+                type="text"
+                class="form-control"
+                id="filament_manufacturer"
+                name="filament_manufacturer"
+                placeholder="z.B. Prusa, Prusament, Hatchbox"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="form-group mb-3">
+              <label for="filament_weight">
+                <i class="fas fa-weight"></i> Gewicht (g)
+              </label>
+              <input
+                type="number"
+                class="form-control"
+                id="filament_weight"
+                name="filament_weight"
+                placeholder="1000"
+                min="1"
+                step="1"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="form-group mb-3">
+              <label for="filament_price">
+                <i class="fas fa-money-bill-wave"></i> Preis (CHF)
+              </label>
+              <div class="input-group">
+                <input
+                  type="number"
+                  class="form-control"
+                  id="filament_price"
+                  name="filament_price"
+                  placeholder="29.90"
+                  min="0"
+                  step="0.01"
+                  required
+                />
+                <div class="input-group-append">
+                  <span class="input-group-text">CHF</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-12">
+            <div class="form-group mb-4">
+              <label for="filament_notes">
+                <i class="fas fa-sticky-note"></i> Notizen (optional)
+              </label>
+              <textarea
+                class="form-control"
+                id="filament_notes"
+                name="filament_notes"
+                rows="3"
+                placeholder="Zusätzliche Informationen, Druckeinstellungen, etc."
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between">
+          <button type="button" class="btn btn-secondary-prusa">
+            <i class="fas fa-times"></i> Abbrechen
+          </button>
+          <button type="submit" class="btn btn-prusa">
+            <i class="fas fa-save"></i> Filament speichern
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Filament Liste -->
+    <div class="filament-list-container">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="text-prusa-orange mb-0">
+          <i class="fas fa-list"></i> Vorhandene Filamente
+        </h3>
+        <span class="badge badge-secondary">3 Filamente</span>
+      </div>
+
+      <!-- Suchbox -->
+      <input
+        type="text"
+        class="form-control search-box"
+        placeholder="🔍 Filamente durchsuchen..."
+      />
+
+      <!-- Beispiel Filamente (später dynamisch aus der Datenbank) -->
+      <div class="filament-item">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center mb-2">
+              <span class="filament-type-badge badge-pla me-2">PLA</span>
+              <h5 class="filament-name mb-0">Prusament PLA Galaxy Black</h5>
+            </div>
+            <div class="filament-info">
+              <p class="mb-1"><strong>Hersteller:</strong> Prusa Research</p>
+              <p class="mb-1"><strong>Gewicht:</strong> 1000g</p>
+              <p class="mb-1">
+                <strong>Preis pro kg:</strong>
+                <span class="filament-price">CHF 24.99</span>
+              </p>
+            </div>
+          </div>
+          <div class="action-buttons">
+            <button class="btn btn-sm btn-outline-warning btn-sm-prusa">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger btn-sm-prusa">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="filament-item">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center mb-2">
+              <span class="filament-type-badge badge-petg me-2">PETG</span>
+              <h5 class="filament-name mb-0">PETG Transparent Clear</h5>
+            </div>
+            <div class="filament-info">
+              <p class="mb-1"><strong>Hersteller:</strong> Hatchbox</p>
+              <p class="mb-1"><strong>Gewicht:</strong> 1000g</p>
+              <p class="mb-1">
+                <strong>Preis pro kg:</strong>
+                <span class="filament-price">CHF 32.50</span>
+              </p>
+            </div>
+          </div>
+          <div class="action-buttons">
+            <button class="btn btn-sm btn-outline-warning btn-sm-prusa">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger btn-sm-prusa">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="filament-item">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center mb-2">
+              <span class="filament-type-badge badge-tpu me-2">TPU</span>
+              <h5 class="filament-name mb-0">Flexible TPU Orange</h5>
+            </div>
+            <div class="filament-info">
+              <p class="mb-1"><strong>Hersteller:</strong> Overture</p>
+              <p class="mb-1"><strong>Gewicht:</strong> 500g</p>
+              <p class="mb-1">
+                <strong>Preis pro kg:</strong>
+                <span class="filament-price">CHF 45.00</span>
+              </p>
+            </div>
+          </div>
+          <div class="action-buttons">
+            <button class="btn btn-sm btn-outline-warning btn-sm-prusa">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger btn-sm-prusa">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
