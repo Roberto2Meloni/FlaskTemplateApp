@@ -1,33 +1,156 @@
 {% extends "layouts/web_app_layouts/web_app_base.html" %} {% block app_styles %}
 <link
   rel="stylesheet"
-  href="{{ url_for('cli.static', filename='css/cli.css') }}"
+  href="{{ url_for('PrintHub.static', filename='css/PrintHub.css') }}"
 />
+
 {% endblock %} {% block content %}
-<div class="cli-container">
-  <div class="cli-wrapper">
-    <div class="cli-header">
-      <div class="cli-title"><h4>CLI Console</h4></div>
-      <div class="cli-tools">
-        <button id="clear-btn" onclick="clearConsole()">🗑️</button>
-      </div>
+<div class="printhub-container">
+  <!-- Sidebar -->
+  <div class="printhub-sidebar">
+    <h3>PrintHub</h3>
+    <ul class="sidebar-nav">
+      <li>
+        <a href="#" class="nav-link" data-page="calculator">
+          <i class="fas fa-calculator"></i>
+          Berechner
+        </a>
+      </li>
+      <li>
+        <a href="#" class="nav-link" data-page="filaments">
+          <i class="fas fa-spool"></i>
+          Filamente
+        </a>
+      </li>
+      <li>
+        <a href="#" class="nav-link" data-page="printers">
+          <i class="fas fa-print"></i>
+          3D Drucker
+        </a>
+      </li>
+      <li>
+        <a href="#" class="nav-link" data-page="energy">
+          <i class="fas fa-bolt"></i>
+          Energie Kosten
+        </a>
+      </li>
+      <li>
+        <a href="#" class="nav-link" data-page="work">
+          <i class="fas fa-clock"></i>
+          Arbeitszeiten
+        </a>
+      </li>
+      <li>
+        <a href="#" class="nav-link" data-page="profit">
+          <i class="fas fa-chart-line"></i>
+          Gewinnmarge
+        </a>
+      </li>
+      <li>
+        <a href="#" class="nav-link" data-page="discounts">
+          <i class="fas fa-percentage"></i>
+          Rabatte
+        </a>
+      </li>
+      <li>
+        <a href="#" class="nav-link" data-page="overhead">
+          <i class="fas fa-cogs"></i>
+          Overhead
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Main Content -->
+  <div class="printhub-content">
+    <div class="content-header">
+      <h1>PrintHub Dashboard</h1>
+      <p class="lead">Willkommen im 3D-Druck Kalkulationssystem</p>
     </div>
-    <div class="cli-console-container">
-      <div class="cli-connected">
-        <p>Verbunden mit {{ config.app_name }}</p>
+
+    <!-- Page Content -->
+    <div id="page-content">
+      {% block page_content %}
+      <div class="row">
+        <div class="col-md-6 col-lg-4 mb-4">
+          <div class="card dashboard-card h-100 shadow-sm">
+            <div class="card-body text-center">
+              <i class="fas fa-calculator fa-3x text-primary mb-3"></i>
+              <h5 class="card-title">Schnellberechner</h5>
+              <p class="card-text">
+                Berechnen Sie schnell die Kosten für Ihren 3D-Druck
+              </p>
+              <a href="#" class="btn btn-primary">Starten</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4 mb-4">
+          <div class="card dashboard-card h-100 shadow-sm">
+            <div class="card-body text-center">
+              <i class="fas fa-spool fa-3x text-success mb-3"></i>
+              <h5 class="card-title">Filament-Verwaltung</h5>
+              <p class="card-text">
+                Verwalten Sie Ihre Filamente und deren Eigenschaften
+              </p>
+              <a href="#" class="btn btn-success">Verwalten</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4 mb-4">
+          <div class="card dashboard-card h-100 shadow-sm">
+            <div class="card-body text-center">
+              <i class="fas fa-print fa-3x text-info mb-3"></i>
+              <h5 class="card-title">Drucker-Setup</h5>
+              <p class="card-text">
+                Konfigurieren Sie Ihre 3D-Drucker und deren Parameter
+              </p>
+              <a href="#" class="btn btn-info">Einrichten</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4 mb-4">
+          <div class="card dashboard-card h-100 shadow-sm">
+            <div class="card-body text-center">
+              <i class="fas fa-bolt fa-3x text-warning mb-3"></i>
+              <h5 class="card-title">Energie-Kosten</h5>
+              <p class="card-text">
+                Berechnen Sie die Stromkosten für Ihre Druckaufträge
+              </p>
+              <a href="#" class="btn btn-warning">Berechnen</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4 mb-4">
+          <div class="card dashboard-card h-100 shadow-sm">
+            <div class="card-body text-center">
+              <i class="fas fa-chart-line fa-3x text-danger mb-3"></i>
+              <h5 class="card-title">Gewinnmarge</h5>
+              <p class="card-text">
+                Analysieren Sie Ihre Gewinnmargen und Rentabilität
+              </p>
+              <a href="#" class="btn btn-danger">Analysieren</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4 mb-4">
+          <div class="card dashboard-card h-100 shadow-sm">
+            <div class="card-body text-center">
+              <i class="fas fa-cogs fa-3x text-secondary mb-3"></i>
+              <h5 class="card-title">Overhead-Kosten</h5>
+              <p class="card-text">
+                Verwalten Sie Ihre Gemeinkosten und Betriebsausgaben
+              </p>
+              <a href="#" class="btn btn-secondary">Verwalten</a>
+            </div>
+          </div>
+        </div>
       </div>
-      <p>Befehls Historie:</p>
-      <div id="cli-history" class="cli-history"></div>
-      <div class="cli-input">
-        <span id="prompt">{{ config.app_name }} # </span>
-        <input
-          type="text"
-          id="cli-input-field"
-          placeholder=""
-          autofocus
-          onkeydown="handleKeyDown(event, '{{ url_for('cli.receive_command') }}', '{{ url_for('cli.check_output', command_id='0') }}')"
-        />
-      </div>
+      {% endblock %}
     </div>
   </div>
 </div>

@@ -1,140 +1,576 @@
-*, body {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    /* Box-Sizing auf die gesamte Seite anwenden */
+/*
+===============================================
+PrintHub - Prusa Galaxy Black & Orange Theme
+===============================================
+*/
+
+:root {
+    /* Prusa Farben */
+    --prusa-black: #1a1a1a;
+    --prusa-dark-grey: #2a2a2a;
+    --prusa-medium-grey: #3a3a3a;
+    --prusa-light-grey: #4a4a4a;
+    --prusa-orange: #ff6600;
+    --prusa-orange-hover: #e55a00;
+    --prusa-orange-light: #ff8533;
+    --prusa-orange-dark: #cc5200;
+    --prusa-white: #ffffff;
+    --prusa-light-text: #e0e0e0;
+    --prusa-accent: #ffaa55;
+
+    /* Schatten und Effekte */
+    --shadow-orange: 0 0 20px rgba(255, 102, 0, 0.3);
+    --shadow-dark: 0 4px 15px rgba(0, 0, 0, 0.5);
+    --shadow-soft: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
-.cli-container {
+/* Container */
+.printhub-container {
     display: flex;
-    justify-content: center;
-    height: 100vh;
+    min-height: calc(100vh - 120px);
+    background: linear-gradient(135deg, var(--prusa-black) 0%, var(--prusa-dark-grey) 100%);
+}
+
+/* Sidebar Styling */
+.printhub-sidebar {
+    width: 280px;
+    background: linear-gradient(180deg, var(--prusa-black) 0%, var(--prusa-dark-grey) 50%, var(--prusa-medium-grey) 100%);
+    padding: 2rem 0;
+    box-shadow: 4px 0 25px rgba(0, 0, 0, 0.8);
+    position: relative;
+    overflow: hidden;
+    border-right: 2px solid var(--prusa-orange);
+}
+
+/* Prusa Galaxy Pattern */
+.printhub-sidebar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+        radial-gradient(circle at 20% 20%, var(--prusa-orange) 0%, transparent 1px),
+        radial-gradient(circle at 80% 40%, var(--prusa-orange) 0%, transparent 1px),
+        radial-gradient(circle at 40% 80%, var(--prusa-orange) 0%, transparent 1px),
+        radial-gradient(circle at 90% 90%, var(--prusa-orange) 0%, transparent 1px);
+    background-size: 100px 100px, 150px 150px, 120px 120px, 80px 80px;
+    opacity: 0.1;
+    pointer-events: none;
+}
+
+/* Prusa Orange Glow Effect */
+.printhub-sidebar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg,
+            transparent 0%,
+            var(--prusa-orange) 20%,
+            var(--prusa-orange-light) 50%,
+            var(--prusa-orange) 80%,
+            transparent 100%);
+    box-shadow: 0 0 15px var(--prusa-orange);
+    animation: pulse 3s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0.8;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+/* Sidebar Header */
+.printhub-sidebar h3 {
+    color: var(--prusa-white);
+    text-align: center;
+    margin-bottom: 2.5rem;
+    font-size: 1.4rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 0 10px var(--prusa-orange);
+}
+
+.printhub-sidebar h3::after {
+    content: '';
+    display: block;
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--prusa-orange), transparent);
+    margin: 0.5rem auto 0;
+    border-radius: 2px;
+}
+
+/* Navigation */
+.sidebar-nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.sidebar-nav li {
+    margin: 0.25rem 0;
+}
+
+.sidebar-nav a {
+    display: flex;
+    align-items: center;
+    padding: 1.2rem 2rem;
+    color: var(--prusa-light-text);
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-left: 4px solid transparent;
+    font-weight: 500;
+    font-size: 0.95rem;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Hover Effect mit Prusa Orange */
+.sidebar-nav a::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    background: linear-gradient(90deg, var(--prusa-orange), var(--prusa-orange-light));
+    transition: width 0.3s ease;
+    z-index: -1;
+}
+
+.sidebar-nav a:hover::before {
     width: 100%;
 }
 
-.cli-wrapper {
-    width: 90%;
-    height: 80%;
-    margin: 10px;
-    border: 5px solid #008B10;
-    border-radius: 5px;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    /* Verhindert, dass Kinder den Container überfließen */
+.sidebar-nav a:hover {
+    color: var(--prusa-white);
+    border-left-color: var(--prusa-orange-light);
+    transform: translateX(8px);
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
 }
 
-.cli-header {
-    background-color: #E6E6E6;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid black;
-    padding: 5px;
+/* Active Link */
+.sidebar-nav a.active {
+    background: linear-gradient(90deg, var(--prusa-orange), var(--prusa-orange-dark));
+    border-left-color: var(--prusa-orange-light);
+    color: var(--prusa-white);
+    font-weight: 600;
+    box-shadow: inset 0 0 20px rgba(255, 102, 0, 0.3);
 }
 
-.cli-title {
-    margin-left: 10px;
-    font-size: 1.5rem;
-    font-weight: bold;
-    /* Macht den Titel auffälliger */
+.sidebar-nav a.active::before {
+    width: 100%;
+    background: linear-gradient(90deg, var(--prusa-orange-light), var(--prusa-orange));
 }
 
-.cli-tools {
-    margin-right: 10px;
-    background-color: black;
-}
-
-.cli-console-container {
-    background-color: #0D0D0D;
-    color: white;
-    height: 100%;
-    padding: 10px;
-    overflow-y: auto;
-    /* Ermöglicht vertikales Scrollen */
-    display: flex;
-    flex-direction: column;
-}
-
-.cli-connected {
-    margin: 10px 0;
-    color: #008B10;
-    font-family: monospace;
-    /* Konsistent mit der CLI-Ästhetik */
-}
-
-.cli-history {
-    margin: 0;
-    max-height: 100%;
-    overflow-y: auto;
-    padding: 10px;
-    /* Fügt etwas Abstand zum Rand hinzu */
-}
-
-.cli-history .cli-input-command,
-.cli-history .cli-output-command {
-    padding: 10px;
-    /* Etwas mehr Padding für bessere Lesbarkeit */
-    border-radius: 8px;
-    /* Abgerundete Ecken für ein moderneres Aussehen */
-    margin-bottom: 10px;
-    /* Etwas mehr Abstand zwischen den Einträgen */
-    font-family: monospace;
-    /* Konsistent mit der CLI-Ästhetik */
-}
-
-.cli-history .cli-input-command {
-    color: #00ff00;
-    /* Hellerer Grünton für Eingaben */
-    background-color: #000;
-    /* Dunkler Hintergrund für Befehle */
-    border: 1px solid #00ff00;
-    /* Dünner grüner Rand für mehr Kontrast */
-}
-
-.cli-history .cli-output-command {
-    color: #f0f0f0;
-    /* Hellerer Text für bessere Lesbarkeit */
-    background-color: #333;
-    /* Dunklerer Hintergrund für Ausgaben */
-    border: 1px solid #f0f0f0;
-    /* Dünner weißer Rand für mehr Kontrast */
-}
-
-.cli-input {
-    display: flex;
-    align-items: center;
-    background-color: #000;
-    padding: 10px;
-    /* Mehr Padding für ein angenehmeres Eingeben */
+/* Icons */
+.sidebar-nav i {
+    margin-right: 1rem;
+    width: 22px;
+    text-align: center;
+    font-size: 1.1rem;
     position: relative;
-    flex-shrink: 0;
-    /* Verhindert, dass das Eingabefeld komprimiert wird */
-    border-top: 1px solid #008B10;
-    /* Abtrennung vom Rest der Konsole */
-}
-
-.cli-input>* {
-    margin-right: 5px;
-}
-
-.cli-input>*:last-child {
-    margin-right: 0;
-}
-
-#cli-input-field {
-    flex: 1;
-    height: 1.5em;
-    background-color: #000;
-    color: white;
-    border: none;
-    outline: none;
-    font-family: monospace;
-    font-size: 1em;
-    padding: 0;
-    margin: 0;
-    box-sizing: border-box;
     z-index: 1;
-    border-radius: 5px;
-    /* Abgerundete Ecken für das Eingabefeld */
+    filter: drop-shadow(0 0 3px rgba(255, 102, 0, 0.5));
+}
+
+.sidebar-nav a:hover i,
+.sidebar-nav a.active i {
+    color: var(--prusa-white);
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.8));
+    transform: scale(1.1);
+}
+
+/* Main Content Area */
+.printhub-content {
+    flex: 1;
+    padding: 2rem;
+    background: linear-gradient(135deg, var(--prusa-dark-grey) 0%, var(--prusa-black) 100%);
+    position: relative;
+}
+
+.printhub-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+        radial-gradient(circle at 30% 30%, var(--prusa-orange) 0%, transparent 2px),
+        radial-gradient(circle at 70% 70%, var(--prusa-orange) 0%, transparent 1px),
+        radial-gradient(circle at 10% 90%, var(--prusa-orange) 0%, transparent 1.5px);
+    background-size: 200px 200px, 150px 150px, 300px 300px;
+    opacity: 0.05;
+    pointer-events: none;
+}
+
+/* Content Header */
+.content-header {
+    background: linear-gradient(135deg, var(--prusa-medium-grey) 0%, var(--prusa-dark-grey) 100%);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: var(--shadow-dark);
+    margin-bottom: 2rem;
+    border: 1px solid var(--prusa-light-grey);
+    border-left: 5px solid var(--prusa-orange);
+    position: relative;
+    overflow: hidden;
+}
+
+.content-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle, var(--prusa-orange) 0%, transparent 70%);
+    opacity: 0.1;
+}
+
+.content-header h1 {
+    margin: 0;
+    color: var(--prusa-white);
+    font-size: 2.8rem;
+    font-weight: 700;
+    text-shadow: 0 0 20px var(--prusa-orange);
+    background: linear-gradient(135deg, var(--prusa-white), var(--prusa-orange-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.content-header .lead {
+    margin: 0.5rem 0 0 0;
+    color: var(--prusa-light-text);
+    font-size: 1.2rem;
+    font-weight: 300;
+}
+
+/* Dashboard Cards - Prusa Style */
+.dashboard-card {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--prusa-medium-grey) 0%, var(--prusa-dark-grey) 100%);
+    border: 1px solid var(--prusa-light-grey);
+    position: relative;
+}
+
+.dashboard-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--prusa-orange), var(--prusa-orange-light), var(--prusa-orange));
+}
+
+.dashboard-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: var(--shadow-orange), var(--shadow-dark);
+    border-color: var(--prusa-orange);
+}
+
+.dashboard-card .card-body {
+    padding: 2.5rem;
+    position: relative;
+    background: transparent;
+    color: var(--prusa-light-text);
+}
+
+.dashboard-card .card-body::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 60px;
+    height: 60px;
+    background: radial-gradient(circle, var(--prusa-orange) 0%, transparent 60%);
+    opacity: 0.15;
+}
+
+/* Card Icons */
+.dashboard-card i {
+    transition: all 0.4s ease;
+    filter: drop-shadow(0 0 8px var(--prusa-orange));
+    color: var(--prusa-orange);
+}
+
+.dashboard-card:hover i {
+    transform: scale(1.15) rotate(5deg);
+    filter: drop-shadow(0 0 15px var(--prusa-orange));
+    color: var(--prusa-orange-light);
+}
+
+/* Card Titles */
+.dashboard-card .card-title {
+    color: var(--prusa-white);
+    font-weight: 600;
+    margin-bottom: 1rem;
+    text-shadow: 0 0 10px rgba(255, 102, 0, 0.3);
+}
+
+.dashboard-card .card-text {
+    color: var(--prusa-light-text);
+    line-height: 1.6;
+}
+
+/* Prusa Orange Buttons */
+.dashboard-card .btn {
+    border-radius: 25px;
+    padding: 0.8rem 2rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-card .btn-primary {
+    background: linear-gradient(135deg, var(--prusa-orange), var(--prusa-orange-dark));
+    border-color: var(--prusa-orange);
+    color: var(--prusa-white);
+    box-shadow: 0 4px 15px rgba(255, 102, 0, 0.3);
+}
+
+.dashboard-card .btn-primary:hover {
+    background: linear-gradient(135deg, var(--prusa-orange-light), var(--prusa-orange));
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(255, 102, 0, 0.5);
+}
+
+.dashboard-card .btn-success {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    border-color: #28a745;
+}
+
+.dashboard-card .btn-info {
+    background: linear-gradient(135deg, var(--prusa-orange), #fd7e14);
+    border-color: var(--prusa-orange);
+}
+
+.dashboard-card .btn-warning {
+    background: linear-gradient(135deg, #ffc107, var(--prusa-orange));
+    border-color: #ffc107;
+    color: var(--prusa-black);
+}
+
+.dashboard-card .btn-danger {
+    background: linear-gradient(135deg, #dc3545, var(--prusa-orange-dark));
+    border-color: #dc3545;
+}
+
+.dashboard-card .btn-secondary {
+    background: linear-gradient(135deg, var(--prusa-light-grey), var(--prusa-medium-grey));
+    border-color: var(--prusa-light-grey);
+    color: var(--prusa-white);
+}
+
+/* Page Content Animations */
+#page-content {
+    animation: fadeInUp 0.6s ease-out;
+    position: relative;
+    z-index: 1;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Custom Scrollbar */
+.printhub-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.printhub-content::-webkit-scrollbar-track {
+    background: var(--prusa-dark-grey);
+}
+
+.printhub-content::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--prusa-orange), var(--prusa-orange-dark));
+    border-radius: 4px;
+}
+
+.printhub-content::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, var(--prusa-orange-light), var(--prusa-orange));
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .printhub-container {
+        flex-direction: column;
+    }
+
+    .printhub-sidebar {
+        width: 100%;
+        padding: 1rem 0;
+        border-right: none;
+        border-bottom: 2px solid var(--prusa-orange);
+    }
+
+    .printhub-sidebar::after {
+        display: none;
+    }
+
+    .sidebar-nav {
+        display: flex;
+        overflow-x: auto;
+        padding: 0 1rem;
+        gap: 0.5rem;
+    }
+
+    .sidebar-nav::-webkit-scrollbar {
+        height: 4px;
+    }
+
+    .sidebar-nav::-webkit-scrollbar-track {
+        background: var(--prusa-dark-grey);
+    }
+
+    .sidebar-nav::-webkit-scrollbar-thumb {
+        background: var(--prusa-orange);
+        border-radius: 2px;
+    }
+
+    .sidebar-nav li {
+        flex-shrink: 0;
+    }
+
+    .sidebar-nav a {
+        padding: 0.8rem 1.5rem;
+        white-space: nowrap;
+        transform: none;
+        border-left: none;
+        border-bottom: 3px solid transparent;
+    }
+
+    .sidebar-nav a:hover {
+        transform: none;
+        border-bottom-color: var(--prusa-orange);
+    }
+
+    .sidebar-nav a.active {
+        border-bottom-color: var(--prusa-orange-light);
+    }
+
+    .printhub-content {
+        padding: 1rem;
+    }
+
+    .content-header {
+        padding: 1.5rem;
+    }
+
+    .content-header h1 {
+        font-size: 2.2rem;
+    }
+
+    .dashboard-card .card-body {
+        padding: 1.5rem;
+    }
+
+    .dashboard-card i {
+        font-size: 2.5rem !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .content-header h1 {
+        font-size: 1.8rem;
+    }
+
+    .dashboard-card .card-body {
+        padding: 1.2rem;
+    }
+
+    .dashboard-card i {
+        font-size: 2rem !important;
+    }
+
+    .sidebar-nav a {
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Dark Theme Utilities */
+.text-prusa-orange {
+    color: var(--prusa-orange) !important;
+}
+
+.bg-prusa-black {
+    background-color: var(--prusa-black) !important;
+}
+
+.bg-prusa-dark {
+    background-color: var(--prusa-dark-grey) !important;
+}
+
+.border-prusa-orange {
+    border-color: var(--prusa-orange) !important;
+}
+
+/* Special Effects */
+.glow-orange {
+    box-shadow: 0 0 20px var(--prusa-orange);
+}
+
+.prusa-gradient {
+    background: linear-gradient(135deg, var(--prusa-orange), var(--prusa-orange-dark));
+}
+
+/* Loading Animation */
+.loading-prusa {
+    position: relative;
+    overflow: hidden;
+}
+
+.loading-prusa::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, var(--prusa-orange), transparent);
+    animation: loadingPrusa 2s infinite;
+    opacity: 0.3;
+}
+
+@keyframes loadingPrusa {
+    0% {
+        left: -100%;
+    }
+
+    100% {
+        left: 100%;
+    }
 }

@@ -3,7 +3,6 @@ from flask_login import current_user
 from . import blueprint
 from app.config import Config
 from app.decorators import admin_required
-from .models import CliCommandHistory
 from app import db
 import subprocess
 import uuid
