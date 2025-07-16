@@ -1,104 +1,921 @@
-< !-- Sidebar --><div class="printhub-sidebar"><h3><a href="{{ url_for('PrintHub.PrintHub_index') }}"
-style="color: inherit; text-decoration: none"
->PrintHub</a></h3><ul class="sidebar-nav"><li><a href="{{ url_for('PrintHub.PrintHub_index') }}"
-class="nav-link {% if not active_page or active_page == 'dashboard' %}active{% endif %}"
-data-page="dashboard"
-><i class="bi bi-house-fill"></i>Dashboard </a></li><li><a href="#"
-class="nav-link {% if active_page == 'calculator' %}active{% endif %}"
-data-page="calculator"
-><i class="bi bi-calculator"></i>Berechner </a></li><li><a href="{{ url_for('PrintHub.printHub_filaments') }}"
-class="nav-link {% if active_page == 'filaments' %}active{% endif %}"
-data-page="filaments"
-><i class="bi bi-disc"></i>Filamente </a></li><li><a href="#"
-class="nav-link {% if active_page == 'printers' %}active{% endif %}"
-data-page="printers"
-><i class="bi bi-printer"></i>3D Drucker </a></li><li><a href="#"
-class="nav-link {% if active_page == 'energy' %}active{% endif %}"
-data-page="energy"
-><i class="bi bi-lightning-charge"></i>Energie Kosten </a></li><li><a href="#"
-class="nav-link {% if active_page == 'work' %}active{% endif %}"
-data-page="work"
-><i class="bi bi-clock"></i>Arbeitszeiten </a></li><li><a href="#"
-class="nav-link {% if active_page == 'profit' %}active{% endif %}"
-data-page="profit"
-><i class="bi bi-graph-up"></i>Gewinnmarge </a></li><li><a href="#"
-class="nav-link {% if active_page == 'discounts' %}active{% endif %}"
-data-page="discounts"
-><i class="bi bi-percent"></i>Rabatte </a></li><li><a href="#"
-class="nav-link {% if active_page == 'overhead' %}active{% endif %}"
-data-page="overhead"
-><i class="bi bi-gear"></i>Overhead </a></li></ul></div><script> // JavaScript für automatische aktive Seite basierend auf URL (Fallback)
+/*
+===============================================
+PrintHub - Prusa Galaxy Black & Orange Theme
+===============================================
+*/
 
-document.addEventListener("DOMContentLoaded", function () {
-        const currentPath=window.location.pathname;
-        const navLinks=document.querySelectorAll(".sidebar-nav .nav-link");
+:root {
+    /* Prusa Farben */
+    --prusa-black: #1a1a1a;
+    --prusa-dark-grey: #2a2a2a;
+    --prusa-medium-grey: #3a3a3a;
+    --prusa-light-grey: #4a4a4a;
+    --prusa-orange: #ff6600;
+    --prusa-orange-hover: #e55a00;
+    --prusa-orange-light: #ff8533;
+    --prusa-orange-dark: #cc5200;
+    --prusa-white: #ffffff;
+    --prusa-light-text: #e0e0e0;
+    --prusa-accent: #ffaa55;
 
-        // Entferne alle aktiven Klassen
-        navLinks.forEach((link)=> {
-                link.classList.remove("active");
-            }
+    /* Schatten und Effekte */
+    --shadow-orange: 0 0 20px rgba(255, 102, 0, 0.3);
+    --shadow-dark: 0 4px 15px rgba(0, 0, 0, 0.5);
+    --shadow-soft: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
 
-        );
+/* Container */
+.printhub-container {
+    display: flex;
+    min-height: calc(100vh - 120px);
+    background: linear-gradient(135deg, var(--prusa-black) 0%, var(--prusa-dark-grey) 100%);
+}
 
-        // Setze aktive Klasse basierend auf URL
-        let activeSet=false;
+/* Sidebar Styling */
+.printhub-sidebar {
+    width: 280px;
+    background: linear-gradient(180deg, var(--prusa-black) 0%, var(--prusa-dark-grey) 50%, var(--prusa-medium-grey) 100%);
+    padding: 2rem 0;
+    box-shadow: 4px 0 25px rgba(0, 0, 0, 0.8);
+    position: relative;
+    overflow: hidden;
+    border-right: 2px solid var(--prusa-orange);
+}
 
-        navLinks.forEach((link)=> {
-                const page=link.dataset.page;
+/* Prusa Galaxy Pattern */
+.printhub-sidebar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+        radial-gradient(circle at 20% 20%, var(--prusa-orange) 0%, transparent 1px),
+        radial-gradient(circle at 80% 40%, var(--prusa-orange) 0%, transparent 1px),
+        radial-gradient(circle at 40% 80%, var(--prusa-orange) 0%, transparent 1px),
+        radial-gradient(circle at 90% 90%, var(--prusa-orange) 0%, transparent 1px);
+    background-size: 100px 100px, 150px 150px, 120px 120px, 80px 80px;
+    opacity: 0.1;
+    pointer-events: none;
+}
 
-                if (currentPath.includes("filaments") && page==="filaments") {
-                    link.classList.add("active");
-                    activeSet=true;
-                }
+/* Prusa Orange Glow Effect */
+.printhub-sidebar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg,
+            transparent 0%,
+            var(--prusa-orange) 20%,
+            var(--prusa-orange-light) 50%,
+            var(--prusa-orange) 80%,
+            transparent 100%);
+    box-shadow: 0 0 15px var(--prusa-orange);
+    animation: pulse 3s ease-in-out infinite;
+}
 
-                else if (currentPath.includes("calculator") && page==="calculator") {
-                    link.classList.add("active");
-                    activeSet=true;
-                }
-
-                else if (currentPath.includes("printers") && page==="printers") {
-                    link.classList.add("active");
-                    activeSet=true;
-                }
-
-                else if (currentPath.includes("energy") && page==="energy") {
-                    link.classList.add("active");
-                    activeSet=true;
-                }
-
-                else if (currentPath.includes("work") && page==="work") {
-                    link.classList.add("active");
-                    activeSet=true;
-                }
-
-                else if (currentPath.includes("profit") && page==="profit") {
-                    link.classList.add("active");
-                    activeSet=true;
-                }
-
-                else if (currentPath.includes("discounts") && page==="discounts") {
-                    link.classList.add("active");
-                    activeSet=true;
-                }
-
-                else if (currentPath.includes("overhead") && page==="overhead") {
-                    link.classList.add("active");
-                    activeSet=true;
-                }
-            }
-
-        );
-
-        // Wenn keine spezifische Seite aktiv ist, setze Dashboard als aktiv
-        if ( !activeSet) {
-            const dashboardLink=document.querySelector('.nav-link[data-page="dashboard"]'
-            );
-
-            if (dashboardLink) {
-                dashboardLink.classList.add("active");
-            }
-        }
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0.8;
     }
 
-);
-</script>
+    50% {
+        opacity: 1;
+    }
+}
+
+/* Sidebar Header */
+.printhub-sidebar h3 {
+    color: var(--prusa-white);
+    text-align: center;
+    margin-bottom: 2.5rem;
+    font-size: 1.4rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 0 10px var(--prusa-orange);
+}
+
+.printhub-sidebar h3::after {
+    content: '';
+    display: block;
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--prusa-orange), transparent);
+    margin: 0.5rem auto 0;
+    border-radius: 2px;
+}
+
+/* Navigation */
+.sidebar-nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.sidebar-nav li {
+    margin: 0.25rem 0;
+}
+
+.sidebar-nav a {
+    display: flex;
+    align-items: center;
+    padding: 1.2rem 2rem;
+    color: var(--prusa-light-text);
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-left: 4px solid transparent;
+    font-weight: 500;
+    font-size: 0.95rem;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Hover Effect mit Prusa Orange */
+.sidebar-nav a::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    background: linear-gradient(90deg, var(--prusa-orange), var(--prusa-orange-light));
+    transition: width 0.3s ease;
+    z-index: -1;
+}
+
+.sidebar-nav a:hover::before {
+    width: 100%;
+}
+
+.sidebar-nav a:hover {
+    color: var(--prusa-white);
+    border-left-color: var(--prusa-orange-light);
+    transform: translateX(8px);
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+}
+
+/* Active Link */
+.sidebar-nav a.active {
+    background: linear-gradient(90deg, var(--prusa-orange), var(--prusa-orange-dark));
+    border-left-color: var(--prusa-orange-light);
+    color: var(--prusa-white);
+    font-weight: 600;
+    box-shadow: inset 0 0 20px rgba(255, 102, 0, 0.3);
+}
+
+.sidebar-nav a.active::before {
+    width: 100%;
+    background: linear-gradient(90deg, var(--prusa-orange-light), var(--prusa-orange));
+}
+
+/* Icons */
+.sidebar-nav i {
+    margin-right: 1rem;
+    width: 22px;
+    text-align: center;
+    font-size: 1.1rem;
+    position: relative;
+    z-index: 1;
+    filter: drop-shadow(0 0 3px rgba(255, 102, 0, 0.5));
+}
+
+.sidebar-nav a:hover i,
+.sidebar-nav a.active i {
+    color: var(--prusa-white);
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.8));
+    transform: scale(1.1);
+}
+
+/* Main Content Area */
+.printhub-content {
+    flex: 1;
+    padding: 2rem;
+    background: linear-gradient(135deg, var(--prusa-dark-grey) 0%, var(--prusa-black) 100%);
+    position: relative;
+}
+
+.printhub-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+        radial-gradient(circle at 30% 30%, var(--prusa-orange) 0%, transparent 2px),
+        radial-gradient(circle at 70% 70%, var(--prusa-orange) 0%, transparent 1px),
+        radial-gradient(circle at 10% 90%, var(--prusa-orange) 0%, transparent 1.5px);
+    background-size: 200px 200px, 150px 150px, 300px 300px;
+    opacity: 0.05;
+    pointer-events: none;
+}
+
+/* Content Header */
+.content-header {
+    background: linear-gradient(135deg, var(--prusa-medium-grey) 0%, var(--prusa-dark-grey) 100%);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: var(--shadow-dark);
+    margin-bottom: 2rem;
+    border: 1px solid var(--prusa-light-grey);
+    border-left: 5px solid var(--prusa-orange);
+    position: relative;
+    overflow: hidden;
+}
+
+.content-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle, var(--prusa-orange) 0%, transparent 70%);
+    opacity: 0.1;
+}
+
+.content-header h1 {
+    margin: 0;
+    color: var(--prusa-white);
+    font-size: 2.8rem;
+    font-weight: 700;
+    text-shadow: 0 0 20px var(--prusa-orange);
+    background: linear-gradient(135deg, var(--prusa-white), var(--prusa-orange-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.content-header .lead {
+    margin: 0.5rem 0 0 0;
+    color: var(--prusa-light-text);
+    font-size: 1.2rem;
+    font-weight: 300;
+}
+
+/* Dashboard Cards - Prusa Style */
+.dashboard-card {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--prusa-medium-grey) 0%, var(--prusa-dark-grey) 100%);
+    border: 1px solid var(--prusa-light-grey);
+    position: relative;
+}
+
+.dashboard-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--prusa-orange), var(--prusa-orange-light), var(--prusa-orange));
+}
+
+.dashboard-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: var(--shadow-orange), var(--shadow-dark);
+    border-color: var(--prusa-orange);
+}
+
+.dashboard-card .card-body {
+    padding: 2.5rem;
+    position: relative;
+    background: transparent;
+    color: var(--prusa-light-text);
+}
+
+.dashboard-card .card-body::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 60px;
+    height: 60px;
+    background: radial-gradient(circle, var(--prusa-orange) 0%, transparent 60%);
+    opacity: 0.15;
+}
+
+/* Card Icons */
+.dashboard-card i {
+    transition: all 0.4s ease;
+    filter: drop-shadow(0 0 8px var(--prusa-orange));
+    color: var(--prusa-orange);
+}
+
+.dashboard-card:hover i {
+    transform: scale(1.15) rotate(5deg);
+    filter: drop-shadow(0 0 15px var(--prusa-orange));
+    color: var(--prusa-orange-light);
+}
+
+/* Card Titles */
+.dashboard-card .card-title {
+    color: var(--prusa-white);
+    font-weight: 600;
+    margin-bottom: 1rem;
+    text-shadow: 0 0 10px rgba(255, 102, 0, 0.3);
+}
+
+.dashboard-card .card-text {
+    color: var(--prusa-light-text);
+    line-height: 1.6;
+}
+
+/* Prusa Orange Buttons */
+.dashboard-card .btn {
+    border-radius: 25px;
+    padding: 0.8rem 2rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-card .btn-primary {
+    background: linear-gradient(135deg, var(--prusa-orange), var(--prusa-orange-dark));
+    border-color: var(--prusa-orange);
+    color: var(--prusa-white);
+    box-shadow: 0 4px 15px rgba(255, 102, 0, 0.3);
+}
+
+.dashboard-card .btn-primary:hover {
+    background: linear-gradient(135deg, var(--prusa-orange-light), var(--prusa-orange));
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(255, 102, 0, 0.5);
+}
+
+.dashboard-card .btn-success {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    border-color: #28a745;
+}
+
+.dashboard-card .btn-info {
+    background: linear-gradient(135deg, var(--prusa-orange), #fd7e14);
+    border-color: var(--prusa-orange);
+}
+
+.dashboard-card .btn-warning {
+    background: linear-gradient(135deg, #ffc107, var(--prusa-orange));
+    border-color: #ffc107;
+    color: var(--prusa-black);
+}
+
+.dashboard-card .btn-danger {
+    background: linear-gradient(135deg, #dc3545, var(--prusa-orange-dark));
+    border-color: #dc3545;
+}
+
+.dashboard-card .btn-secondary {
+    background: linear-gradient(135deg, var(--prusa-light-grey), var(--prusa-medium-grey));
+    border-color: var(--prusa-light-grey);
+    color: var(--prusa-white);
+}
+
+/* Page Content Animations */
+#page-content {
+    animation: fadeInUp 0.6s ease-out;
+    position: relative;
+    z-index: 1;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Custom Scrollbar */
+.printhub-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.printhub-content::-webkit-scrollbar-track {
+    background: var(--prusa-dark-grey);
+}
+
+.printhub-content::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--prusa-orange), var(--prusa-orange-dark));
+    border-radius: 4px;
+}
+
+.printhub-content::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, var(--prusa-orange-light), var(--prusa-orange));
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .printhub-container {
+        flex-direction: column;
+    }
+
+    .printhub-sidebar {
+        width: 100%;
+        padding: 1rem 0;
+        border-right: none;
+        border-bottom: 2px solid var(--prusa-orange);
+    }
+
+    .printhub-sidebar::after {
+        display: none;
+    }
+
+    .sidebar-nav {
+        display: flex;
+        overflow-x: auto;
+        padding: 0 1rem;
+        gap: 0.5rem;
+    }
+
+    .sidebar-nav::-webkit-scrollbar {
+        height: 4px;
+    }
+
+    .sidebar-nav::-webkit-scrollbar-track {
+        background: var(--prusa-dark-grey);
+    }
+
+    .sidebar-nav::-webkit-scrollbar-thumb {
+        background: var(--prusa-orange);
+        border-radius: 2px;
+    }
+
+    .sidebar-nav li {
+        flex-shrink: 0;
+    }
+
+    .sidebar-nav a {
+        padding: 0.8rem 1.5rem;
+        white-space: nowrap;
+        transform: none;
+        border-left: none;
+        border-bottom: 3px solid transparent;
+    }
+
+    .sidebar-nav a:hover {
+        transform: none;
+        border-bottom-color: var(--prusa-orange);
+    }
+
+    .sidebar-nav a.active {
+        border-bottom-color: var(--prusa-orange-light);
+    }
+
+    .printhub-content {
+        padding: 1rem;
+    }
+
+    .content-header {
+        padding: 1.5rem;
+    }
+
+    .content-header h1 {
+        font-size: 2.2rem;
+    }
+
+    .dashboard-card .card-body {
+        padding: 1.5rem;
+    }
+
+    .dashboard-card i {
+        font-size: 2.5rem !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .content-header h1 {
+        font-size: 1.8rem;
+    }
+
+    .dashboard-card .card-body {
+        padding: 1.2rem;
+    }
+
+    .dashboard-card i {
+        font-size: 2rem !important;
+    }
+
+    .sidebar-nav a {
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Dark Theme Utilities */
+.text-prusa-orange {
+    color: var(--prusa-orange) !important;
+}
+
+.bg-prusa-black {
+    background-color: var(--prusa-black) !important;
+}
+
+.bg-prusa-dark {
+    background-color: var(--prusa-dark-grey) !important;
+}
+
+.border-prusa-orange {
+    border-color: var(--prusa-orange) !important;
+}
+
+/* Special Effects */
+.glow-orange {
+    box-shadow: 0 0 20px var(--prusa-orange);
+}
+
+.prusa-gradient {
+    background: linear-gradient(135deg, var(--prusa-orange), var(--prusa-orange-dark));
+}
+
+/* Loading Animation */
+.loading-prusa {
+    position: relative;
+    overflow: hidden;
+}
+
+.loading-prusa::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, var(--prusa-orange), transparent);
+    animation: loadingPrusa 2s infinite;
+    opacity: 0.3;
+}
+
+@keyframes loadingPrusa {
+    0% {
+        left: -100%;
+    }
+
+    100% {
+        left: 100%;
+    }
+}
+
+/* Filaments */
+.filament-form-container {
+    background: linear-gradient(135deg, var(--prusa-medium-grey) 0%, var(--prusa-dark-grey) 100%);
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: var(--shadow-dark);
+    border: 1px solid var(--prusa-light-grey);
+    border-left: 5px solid var(--prusa-orange);
+    margin-bottom: 2rem;
+}
+
+.form-group label {
+    color: var(--prusa-white);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+.form-control {
+    background: var(--prusa-dark-grey);
+    border: 2px solid var(--prusa-light-grey);
+    border-radius: 8px;
+    color: var(--prusa-white);
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    background: var(--prusa-medium-grey);
+    border-color: var(--prusa-orange);
+    box-shadow: 0 0 0 0.2rem rgba(255, 102, 0, 0.25);
+    color: var(--prusa-white);
+}
+
+.form-control::placeholder {
+    color: var(--prusa-light-text);
+    opacity: 0.7;
+}
+
+.btn-prusa {
+    background: linear-gradient(135deg, var(--prusa-orange), var(--prusa-orange-dark));
+    border: 2px solid var(--prusa-orange);
+    color: var(--prusa-white);
+    padding: 0.8rem 2rem;
+    border-radius: 25px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 102, 0, 0.3);
+}
+
+.btn-prusa:hover {
+    background: linear-gradient(135deg, var(--prusa-orange-light), var(--prusa-orange));
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 102, 0, 0.5);
+    color: var(--prusa-white);
+}
+
+.btn-secondary-prusa {
+    background: linear-gradient(135deg, var(--prusa-light-grey), var(--prusa-medium-grey));
+    border: 2px solid var(--prusa-light-grey);
+    color: var(--prusa-white);
+    padding: 0.8rem 2rem;
+    border-radius: 25px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary-prusa:hover {
+    background: linear-gradient(135deg, var(--prusa-medium-grey), var(--prusa-light-grey));
+    transform: translateY(-2px);
+    color: var(--prusa-white);
+}
+
+.filament-list-container {
+    background: linear-gradient(135deg, var(--prusa-medium-grey) 0%, var(--prusa-dark-grey) 100%);
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: var(--shadow-dark);
+    border: 1px solid var(--prusa-light-grey);
+    border-left: 5px solid var(--prusa-orange);
+}
+
+.filament-item {
+    background: var(--prusa-dark-grey);
+    border: 1px solid var(--prusa-light-grey);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.filament-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 102, 0, 0.2);
+    border-color: var(--prusa-orange);
+}
+
+.filament-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--prusa-orange), var(--prusa-orange-light));
+}
+
+.filament-type-badge {
+    display: inline-block;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-pla {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.badge-petg {
+    background: linear-gradient(135deg, #007bff, #6610f2);
+    color: white;
+}
+
+.badge-tpu {
+    background: linear-gradient(135deg, #fd7e14, var(--prusa-orange));
+    color: white;
+}
+
+.filament-info {
+    color: var(--prusa-light-text);
+}
+
+.filament-name {
+    color: var(--prusa-white);
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.filament-price {
+    color: var(--prusa-orange);
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+
+.input-group-text {
+    background: var(--prusa-light-grey);
+    border: 2px solid var(--prusa-light-grey);
+    color: var(--prusa-white);
+    border-left: none;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.btn-sm-prusa {
+    padding: 0.4rem 1rem;
+    font-size: 0.875rem;
+    border-radius: 15px;
+    font-weight: 500;
+}
+
+.search-box {
+    background: var(--prusa-dark-grey);
+    border: 2px solid var(--prusa-light-grey);
+    border-radius: 25px;
+    padding: 0.75rem 1.5rem;
+    color: var(--prusa-white);
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.search-box:focus {
+    border-color: var(--prusa-orange);
+    box-shadow: 0 0 0 0.2rem rgba(255, 102, 0, 0.25);
+    color: var(--prusa-white);
+}
+
+/* PrintHub Container Fix - Vollständige Seitennutzung */
+
+/* Stelle sicher, dass der Container die volle Breite nutzt */
+.printhub-container {
+    display: flex;
+    min-height: 100vh;
+    /* Volle Viewport-Höhe statt calc() */
+    width: 100vw;
+    /* Volle Viewport-Breite */
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, var(--prusa-black) 0%, var(--prusa-dark-grey) 100%);
+    overflow-x: hidden;
+    /* Verhindere horizontales Scrollen */
+}
+
+/* Sidebar Breite fixieren */
+.printhub-sidebar {
+    width: 280px;
+    min-width: 280px;
+    /* Verhindere Shrinking */
+    flex-shrink: 0;
+    /* Sidebar behält ihre Größe */
+    background: linear-gradient(180deg, var(--prusa-black) 0%, var(--prusa-dark-grey) 50%, var(--prusa-medium-grey) 100%);
+    padding: 2rem 0;
+    box-shadow: 4px 0 25px rgba(0, 0, 0, 0.8);
+    position: relative;
+    overflow: hidden;
+    border-right: 2px solid var(--prusa-orange);
+    height: 100vh;
+    /* Volle Höhe */
+    overflow-y: auto;
+    /* Scrollbar wenn nötig */
+}
+
+/* Main Content Area - nutzt den restlichen Platz */
+.printhub-content {
+    flex: 1;
+    /* Nimmt den gesamten verbleibenden Platz */
+    min-width: 0;
+    /* Wichtig für Flexbox */
+    padding: 2rem;
+    background: linear-gradient(135deg, var(--prusa-dark-grey) 0%, var(--prusa-black) 100%);
+    position: relative;
+    height: 100vh;
+    /* Volle Höhe */
+    overflow-y: auto;
+    /* Scrollbar für Content */
+    width: calc(100vw - 280px);
+    /* Explizite Breite */
+}
+
+/* Falls der Container von einem Parent eingeschränkt wird */
+.container-fluid,
+.container {
+    max-width: none !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* Body und HTML für volle Breite */
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+/* Web App Base Layout Override falls nötig */
+.web-app-container {
+    max-width: none !important;
+    width: 100% !important;
+    padding: 0 !important;
+}
+
+/* Form Container Anpassungen */
+.filament-form-container,
+.filament-list-container {
+    background: linear-gradient(135deg, var(--prusa-medium-grey) 0%, var(--prusa-dark-grey) 100%);
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: var(--shadow-dark);
+    border: 1px solid var(--prusa-light-grey);
+    border-left: 5px solid var(--prusa-orange);
+    margin-bottom: 2rem;
+    width: 100%;
+    max-width: none;
+}
+
+/* Content Header */
+.content-header {
+    background: linear-gradient(135deg, var(--prusa-medium-grey) 0%, var(--prusa-dark-grey) 100%);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: var(--shadow-dark);
+    margin-bottom: 2rem;
+    border: 1px solid var(--prusa-light-grey);
+    border-left: 5px solid var(--prusa-orange);
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+}
+
+/* Responsive Fixes */
+@media (max-width: 768px) {
+    .printhub-container {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+    }
+
+    .printhub-sidebar {
+        width: 100vw;
+        height: auto;
+        min-height: auto;
+        padding: 1rem 0;
+        border-right: none;
+        border-bottom: 2px solid var(--prusa-orange);
+    }
+
+    .printhub-content {
+        width: 100vw;
+        height: auto;
+        min-height: calc(100vh - 100px);
+        padding: 1rem;
+    }
+}
+
+/* Debugging - Temporär hinzufügen um das Problem zu identifizieren */
+.debug-container {
+    border: 2px solid red !important;
+    background: rgba(255, 0, 0, 0.1) !important;
+}
+
+.debug-sidebar {
+    border: 2px solid blue !important;
+    background: rgba(0, 0, 255, 0.1) !important;
+}
+
+.debug-content {
+    border: 2px solid green !important;
+    background: rgba(0, 255, 0, 0.1) !important;
+}
+
+/* Falls Bootstrap Container-Klassen das Problem verursachen */
+.row {
+    margin: 0 !important;
+    max-width: none !important;
+}
+
+.col-md-6, .col-md-3, .col-md-12 {
+    max-width: none;
+}

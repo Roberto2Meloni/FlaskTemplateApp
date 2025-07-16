@@ -1,10 +1,4 @@
-{% extends "layouts/web_app_layouts/web_app_base.html" %} {% block app_styles %}
-<link
-  rel="stylesheet"
-  href="{{ url_for('PrintHub.static', filename='css/PrintHub.css') }}"
-/>
-
-{% endblock %} {% block content %}
+{% extends "layouts/web_app_layouts/web_app_base.html" %}{% block content %}
 <div class="printhub-container">
   <!-- Sidebar -->
   {% include "layouts/web_app_layouts/PrintHubSidebar.html" %}
