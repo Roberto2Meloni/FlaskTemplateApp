@@ -919,3 +919,261 @@ body, html {
 .col-md-6, .col-md-3, .col-md-12 {
     max-width: none;
 }
+
+/* 
+===============================================
+PrintHub Drucker CSS - Zu PrintHub.css hinzufügen
+===============================================
+*/
+
+/* Drucker-Typ Badges */
+.badge-fdm {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+}
+
+.badge-sla {
+    background: linear-gradient(135deg, #28a745, #1e7e34);
+    color: white;
+}
+
+.badge-sls {
+    background: linear-gradient(135deg, #dc3545, #bd2130);
+    color: white;
+}
+
+.badge-multi {
+    background: linear-gradient(135deg, #6f42c1, #563d7c);
+    color: white;
+}
+
+/* Drucker-spezifische Verbesserungen */
+.printer-cost-highlight {
+    color: var(--prusa-orange);
+    font-weight: 600;
+}
+
+.printer-specs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.printer-spec-item {
+    background: var(--prusa-medium-grey);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: var(--prusa-light-text);
+}
+
+/* Kostenberechnung Highlights */
+.cost-breakdown {
+    background: var(--prusa-dark-grey);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+    border-left: 3px solid var(--prusa-orange);
+}
+
+.cost-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.cost-item:last-child {
+    margin-bottom: 0;
+    border-top: 1px solid var(--prusa-light-grey);
+    padding-top: 0.5rem;
+    font-weight: 600;
+    color: var(--prusa-orange);
+}
+
+/* Daily Cost Calculator */
+.daily-cost-display {
+    background: linear-gradient(135deg, var(--prusa-orange-dark), var(--prusa-orange));
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    display: inline-block;
+    margin-top: 0.5rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* Print Volume Display */
+.print-volume {
+    color: var(--prusa-orange-light);
+    font-weight: 500;
+}
+
+/* Energy Consumption Indicator */
+.energy-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--prusa-accent);
+}
+
+.energy-indicator i {
+    color: #ffc107;
+}
+
+/* 
+===============================================
+Maschinenkosten-Rechner CSS - Zu PrintHub.css hinzufügen
+===============================================
+*/
+
+/* Cost Calculator Modal */
+#costCalculatorModal .modal-content {
+    background: linear-gradient(135deg, var(--prusa-medium-grey) 0%, var(--prusa-dark-grey) 100%);
+    border: 1px solid var(--prusa-light-grey);
+    border-radius: 15px;
+}
+
+#costCalculatorModal .modal-header {
+    border-bottom: 1px solid var(--prusa-orange);
+    background: linear-gradient(90deg, var(--prusa-orange-dark), var(--prusa-orange));
+}
+
+#costCalculatorModal .modal-title {
+    color: var(--prusa-white);
+    font-weight: 600;
+}
+
+/* Cost Breakdown Container */
+.cost-breakdown {
+    background: var(--prusa-dark-grey);
+    border-radius: 10px;
+    padding: 1.5rem;
+    border-left: 4px solid var(--prusa-orange);
+    border: 1px solid var(--prusa-light-grey);
+}
+
+.cost-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    color: var(--prusa-light-text);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cost-item:last-child {
+    border-bottom: none;
+    margin-top: 0.5rem;
+    padding-top: 1rem;
+    border-top: 2px solid var(--prusa-orange);
+}
+
+.cost-item.total-cost {
+    background: rgba(255, 102, 0, 0.1);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+    border: 1px solid var(--prusa-orange);
+}
+
+.cost-item.total-cost span {
+    color: var(--prusa-orange);
+    font-size: 1.1rem;
+}
+
+/* Additional Costs Display */
+.additional-costs {
+    background: var(--prusa-black);
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid var(--prusa-light-grey);
+}
+
+.additional-costs .d-flex {
+    padding: 0.25rem 0;
+    font-size: 0.9rem;
+}
+
+/* Calculator Button */
+.btn-outline-warning {
+    border-color: var(--prusa-orange);
+    color: var(--prusa-orange);
+    padding: 0.2rem 0.5rem;
+    font-size: 0.8rem;
+    border-radius: 15px;
+}
+
+.btn-outline-warning:hover {
+    background: var(--prusa-orange);
+    border-color: var(--prusa-orange);
+    color: var(--prusa-white);
+}
+
+.btn-outline-info {
+    border-color: #17a2b8;
+    color: #17a2b8;
+}
+
+.btn-outline-info:hover {
+    background: #17a2b8;
+    border-color: #17a2b8;
+    color: var(--prusa-white);
+}
+
+/* Calculator Input Styling */
+#costCalculatorModal .form-control {
+    background: var(--prusa-black);
+    border: 2px solid var(--prusa-light-grey);
+    color: var(--prusa-white);
+    border-radius: 8px;
+}
+
+#costCalculatorModal .form-control:focus {
+    background: var(--prusa-dark-grey);
+    border-color: var(--prusa-orange);
+    box-shadow: 0 0 0 0.2rem rgba(255, 102, 0, 0.25);
+    color: var(--prusa-white);
+}
+
+#costCalculatorModal .form-text {
+    color: var(--prusa-light-text);
+    font-size: 0.8rem;
+}
+
+/* Calculator Labels */
+#costCalculatorModal label {
+    color: var(--prusa-white);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+#costCalculatorModal label i {
+    color: var(--prusa-orange);
+    margin-right: 0.5rem;
+}
+
+/* Section Headers in Calculator */
+#costCalculatorModal h6 {
+    color: var(--prusa-orange);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--prusa-orange);
+    padding-bottom: 0.5rem;
+}
+
+/* Responsive Calculator */
+@media (max-width: 768px) {
+    #costCalculatorModal .modal-dialog {
+        margin: 0.5rem;
+    }
+
+    #costCalculatorModal .row {
+        flex-direction: column;
+    }
+
+    .cost-breakdown {
+        margin-top: 1.5rem;
+    }
+}

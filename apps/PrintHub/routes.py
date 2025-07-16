@@ -1,7 +1,3 @@
-# ================================================================
-# BEREINIGTE ROUTES - app/routes/PrintHub/routes.py
-# ================================================================
-
 from flask import (
     Blueprint,
     render_template,
@@ -16,8 +12,9 @@ from flask_login import login_required, current_user
 from app.decorators import enabled_required
 from app.config import Config
 from app import db, app
-from .models import PrintHubFilament, get_current_time
+from .models import PrintHubFilament, get_current_time, PrintHubPrinter
 from sqlalchemy.exc import IntegrityError
+
 
 # Blueprint
 blueprint = Blueprint(
@@ -216,7 +213,6 @@ def delete_filament(filament_id):
 
 # API Endpoints
 @blueprint.route("/api/filaments", methods=["GET"])
-@login_required
 @enabled_required
 def api_filaments():
     """API: Alle Filamente als JSON"""
@@ -225,4 +221,157 @@ def api_filaments():
         return jsonify({"success": True, "data": [f.to_dict() for f in filaments]})
     except Exception as e:
         current_app.logger.error(f"Error in API filaments: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# Printer Seiten
+@blueprint.route("/printHub_printers", methods=["GET", "POST"])
+@enabled_required
+def printHub_printers():
+    """Drucker-Verwaltung - Ohne manuelle Rollbacks"""
+
+    if request.method == "POST":
+        try:
+            # Form-Daten extrahieren
+            name = request.form.get("printer_name", "").strip()
+            brand = request.form.get("printer_brand", "").strip()
+            machine_cost_per_hour = request.form.get(
+                "machine_cost_per_hour", type=float
+            )
+            energy_consumption = request.form.get("energy_consumption", type=int)
+            notes = request.form.get("printer_notes", "").strip()
+
+            # Validierung
+            if not all([name, brand]) or not machine_cost_per_hour:
+                flash("Bitte füllen Sie alle Pflichtfelder aus!", "error")
+                return redirect(url_for("PrintHub.printHub_printers"))
+
+            if machine_cost_per_hour <= 0:
+                flash("Maschinenkosten müssen größer als 0 sein!", "error")
+                return redirect(url_for("PrintHub.printHub_printers"))
+
+            # Neuen Drucker erstellen
+            new_printer = PrintHubPrinter(
+                name=name,
+                brand=brand,
+                machine_cost_per_hour=machine_cost_per_hour,
+                energy_consumption=energy_consumption if energy_consumption else None,
+                notes=notes if notes else None,
+                created_by=current_user.username,
+                created_at=get_current_time(),
+                updated_at=get_current_time(),
+            )
+
+            # In Datenbank speichern
+            db.session.add(new_printer)
+            print("Printer added to database")
+            db.session.commit()
+            print("Session committed")
+
+            flash(f'Drucker "{name}" erfolgreich hinzugefügt!', "success")
+            current_app.logger.info(
+                f"User {current_user.username} added printer: {name}"
+            )
+        except Exception as e:
+            # Kein manueller rollback() - SQLAlchemy macht das automatisch
+            flash("Ein unerwarteter Fehler ist aufgetreten.", "error")
+            current_app.logger.error(f"Unexpected error adding printer: {e}")
+            print(f"Unexpected error adding printer: {e}")
+
+        return redirect(url_for("PrintHub.printHub_printers"))
+
+    # GET Request - Drucker laden
+    try:
+        search_term = request.args.get("search", "").strip()
+
+        if search_term:
+            printers = PrintHubPrinter.search(
+                username=current_user.username, search_term=search_term
+            )
+        else:
+            printers = PrintHubPrinter.get_by_user(current_user.username)
+
+        stats = {
+            "total_printers": len(printers),
+            "total_daily_cost": sum(p.daily_machine_cost for p in printers),
+            "total_hourly_cost": sum(float(p.machine_cost_per_hour) for p in printers),
+        }
+
+        return render_template(
+            "PrintHubPrinters.html",
+            user=current_user,
+            config=config,
+            active_page="printers",
+            printers=printers,
+            stats=stats,
+            printer_brands=PrintHubPrinter.get_common_brands(),
+            search_term=search_term,
+        )
+
+    except Exception as e:
+        flash("Fehler beim Laden der Drucker.", "error")
+        current_app.logger.error(f"Error loading printers: {e}")
+        return render_template(
+            "PrintHubPrinters.html",
+            user=current_user,
+            config=config,
+            active_page="printers",
+            printers=[],
+            stats={"total_printers": 0, "total_daily_cost": 0, "total_hourly_cost": 0},
+            printer_brands=PrintHubPrinter.get_common_brands(),
+            search_term="",
+        )
+
+
+@blueprint.route("/printer/delete_printer/<int:printer_id>", methods=["POST"])
+@enabled_required
+def delete_printer(printer_id):
+    """Drucker löschen - nur eigene Drucker"""
+    try:
+        # Drucker laden und prüfen ob er dem aktuellen Benutzer gehört
+        printer = PrintHubPrinter.query.filter_by(
+            id=printer_id, created_by=current_user.username
+        ).first()
+
+        if not printer:
+            flash(
+                "Drucker nicht gefunden oder Sie haben keine Berechtigung zum Löschen.",
+                "error",
+            )
+            return redirect(url_for("PrintHub.printHub_printers"))
+
+        printer_name = printer.name
+        printer_brand = printer.brand
+
+        # Drucker löschen
+        db.session.delete(printer)
+        db.session.commit()
+
+        flash(
+            f'Drucker "{printer_name}" ({printer_brand}) erfolgreich gelöscht!',
+            "success",
+        )
+        current_app.logger.info(
+            f"User {current_user.username} deleted printer: {printer_name} ({printer_brand})"
+        )
+
+    except Exception as e:
+        db.session.rollback()
+        flash("Fehler beim Löschen des Druckers.", "error")
+        current_app.logger.error(f"Error deleting printer: {e}")
+
+    return redirect(url_for("PrintHub.printHub_printers"))
+
+
+# API Endpoints
+@blueprint.route("/api/printers", methods=["GET"])
+@login_required
+@enabled_required
+def api_printers():
+    """API: Alle Drucker als JSON"""
+    try:
+        printers = PrintHubPrinter.get_by_user(current_user.username)
+        return jsonify({"success": True, "data": [p.to_dict() for p in printers]})
+    except Exception as e:
+        current_app.logger.error(f"Error in API printers: {e}")
         return jsonify({"success": False, "error": str(e)}), 500

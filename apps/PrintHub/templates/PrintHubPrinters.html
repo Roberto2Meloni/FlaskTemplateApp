@@ -1,0 +1,543 @@
+{% extends "layouts/web_app_layouts/web_app_base.html" %} {% block content %}
+<div class="printhub-container">
+  <!-- Sidebar -->
+  {% include "layouts/web_app_layouts/PrintHubSidebar.html" %}
+
+  <!-- Main Content -->
+  <div class="printhub-content">
+    <div class="content-header">
+      <h1><i class="bi bi-printer"></i> 3D-Drucker Verwaltung</h1>
+      <p class="lead">Verwalten Sie Ihre 3D-Drucker und deren Betriebskosten</p>
+    </div>
+
+    <!-- Statistiken -->
+    {% if stats.total_printers > 0 %}
+    <div class="stats-container">
+      <div class="row">
+        <div class="col-md-3">
+          <div class="stat-item">
+            <span class="stat-value">{{ stats.total_printers }}</span>
+            <small>Drucker gesamt</small>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-item">
+            <span class="stat-value"
+              >CHF {{ "%.2f"|format(stats.total_hourly_cost) }}/h</span
+            >
+            <small>Gesamtkosten/Stunde</small>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-item">
+            <span class="stat-value"
+              >CHF {{ "%.0f"|format(stats.total_daily_cost) }}</span
+            >
+            <small>Tageskosten (24h)</small>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-item">
+            <span class="stat-value"
+              >{{ "%.1f"|format(stats.total_hourly_cost / stats.total_printers
+              if stats.total_printers > 0 else 0) }}</span
+            >
+            <small>Ø Kosten/Drucker/h</small>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %} {% for category, message in messages %}
+    <div
+      class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show"
+      role="alert"
+    >
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %} {% endif %} {% endwith %}
+
+    <!-- Drucker hinzufügen Form -->
+    <div class="filament-form-container">
+      <h3 class="text-prusa-orange mb-4">
+        <i class="bi bi-plus-circle"></i> Neuen 3D-Drucker hinzufügen
+      </h3>
+
+      <form
+        id="printerForm"
+        method="POST"
+        action="{{ url_for('PrintHub.printHub_printers') }}"
+      >
+        <!-- Grunddaten -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group mb-3">
+              <label for="printer_name">
+                <i class="bi bi-fonts"></i> Name des Druckers
+              </label>
+              <input
+                type="text"
+                class="form-control"
+                id="printer_name"
+                name="printer_name"
+                placeholder="z.B. Prusa MK4, Ender 3 V2"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="form-group mb-3">
+              <label for="printer_brand">
+                <i class="bi bi-building"></i> Marke
+              </label>
+              <select
+                class="form-control"
+                id="printer_brand"
+                name="printer_brand"
+                required
+              >
+                <option value="">-- Marke auswählen --</option>
+                {% for brand in printer_brands %}
+                <option value="{{ brand }}">{{ brand }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Kosten -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group mb-3">
+              <label for="machine_cost_per_hour">
+                <i class="bi bi-currency-dollar"></i> Maschinenkosten pro Stunde
+                (CHF)
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-warning ms-2"
+                  onclick="openCostCalculator()"
+                  title="Maschinenkosten berechnen"
+                >
+                  <i class="bi bi-calculator"></i> Berechnen
+                </button>
+              </label>
+              <div class="input-group">
+                <input
+                  type="number"
+                  class="form-control"
+                  id="machine_cost_per_hour"
+                  name="machine_cost_per_hour"
+                  placeholder="2.50"
+                  min="0"
+                  step="0.01"
+                  required
+                />
+                <div class="input-group-append">
+                  <span class="input-group-text">CHF/h</span>
+                </div>
+              </div>
+              <small class="form-text text-muted">
+                <strong>Berechnungshilfe:</strong> (Anschaffungskosten ÷
+                Lebensdauer in Stunden) + Wartung/h + Raumkosten/h +
+                Ausfallrisiko/h<br />
+                <em>Beispiel für CHF 1000 Drucker:</em> CHF 1000 ÷ 3000h + CHF
+                0.50 + CHF 1.00 + CHF 0.67 = <strong>CHF 2.50/h</strong>
+              </small>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="form-group mb-3">
+              <label for="energy_consumption">
+                <i class="bi bi-lightning-charge"></i> Energieverbrauch (Watt) -
+                optional
+              </label>
+              <div class="input-group">
+                <input
+                  type="number"
+                  class="form-control"
+                  id="energy_consumption"
+                  name="energy_consumption"
+                  placeholder="220"
+                  min="0"
+                  step="1"
+                />
+                <div class="input-group-append">
+                  <span class="input-group-text">W</span>
+                </div>
+              </div>
+              <small class="form-text text-muted"
+                >Für automatische Stromkostenberechnung (ca. CHF
+                0.25/kWh)</small
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Notizen -->
+        <div class="row">
+          <div class="col-md-12">
+            <div class="form-group mb-4">
+              <label for="printer_notes">
+                <i class="bi bi-sticky"></i> Notizen (optional)
+              </label>
+              <textarea
+                class="form-control"
+                id="printer_notes"
+                name="printer_notes"
+                rows="3"
+                placeholder="Besonderheiten, Wartungsdaten, etc."
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between">
+          <button
+            type="button"
+            class="btn btn-secondary-prusa"
+            id="resetPrinterFormBtn"
+          >
+            <i class="bi bi-x-circle"></i> Zurücksetzen
+          </button>
+          <button type="submit" class="btn btn-prusa">
+            <i class="bi bi-save"></i> Drucker speichern
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Drucker Liste -->
+    <div class="filament-list-container">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="text-prusa-orange mb-0">
+          <i class="bi bi-list-ul"></i> Vorhandene Drucker
+        </h3>
+        <span class="badge badge-secondary"
+          >{{ stats.total_printers }} Drucker</span
+        >
+      </div>
+
+      <!-- Filter und Suche -->
+      <div class="filter-container">
+        <form method="GET" class="filter-row">
+          <div class="col-md-10">
+            <input
+              type="text"
+              name="search"
+              class="form-control search-box"
+              placeholder="🔍 Drucker durchsuchen..."
+              value="{{ search_term }}"
+            />
+          </div>
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-prusa btn-sm">Suchen</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Drucker Items -->
+      {% if printers %} {% for printer in printers %}
+      <div class="filament-item">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center mb-2">
+              <h5 class="filament-name mb-0">{{ printer.name }}</h5>
+            </div>
+            <div class="filament-info">
+              <p class="mb-1"><strong>Marke:</strong> {{ printer.brand }}</p>
+              <p class="mb-1">
+                <strong>Maschinenkosten:</strong> CHF {{
+                "%.2f"|format(printer.machine_cost_per_hour) }}/h
+              </p>
+              <p class="mb-1">
+                <strong>Tägliche Kosten:</strong> CHF {{
+                "%.2f"|format(printer.daily_machine_cost) }} (24h Betrieb)
+              </p>
+
+              {% if printer.energy_consumption %}
+              <p class="mb-1">
+                <strong>Energieverbrauch:</strong> {{ printer.energy_consumption
+                }}W
+              </p>
+              {% endif %} {% if printer.notes %}
+              <p class="mb-1"><strong>Notizen:</strong> {{ printer.notes }}</p>
+              {% endif %}
+
+              <small class="text-muted">
+                Erstellt: {{ printer.created_at.strftime('%d.%m.%Y %H:%M') if
+                printer.created_at }} | Von: {{ printer.created_by }} {% if
+                printer.updated_at and printer.updated_at != printer.created_at
+                %} | Aktualisiert: {{ printer.updated_at.strftime('%d.%m.%Y
+                %H:%M') }} {% endif %}
+              </small>
+            </div>
+          </div>
+          <div class="action-buttons">
+            <button
+              class="btn btn-sm btn-outline-danger btn-sm-prusa"
+              data-action="delete"
+              data-printer-id="{{ printer.id }}"
+              data-printer-name="{{ printer.name }}"
+              title="Löschen"
+            >
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      {% endfor %} {% else %}
+      <div class="empty-state">
+        <i class="bi bi-printer"></i>
+        <h4>Keine Drucker gefunden</h4>
+        {% if search_term %}
+        <p>Keine Drucker entsprechen Ihren Suchkriterien.</p>
+        <a
+          href="{{ url_for('PrintHub.printHub_printers') }}"
+          class="btn btn-prusa"
+          >Filter zurücksetzen</a
+        >
+        {% else %}
+        <p>Fügen Sie Ihren ersten 3D-Drucker hinzu, um loszulegen!</p>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Maschinenkosten-Rechner Modal -->
+<div class="modal fade" id="costCalculatorModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content bg-dark text-light">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title">
+          <i class="bi bi-calculator"></i> Maschinenkosten-Rechner
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <!-- Eingabebereich -->
+          <div class="col-md-6">
+            <h6 class="text-prusa-orange mb-3">Eingaben</h6>
+
+            <div class="form-group mb-3">
+              <label for="calc_purchase_price">
+                <i class="bi bi-cash-stack"></i> Anschaffungskosten (CHF)
+              </label>
+              <input
+                type="number"
+                class="form-control"
+                id="calc_purchase_price"
+                placeholder="1000"
+                min="0"
+                step="0.01"
+                onchange="calculateMachineCost()"
+              />
+            </div>
+
+            <div class="form-group mb-3">
+              <label for="calc_lifetime_hours">
+                <i class="bi bi-clock-history"></i> Geschätzte Lebensdauer
+                (Stunden)
+              </label>
+              <input
+                type="number"
+                class="form-control"
+                id="calc_lifetime_hours"
+                placeholder="3000"
+                min="1"
+                step="1"
+                onchange="calculateMachineCost()"
+              />
+              <small class="form-text text-muted"
+                >Typisch: 2000-5000h je nach Drucker-Qualität</small
+              >
+            </div>
+
+            <div class="form-group mb-3">
+              <label for="calc_maintenance_cost">
+                <i class="bi bi-tools"></i> Wartungskosten pro Stunde (CHF)
+              </label>
+              <input
+                type="number"
+                class="form-control"
+                id="calc_maintenance_cost"
+                placeholder="0.50"
+                min="0"
+                step="0.01"
+                onchange="calculateMachineCost()"
+              />
+              <small class="form-text text-muted"
+                >Düsen, Riemen, Heizbett-Reparaturen, etc.</small
+              >
+            </div>
+
+            <div class="form-group mb-3">
+              <label for="calc_room_cost">
+                <i class="bi bi-house"></i> Raumkosten pro Stunde (CHF)
+              </label>
+              <input
+                type="number"
+                class="form-control"
+                id="calc_room_cost"
+                placeholder="1.00"
+                min="0"
+                step="0.01"
+                onchange="calculateMachineCost()"
+              />
+              <small class="form-text text-muted"
+                >Anteilige Miete, Heizung, Beleuchtung</small
+              >
+            </div>
+
+            <div class="form-group mb-3">
+              <label for="calc_failure_rate">
+                <i class="bi bi-exclamation-triangle"></i> Ausfallrisiko (%)
+              </label>
+              <input
+                type="number"
+                class="form-control"
+                id="calc_failure_rate"
+                placeholder="15"
+                min="0"
+                max="100"
+                step="1"
+                onchange="calculateMachineCost()"
+              />
+              <small class="form-text text-muted"
+                >Fehldrucke, Materialverschwendung, Nacharbeit</small
+              >
+            </div>
+          </div>
+
+          <!-- Ergebnisbereich -->
+          <div class="col-md-6">
+            <h6 class="text-prusa-orange mb-3">Berechnung</h6>
+
+            <div class="cost-breakdown">
+              <div class="cost-item">
+                <span>Abschreibung:</span>
+                <span id="calc_depreciation">CHF 0.00/h</span>
+              </div>
+              <div class="cost-item">
+                <span>Wartung:</span>
+                <span id="calc_maintenance_display">CHF 0.00/h</span>
+              </div>
+              <div class="cost-item">
+                <span>Raumkosten:</span>
+                <span id="calc_room_display">CHF 0.00/h</span>
+              </div>
+              <div class="cost-item">
+                <span>Ausfallrisiko:</span>
+                <span id="calc_failure_display">CHF 0.00/h</span>
+              </div>
+              <div class="cost-item total-cost">
+                <span><strong>Gesamtkosten:</strong></span>
+                <span id="calc_total_cost"><strong>CHF 0.00/h</strong></span>
+              </div>
+            </div>
+
+            <div class="mt-4">
+              <h6 class="text-prusa-orange">Weitere Berechnungen</h6>
+              <div class="additional-costs">
+                <div class="d-flex justify-content-between">
+                  <span>Tägliche Kosten (24h):</span>
+                  <span id="calc_daily_cost" class="text-prusa-orange"
+                    >CHF 0.00</span
+                  >
+                </div>
+                <div class="d-flex justify-content-between">
+                  <span>Monatliche Kosten (720h):</span>
+                  <span id="calc_monthly_cost" class="text-prusa-orange"
+                    >CHF 0.00</span
+                  >
+                </div>
+                <div class="d-flex justify-content-between">
+                  <span>Kosten pro 4h Druck:</span>
+                  <span id="calc_print_cost" class="text-prusa-orange"
+                    >CHF 0.00</span
+                  >
+                </div>
+              </div>
+            </div>
+
+            <!-- Beispielwerte Button -->
+            <div class="mt-4">
+              <button
+                type="button"
+                class="btn btn-outline-info btn-sm"
+                onclick="loadExampleValues()"
+              >
+                <i class="bi bi-lightbulb"></i> Beispielwerte laden
+              </button>
+              <small class="d-block mt-2 text-muted"
+                >Lädt typische Werte für einen CHF 1000 Drucker</small
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-secondary">
+        <button
+          type="button"
+          class="btn btn-secondary-prusa"
+          data-bs-dismiss="modal"
+        >
+          Schließen
+        </button>
+        <button type="button" class="btn btn-prusa" onclick="applyCostToForm()">
+          <i class="bi bi-check-circle"></i> Wert übernehmen
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deletePrinterModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content bg-dark text-light">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title">Drucker löschen</h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p>
+          Möchten Sie den Drucker "<span id="deletePrinterName"></span>"
+          wirklich löschen?
+        </p>
+        <p class="text-warning">
+          <small>Diese Aktion kann nicht rückgängig gemacht werden.</small>
+        </p>
+      </div>
+      <div class="modal-footer border-secondary">
+        <button
+          type="button"
+          class="btn btn-secondary-prusa"
+          data-bs-dismiss="modal"
+        >
+          Abbrechen
+        </button>
+        <form id="deletePrinterForm" method="POST">
+          <button type="submit" class="btn btn-danger">Löschen</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
