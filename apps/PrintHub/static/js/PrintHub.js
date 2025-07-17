@@ -1,1042 +1,845 @@
 /**
- * PrintHub JavaScript Functions - Vereinfacht
- * Nur Add und Delete Funktionen
+ * PrintHub JavaScript - Optimierte modulare Version
+ * Alle PrintHub Funktionen in einer organisierten Struktur
  */
 
-console.log("PrintHub JS loaded - Simple Version");
+console.log("PrintHub JS loaded - Optimized Version");
 
-// Global Variables
-let deleteModal;
+// Global PrintHub Namespace
+const PrintHub = {
+  // Configuration
+  config: {
+    energyRate: 0.25, // CHF per kWh
+    validationMessages: {
+      required: "Bitte füllen Sie alle Pflichtfelder aus!",
+      positiveNumber: "Wert muss eine positive Zahl sein!",
+      validEmail: "Bitte geben Sie eine gültige E-Mail-Adresse ein!",
+    },
+  },
 
-/**
- * Initialize PrintHub Functions
- */
-document.addEventListener("DOMContentLoaded", function () {
-  console.log("PrintHub DOM loaded");
+  // Global state
+  state: {
+    modals: {},
+    calculatedValues: {},
+  },
 
-  // Initialize Bootstrap Modal
-  const deleteModalElement = document.getElementById("deleteModal");
-  if (deleteModalElement) {
-    deleteModal = new bootstrap.Modal(deleteModalElement);
-  }
+  // Utility functions
+  utils: {
+    // Safe DOM element access
+    getElement: (id) => document.getElementById(id),
 
-  // Initialize Event Listeners
-  initializeEventListeners();
-  initializeFormHandlers();
-});
-
-/**
- * Initialize All Event Listeners
- */
-function initializeEventListeners() {
-  // Reset Form Button
-  const resetBtn = document.getElementById("resetFormBtn");
-  if (resetBtn) {
-    resetBtn.addEventListener("click", function () {
-      const form = document.getElementById("filamentForm");
-      if (form) {
-        form.reset();
-        // Reset any validation classes
-        const inputs = form.querySelectorAll(".is-invalid");
-        inputs.forEach((input) => input.classList.remove("is-invalid"));
+    // Safe value extraction
+    getValue: (elementId, defaultValue = 0) => {
+      const element = PrintHub.utils.getElement(elementId);
+      if (!element) {
+        console.warn(`Element '${elementId}' not found`);
+        return defaultValue;
       }
-    });
-  }
+      const value = parseFloat(element.value);
+      return isNaN(value) ? defaultValue : value;
+    },
 
-  // Delete Buttons
-  document.addEventListener("click", function (e) {
-    const deleteBtn = e.target.closest('[data-action="delete"]');
-    if (!deleteBtn) return;
-
-    e.preventDefault();
-
-    const filamentId = deleteBtn.getAttribute("data-filament-id");
-    const filamentName = deleteBtn.getAttribute("data-filament-name");
-
-    console.log("Delete clicked:", filamentId, filamentName);
-    showDeleteModal(filamentId, filamentName);
-  });
-}
-
-/**
- * Initialize Form Handlers
- */
-function initializeFormHandlers() {
-  const filamentForm = document.getElementById("filamentForm");
-  if (!filamentForm) return;
-
-  // Live Price Calculation
-  const weightInput = document.getElementById("filament_weight");
-  const priceInput = document.getElementById("filament_price");
-
-  if (weightInput && priceInput) {
-    weightInput.addEventListener("input", updatePricePerKg);
-    priceInput.addEventListener("input", updatePricePerKg);
-  }
-
-  // Form Validation
-  filamentForm.addEventListener("submit", validateForm);
-
-  // Remove validation classes on input
-  const inputs = filamentForm.querySelectorAll("input, select, textarea");
-  inputs.forEach((input) => {
-    input.addEventListener("input", function () {
-      this.classList.remove("is-invalid");
-    });
-  });
-}
-
-/**
- * Show Delete Confirmation Modal
- */
-function showDeleteModal(filamentId, filamentName) {
-  console.log("Showing delete modal for:", filamentId, filamentName);
-
-  if (!deleteModal) {
-    console.error("Delete modal not found");
-    return;
-  }
-
-  const deleteNameSpan = document.getElementById("deleteFilamentName");
-  const deleteForm = document.getElementById("deleteForm");
-
-  if (deleteNameSpan) {
-    deleteNameSpan.textContent = filamentName;
-  }
-
-  if (deleteForm) {
-    deleteForm.action = `/printhub/filament/delete_filament/${filamentId}`;
-  }
-
-  deleteModal.show();
-}
-
-/**
- * Update Price Per KG Calculation
- */
-function updatePricePerKg() {
-  const weightInput = document.getElementById("filament_weight");
-  const priceInput = document.getElementById("filament_price");
-
-  if (!weightInput || !priceInput) return;
-
-  const weight = parseFloat(weightInput.value) || 0;
-  const price = parseFloat(priceInput.value) || 0;
-
-  if (weight > 0 && price > 0) {
-    const pricePerKg = ((price / weight) * 1000).toFixed(2);
-
-    // Update tooltip
-    priceInput.title = `Preis pro kg: CHF ${pricePerKg}`;
-
-    // Show visual feedback
-    priceInput.style.borderColor = "var(--prusa-orange)";
-    weightInput.style.borderColor = "var(--prusa-orange)";
-  } else {
-    priceInput.title = "";
-    priceInput.style.borderColor = "";
-    weightInput.style.borderColor = "";
-  }
-}
-
-/**
- * Validate Form
- */
-function validateForm(e) {
-  const form = e.target;
-  const requiredFields = [
-    "filament_type",
-    "filament_name",
-    "filament_manufacturer",
-    "filament_weight",
-    "filament_price",
-  ];
-  let isValid = true;
-  let firstInvalidField = null;
-
-  // Check required fields
-  requiredFields.forEach((fieldName) => {
-    const field = document.getElementById(fieldName);
-    if (!field || !field.value.trim()) {
-      if (field) {
-        field.classList.add("is-invalid");
-        if (!firstInvalidField) firstInvalidField = field;
+    // Safe text setting
+    setText: (elementId, text) => {
+      const element = PrintHub.utils.getElement(elementId);
+      if (element) {
+        element.textContent = text;
+        return true;
       }
-      isValid = false;
-    } else {
-      if (field) field.classList.remove("is-invalid");
-    }
-  });
+      console.warn(`Cannot set text - element '${elementId}' not found`);
+      return false;
+    },
 
-  // Validate weight and price are positive numbers
-  const weightField = document.getElementById("filament_weight");
-  const priceField = document.getElementById("filament_price");
+    // Safe value setting
+    setValue: (elementId, value) => {
+      const element = PrintHub.utils.getElement(elementId);
+      if (element) {
+        element.value = value;
+        return true;
+      }
+      console.warn(`Cannot set value - element '${elementId}' not found`);
+      return false;
+    },
 
-  if (weightField) {
-    const weight = parseFloat(weightField.value);
-    if (isNaN(weight) || weight <= 0) {
-      weightField.classList.add("is-invalid");
-      if (!firstInvalidField) firstInvalidField = weightField;
-      isValid = false;
-    } else {
-      weightField.classList.remove("is-invalid");
-    }
-  }
+    // Format currency
+    formatCurrency: (amount, currency = "CHF") => {
+      return `${currency} ${amount.toFixed(2)}`;
+    },
 
-  if (priceField) {
-    const price = parseFloat(priceField.value);
-    if (isNaN(price) || price <= 0) {
-      priceField.classList.add("is-invalid");
-      if (!firstInvalidField) firstInvalidField = priceField;
-      isValid = false;
-    } else {
-      priceField.classList.remove("is-invalid");
-    }
-  }
+    // Add event listener safely
+    addEventSafe: (elementId, event, callback) => {
+      const element = PrintHub.utils.getElement(elementId);
+      if (element) {
+        element.addEventListener(event, callback);
+        return true;
+      }
+      console.warn(
+        `Cannot add event listener - element '${elementId}' not found`
+      );
+      return false;
+    },
 
-  if (!isValid) {
-    e.preventDefault();
+    // Show temporary message
+    showMessage: (message, type = "info", duration = 3000) => {
+      // Remove existing messages
+      document.querySelectorAll(".temp-message").forEach((msg) => msg.remove());
 
-    // Focus first invalid field
-    if (firstInvalidField) {
-      firstInvalidField.focus();
-    }
+      const messageDiv = document.createElement("div");
+      messageDiv.className = `alert alert-${type} temp-message`;
+      messageDiv.style.cssText = `
+        position: fixed; top: 20px; right: 20px; z-index: 9999;
+        min-width: 300px; animation: slideInRight 0.3s ease;
+      `;
 
-    // Show error message
-    showFormError("Bitte füllen Sie alle Pflichtfelder korrekt aus!");
-  }
-}
+      const iconMap = {
+        success: "check-circle",
+        warning: "exclamation-triangle",
+        error: "x-circle",
+        info: "info-circle",
+      };
 
-/**
- * Show Form Error Message
- */
-function showFormError(message) {
-  // Remove existing error alerts
-  const existingAlerts = document.querySelectorAll(".alert-danger.form-error");
-  existingAlerts.forEach((alert) => alert.remove());
-
-  // Create new error alert
-  const alertDiv = document.createElement("div");
-  alertDiv.className =
-    "alert alert-danger alert-dismissible fade show form-error";
-  alertDiv.innerHTML = `
+      messageDiv.innerHTML = `
+        <i class="bi bi-${iconMap[type] || "info-circle"}"></i>
         ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
+      `;
 
-  // Insert before form
-  const form = document.getElementById("filamentForm");
-  if (form) {
-    form.parentNode.insertBefore(alertDiv, form);
-
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-      if (alertDiv.parentNode) {
-        alertDiv.remove();
-      }
-    }, 5000);
-  }
-}
-
-/**
- * Global functions for backward compatibility
- */
-window.deleteFilament = showDeleteModal;
-
-/**
- * PrintHub Drucker JavaScript Functions - Vereinfacht
- * Ergänzungen für PrintHub.js - nur relevante Funktionen
- */
-
-// Erweitere die bestehenden Funktionen in PrintHub.js:
-
-document.addEventListener("DOMContentLoaded", function () {
-  // Bestehende Initialisierung...
-
-  // Drucker-spezifische Initialisierung
-  initializePrinterFunctions();
-});
-
-/**
- * Initialize Printer-specific Functions
- */
-function initializePrinterFunctions() {
-  // Drucker Delete Modal
-  const deletePrinterModalElement =
-    document.getElementById("deletePrinterModal");
-  if (deletePrinterModalElement) {
-    window.deletePrinterModal = new bootstrap.Modal(deletePrinterModalElement);
-  }
-
-  // Drucker Form Handler
-  initializePrinterForm();
-
-  // Drucker Delete Buttons
-  document.addEventListener("click", function (e) {
-    const deleteBtn = e.target.closest(
-      '[data-action="delete"][data-printer-id]'
-    );
-    if (!deleteBtn) return;
-
-    e.preventDefault();
-
-    const printerId = deleteBtn.getAttribute("data-printer-id");
-    const printerName = deleteBtn.getAttribute("data-printer-name");
-
-    console.log("Delete printer clicked:", printerId, printerName);
-    showDeletePrinterModal(printerId, printerName);
-  });
-}
-
-/**
- * Initialize Printer Form
- */
-function initializePrinterForm() {
-  const printerForm = document.getElementById("printerForm");
-  if (!printerForm) return;
-
-  // Reset Button
-  const resetBtn = document.getElementById("resetPrinterFormBtn");
-  if (resetBtn) {
-    resetBtn.addEventListener("click", function () {
-      printerForm.reset();
-      // Reset validation classes
-      const inputs = printerForm.querySelectorAll(".is-invalid");
-      inputs.forEach((input) => input.classList.remove("is-invalid"));
-      // Reset cost calculations
-      updateDailyCostDisplay();
-    });
-  }
-
-  // Live Cost Calculation
-  const costInput = document.getElementById("machine_cost_per_hour");
-  const energyInput = document.getElementById("energy_consumption");
-
-  if (costInput) {
-    costInput.addEventListener("input", updateDailyCostDisplay);
-  }
-
-  if (energyInput) {
-    energyInput.addEventListener("input", updateDailyCostDisplay);
-  }
-
-  // Form Validation
-  printerForm.addEventListener("submit", validatePrinterForm);
-
-  // Remove validation classes on input
-  const inputs = printerForm.querySelectorAll("input, select, textarea");
-  inputs.forEach((input) => {
-    input.addEventListener("input", function () {
-      this.classList.remove("is-invalid");
-    });
-  });
-
-  // Initial calculations
-  updateDailyCostDisplay();
-}
-
-/**
- * Show Delete Printer Modal
- */
-function showDeletePrinterModal(printerId, printerName) {
-  console.log("Showing delete printer modal for:", printerId, printerName);
-
-  if (!window.deletePrinterModal) {
-    console.error("Delete printer modal not found");
-    return;
-  }
-
-  const deleteNameSpan = document.getElementById("deletePrinterName");
-  const deleteForm = document.getElementById("deletePrinterForm");
-
-  if (deleteNameSpan) {
-    deleteNameSpan.textContent = printerName;
-  }
-
-  if (deleteForm) {
-    deleteForm.action = `/printhub/printer/delete_printer/${printerId}`;
-  }
-
-  window.deletePrinterModal.show();
-}
-
-/**
- * Update Daily Cost Display
- */
-function updateDailyCostDisplay() {
-  const costInput = document.getElementById("machine_cost_per_hour");
-  const energyInput = document.getElementById("energy_consumption");
-
-  if (!costInput) return;
-
-  const hourlyCost = parseFloat(costInput.value) || 0;
-  const energyWatts = parseFloat(energyInput?.value) || 0;
-
-  // Berechne tägliche Kosten
-  const dailyMachineCost = hourlyCost * 24;
-
-  // Berechne Energiekosten (Annahme: 0.25 CHF/kWh)
-  const dailyEnergyKwh = (energyWatts / 1000) * 24;
-  const dailyEnergyCost = dailyEnergyKwh * 0.25;
-
-  const totalDailyCost = dailyMachineCost + dailyEnergyCost;
-
-  // Update Tooltip
-  if (hourlyCost > 0) {
-    costInput.title = `Tägliche Kosten: CHF ${totalDailyCost.toFixed(
-      2
-    )} (24h Betrieb)`;
-    costInput.style.borderColor = "var(--prusa-orange)";
-  } else {
-    costInput.title = "";
-    costInput.style.borderColor = "";
-  }
-
-  // Update Energie-Tooltip
-  if (energyInput && energyWatts > 0) {
-    energyInput.title = `Täglich: ${dailyEnergyKwh.toFixed(
-      2
-    )} kWh = CHF ${dailyEnergyCost.toFixed(2)}`;
-    energyInput.style.borderColor = "var(--prusa-orange)";
-  } else if (energyInput) {
-    energyInput.title = "";
-    energyInput.style.borderColor = "";
-  }
-}
-
-/**
- * Validate Printer Form
- */
-function validatePrinterForm(e) {
-  const form = e.target;
-  const requiredFields = [
-    "printer_name",
-    "printer_brand",
-    "machine_cost_per_hour",
-  ];
-  let isValid = true;
-  let firstInvalidField = null;
-
-  // Check required fields
-  requiredFields.forEach((fieldName) => {
-    const field = document.getElementById(fieldName);
-    if (!field || !field.value.trim()) {
-      if (field) {
-        field.classList.add("is-invalid");
-        if (!firstInvalidField) firstInvalidField = field;
-      }
-      isValid = false;
-    } else {
-      if (field) field.classList.remove("is-invalid");
-    }
-  });
-
-  // Validate machine cost is positive
-  const costField = document.getElementById("machine_cost_per_hour");
-  if (costField) {
-    const cost = parseFloat(costField.value);
-    if (isNaN(cost) || cost <= 0) {
-      costField.classList.add("is-invalid");
-      if (!firstInvalidField) firstInvalidField = costField;
-      isValid = false;
-    } else {
-      costField.classList.remove("is-invalid");
-    }
-  }
-
-  // Validate optional energy consumption
-  const energyField = document.getElementById("energy_consumption");
-  if (energyField && energyField.value.trim()) {
-    const value = parseFloat(energyField.value);
-    if (isNaN(value) || value < 0) {
-      energyField.classList.add("is-invalid");
-      if (!firstInvalidField) firstInvalidField = energyField;
-      isValid = false;
-    } else {
-      energyField.classList.remove("is-invalid");
-    }
-  }
-
-  if (!isValid) {
-    e.preventDefault();
-
-    // Focus first invalid field
-    if (firstInvalidField) {
-      firstInvalidField.focus();
-    }
-
-    // Show error message
-    showFormError("Bitte füllen Sie alle Pflichtfelder korrekt aus!");
-  }
-}
-
-// Global functions
-window.deletePrinter = showDeletePrinterModal;
-
-/**
- * Maschinenkosten-Rechner JavaScript
- * Ergänzung für PrintHub.js
- */
-
-// Global Variables for Cost Calculator
-let costCalculatorModal;
-
-document.addEventListener("DOMContentLoaded", function () {
-  // Initialize Cost Calculator Modal
-  const costModalElement = document.getElementById("costCalculatorModal");
-  if (costModalElement) {
-    costCalculatorModal = new bootstrap.Modal(costModalElement);
-  }
-});
-
-/**
- * Open Cost Calculator Modal
- */
-function openCostCalculator() {
-  if (costCalculatorModal) {
-    // Load current value if exists
-    const currentValue = document.getElementById("machine_cost_per_hour").value;
-    if (currentValue && parseFloat(currentValue) > 0) {
-      // Try to reverse-engineer the values (optional)
-      loadExampleValues();
-    }
-    costCalculatorModal.show();
-  }
-}
-
-/**
- * Load Example Values
- */
-function loadExampleValues() {
-  document.getElementById("calc_purchase_price").value = "1000";
-  document.getElementById("calc_lifetime_hours").value = "3000";
-  document.getElementById("calc_maintenance_cost").value = "0.50";
-  document.getElementById("calc_room_cost").value = "1.00";
-  document.getElementById("calc_failure_rate").value = "15";
-
-  calculateMachineCost();
-}
-
-/**
- * Calculate Machine Cost
- */
-function calculateMachineCost() {
-  // Get input values
-  const purchasePrice =
-    parseFloat(document.getElementById("calc_purchase_price").value) || 0;
-  const lifetimeHours =
-    parseFloat(document.getElementById("calc_lifetime_hours").value) || 1;
-  const maintenanceCost =
-    parseFloat(document.getElementById("calc_maintenance_cost").value) || 0;
-  const roomCost =
-    parseFloat(document.getElementById("calc_room_cost").value) || 0;
-  const failureRate =
-    parseFloat(document.getElementById("calc_failure_rate").value) || 0;
-
-  // Calculate depreciation
-  const depreciation = purchasePrice / lifetimeHours;
-
-  // Calculate base costs
-  const baseCost = depreciation + maintenanceCost + roomCost;
-
-  // Calculate failure risk cost (percentage of base cost)
-  const failureCost = baseCost * (failureRate / 100);
-
-  // Total cost per hour
-  const totalCost = baseCost + failureCost;
-
-  // Update display elements
-  document.getElementById(
-    "calc_depreciation"
-  ).textContent = `CHF ${depreciation.toFixed(2)}/h`;
-  document.getElementById(
-    "calc_maintenance_display"
-  ).textContent = `CHF ${maintenanceCost.toFixed(2)}/h`;
-  document.getElementById(
-    "calc_room_display"
-  ).textContent = `CHF ${roomCost.toFixed(2)}/h`;
-  document.getElementById(
-    "calc_failure_display"
-  ).textContent = `CHF ${failureCost.toFixed(2)}/h`;
-  document.getElementById(
-    "calc_total_cost"
-  ).innerHTML = `<strong>CHF ${totalCost.toFixed(2)}/h</strong>`;
-
-  // Calculate additional costs
-  const dailyCost = totalCost * 24;
-  const monthlyCost = totalCost * 720; // 30 days * 24 hours
-  const printCost = totalCost * 4; // 4 hour print
-
-  document.getElementById(
-    "calc_daily_cost"
-  ).textContent = `CHF ${dailyCost.toFixed(2)}`;
-  document.getElementById(
-    "calc_monthly_cost"
-  ).textContent = `CHF ${monthlyCost.toFixed(0)}`;
-  document.getElementById(
-    "calc_print_cost"
-  ).textContent = `CHF ${printCost.toFixed(2)}`;
-
-  // Store calculated value for later use
-  window.calculatedMachineCost = totalCost;
-
-  // Visual feedback
-  if (totalCost > 0) {
-    document.getElementById("calc_total_cost").parentElement.style.borderColor =
-      "var(--prusa-orange)";
-    document.getElementById("calc_total_cost").parentElement.style.boxShadow =
-      "0 0 10px rgba(255, 102, 0, 0.3)";
-  }
-}
-
-/**
- * Apply Calculated Cost to Form
- */
-function applyCostToForm() {
-  const calculatedCost = window.calculatedMachineCost;
-
-  if (calculatedCost && calculatedCost > 0) {
-    const machineField = document.getElementById("machine_cost_per_hour");
-    if (machineField) {
-      machineField.value = calculatedCost.toFixed(2);
-
-      // Trigger change event to update any live calculations
-      machineField.dispatchEvent(new Event("input"));
-
-      // Visual feedback
-      machineField.style.borderColor = "var(--prusa-orange)";
-      machineField.style.boxShadow = "0 0 10px rgba(255, 102, 0, 0.3)";
+      document.body.appendChild(messageDiv);
 
       setTimeout(() => {
-        machineField.style.borderColor = "";
-        machineField.style.boxShadow = "";
-      }, 2000);
-    }
+        messageDiv.style.animation = "slideOutRight 0.3s ease";
+        setTimeout(() => messageDiv.remove(), 300);
+      }, duration);
+    },
+  },
 
-    // Close modal
-    if (costCalculatorModal) {
-      costCalculatorModal.hide();
-    }
+  // Form validation
+  validation: {
+    // Generic field validation
+    validateField: (fieldId, rules = {}) => {
+      const element = PrintHub.utils.getElement(fieldId);
+      if (!element) return false;
 
-    // Show success message
-    showTemporaryMessage("Maschinenkosten erfolgreich übernommen!", "success");
-  } else {
-    showTemporaryMessage(
-      "Bitte füllen Sie die Berechnungsfelder aus!",
-      "warning"
-    );
-  }
-}
+      const value = element.value.trim();
+      let isValid = true;
 
-/**
- * Show Temporary Message
- */
-function showTemporaryMessage(message, type = "info") {
-  // Remove existing temporary messages
-  const existingMessages = document.querySelectorAll(".temp-message");
-  existingMessages.forEach((msg) => msg.remove());
+      // Required check
+      if (rules.required && !value) {
+        isValid = false;
+      }
 
-  // Create message element
-  const messageDiv = document.createElement("div");
-  messageDiv.className = `alert alert-${type} temp-message`;
-  messageDiv.style.position = "fixed";
-  messageDiv.style.top = "20px";
-  messageDiv.style.right = "20px";
-  messageDiv.style.zIndex = "9999";
-  messageDiv.style.minWidth = "300px";
-  messageDiv.style.animation = "slideInRight 0.3s ease";
-  messageDiv.innerHTML = `
-        <i class="bi bi-${
-          type === "success"
-            ? "check-circle"
-            : type === "warning"
-            ? "exclamation-triangle"
-            : "info-circle"
-        }"></i>
-        ${message}
+      // Number validation
+      if (rules.type === "number" && value) {
+        const num = parseFloat(value);
+        if (isNaN(num)) isValid = false;
+        if (rules.min !== undefined && num < rules.min) isValid = false;
+        if (rules.max !== undefined && num > rules.max) isValid = false;
+      }
+
+      // Email validation
+      if (rules.type === "email" && value) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(value)) isValid = false;
+      }
+
+      // Apply visual feedback
+      element.classList.toggle("is-invalid", !isValid);
+      return isValid;
+    },
+
+    // Validate entire form
+    validateForm: (formId, fieldRules) => {
+      let isValid = true;
+      let firstInvalidField = null;
+
+      Object.entries(fieldRules).forEach(([fieldId, rules]) => {
+        const fieldValid = PrintHub.validation.validateField(fieldId, rules);
+        if (!fieldValid) {
+          isValid = false;
+          if (!firstInvalidField) {
+            firstInvalidField = PrintHub.utils.getElement(fieldId);
+          }
+        }
+      });
+
+      if (!isValid && firstInvalidField) {
+        firstInvalidField.focus();
+        PrintHub.utils.showMessage(
+          PrintHub.config.validationMessages.required,
+          "error"
+        );
+      }
+
+      return isValid;
+    },
+  },
+
+  // Modal management
+  modals: {
+    // Initialize modal
+    init: (modalId) => {
+      const modalElement = PrintHub.utils.getElement(modalId);
+      if (modalElement && typeof bootstrap !== "undefined") {
+        PrintHub.state.modals[modalId] = new bootstrap.Modal(modalElement);
+        return PrintHub.state.modals[modalId];
+      }
+      console.warn(`Modal '${modalId}' not found or Bootstrap not available`);
+      return null;
+    },
+
+    // Show modal
+    show: (modalId) => {
+      if (PrintHub.state.modals[modalId]) {
+        PrintHub.state.modals[modalId].show();
+      } else {
+        console.warn(`Modal '${modalId}' not initialized`);
+      }
+    },
+
+    // Hide modal
+    hide: (modalId) => {
+      if (PrintHub.state.modals[modalId]) {
+        PrintHub.state.modals[modalId].hide();
+      }
+    },
+
+    // Generic delete modal
+    showDeleteModal: (modalId, itemId, itemName, deleteUrl) => {
+      const modal = PrintHub.state.modals[modalId];
+      if (!modal) {
+        console.error(`Delete modal '${modalId}' not found`);
+        return;
+      }
+
+      // Set item name in modal
+      const nameElement = document.querySelector(
+        `#${modalId} [data-item-name]`
+      );
+      if (nameElement) {
+        nameElement.textContent = itemName;
+      }
+
+      // Set form action
+      const formElement = document.querySelector(`#${modalId} form`);
+      if (formElement) {
+        formElement.action = deleteUrl;
+      }
+
+      modal.show();
+    },
+  },
+
+  // Filament Management
+  filament: {
+    init: () => {
+      console.log("Initializing filament module");
+
+      // Initialize form
+      PrintHub.filament.initForm();
+
+      // Initialize delete handlers
+      PrintHub.filament.initDeleteHandlers();
+    },
+
+    initForm: () => {
+      const formId = "filamentForm";
+      const form = PrintHub.utils.getElement(formId);
+      if (!form) return;
+
+      // Reset button
+      PrintHub.utils.addEventSafe("resetFormBtn", "click", () => {
+        form.reset();
+        form
+          .querySelectorAll(".is-invalid")
+          .forEach((input) => input.classList.remove("is-invalid"));
+      });
+
+      // Live price calculation
+      ["filament_weight", "filament_price"].forEach((fieldId) => {
+        PrintHub.utils.addEventSafe(
+          fieldId,
+          "input",
+          PrintHub.filament.updatePricePerKg
+        );
+      });
+
+      // Form validation
+      form.addEventListener("submit", PrintHub.filament.validateForm);
+
+      // Remove validation on input
+      form.querySelectorAll("input, select, textarea").forEach((input) => {
+        input.addEventListener("input", () =>
+          input.classList.remove("is-invalid")
+        );
+      });
+    },
+
+    initDeleteHandlers: () => {
+      PrintHub.modals.init("deleteModal");
+
+      document.addEventListener("click", (e) => {
+        const deleteBtn = e.target.closest(
+          '[data-action="delete"][data-filament-id]'
+        );
+        if (!deleteBtn) return;
+
+        e.preventDefault();
+        const filamentId = deleteBtn.getAttribute("data-filament-id");
+        const filamentName = deleteBtn.getAttribute("data-filament-name");
+        const deleteUrl = `/PrintHub/filament/delete_filament/${filamentId}`;
+
+        PrintHub.modals.showDeleteModal(
+          "deleteModal",
+          filamentId,
+          filamentName,
+          deleteUrl
+        );
+      });
+    },
+
+    updatePricePerKg: () => {
+      const weight = PrintHub.utils.getValue("filament_weight");
+      const price = PrintHub.utils.getValue("filament_price");
+
+      const weightElement = PrintHub.utils.getElement("filament_weight");
+      const priceElement = PrintHub.utils.getElement("filament_price");
+
+      if (weight > 0 && price > 0) {
+        const pricePerKg = ((price / weight) * 1000).toFixed(2);
+
+        if (priceElement) {
+          priceElement.title = `Preis pro kg: CHF ${pricePerKg}`;
+          priceElement.style.borderColor = "var(--prusa-orange)";
+        }
+        if (weightElement) {
+          weightElement.style.borderColor = "var(--prusa-orange)";
+        }
+      } else {
+        if (priceElement) {
+          priceElement.title = "";
+          priceElement.style.borderColor = "";
+        }
+        if (weightElement) {
+          weightElement.style.borderColor = "";
+        }
+      }
+    },
+
+    validateForm: (e) => {
+      const fieldRules = {
+        filament_type: { required: true },
+        filament_name: { required: true },
+        filament_manufacturer: { required: true },
+        filament_weight: { required: true, type: "number", min: 0 },
+        filament_price: { required: true, type: "number", min: 0 },
+      };
+
+      if (!PrintHub.validation.validateForm("filamentForm", fieldRules)) {
+        e.preventDefault();
+      }
+    },
+  },
+
+  // Printer Management
+  printer: {
+    init: () => {
+      console.log("Initializing printer module");
+
+      PrintHub.printer.initForm();
+      PrintHub.printer.initDeleteHandlers();
+      PrintHub.printer.initCostCalculator();
+    },
+
+    initForm: () => {
+      const formId = "printerForm";
+      const form = PrintHub.utils.getElement(formId);
+      if (!form) return;
+
+      // Reset button
+      PrintHub.utils.addEventSafe("resetPrinterFormBtn", "click", () => {
+        form.reset();
+        form
+          .querySelectorAll(".is-invalid")
+          .forEach((input) => input.classList.remove("is-invalid"));
+        PrintHub.printer.updateDailyCostDisplay();
+      });
+
+      // Live cost calculation
+      ["machine_cost_per_hour", "energy_consumption"].forEach((fieldId) => {
+        PrintHub.utils.addEventSafe(
+          fieldId,
+          "input",
+          PrintHub.printer.updateDailyCostDisplay
+        );
+      });
+
+      // Form validation
+      form.addEventListener("submit", PrintHub.printer.validateForm);
+
+      // Remove validation on input
+      form.querySelectorAll("input, select, textarea").forEach((input) => {
+        input.addEventListener("input", () =>
+          input.classList.remove("is-invalid")
+        );
+      });
+
+      // Initial calculation
+      PrintHub.printer.updateDailyCostDisplay();
+    },
+
+    initDeleteHandlers: () => {
+      PrintHub.modals.init("deletePrinterModal");
+
+      document.addEventListener("click", (e) => {
+        const deleteBtn = e.target.closest(
+          '[data-action="delete"][data-printer-id]'
+        );
+        if (!deleteBtn) return;
+
+        e.preventDefault();
+        const printerId = deleteBtn.getAttribute("data-printer-id");
+        const printerName = deleteBtn.getAttribute("data-printer-name");
+        const deleteUrl = `/PrintHub/printer/delete_printer/${printerId}`;
+
+        PrintHub.modals.showDeleteModal(
+          "deletePrinterModal",
+          printerId,
+          printerName,
+          deleteUrl
+        );
+      });
+    },
+
+    updateDailyCostDisplay: () => {
+      const hourlyCost = PrintHub.utils.getValue("machine_cost_per_hour");
+      const energyWatts = PrintHub.utils.getValue("energy_consumption");
+
+      const dailyMachineCost = hourlyCost * 24;
+      const dailyEnergyKwh = (energyWatts / 1000) * 24;
+      const dailyEnergyCost = dailyEnergyKwh * PrintHub.config.energyRate;
+      const totalDailyCost = dailyMachineCost + dailyEnergyCost;
+
+      const costElement = PrintHub.utils.getElement("machine_cost_per_hour");
+      const energyElement = PrintHub.utils.getElement("energy_consumption");
+
+      if (costElement && hourlyCost > 0) {
+        costElement.title = `Tägliche Kosten: ${PrintHub.utils.formatCurrency(
+          totalDailyCost
+        )} (24h Betrieb)`;
+        costElement.style.borderColor = "var(--prusa-orange)";
+      }
+
+      if (energyElement && energyWatts > 0) {
+        energyElement.title = `Täglich: ${dailyEnergyKwh.toFixed(
+          2
+        )} kWh = ${PrintHub.utils.formatCurrency(dailyEnergyCost)}`;
+        energyElement.style.borderColor = "var(--prusa-orange)";
+      }
+    },
+
+    validateForm: (e) => {
+      const fieldRules = {
+        printer_name: { required: true },
+        printer_brand: { required: true },
+        machine_cost_per_hour: { required: true, type: "number", min: 0 },
+        energy_consumption: { type: "number", min: 0 },
+      };
+
+      if (!PrintHub.validation.validateForm("printerForm", fieldRules)) {
+        e.preventDefault();
+      }
+    },
+
+    // Cost Calculator
+    initCostCalculator: () => {
+      PrintHub.modals.init("costCalculatorModal");
+    },
+
+    openCostCalculator: () => {
+      PrintHub.modals.show("costCalculatorModal");
+      PrintHub.printer.loadExampleValues();
+    },
+
+    loadExampleValues: () => {
+      const exampleValues = {
+        calc_purchase_price: "1000",
+        calc_lifetime_hours: "3000",
+        calc_maintenance_cost: "0.50",
+        calc_room_cost: "1.00",
+        calc_failure_rate: "15",
+      };
+
+      Object.entries(exampleValues).forEach(([id, value]) => {
+        PrintHub.utils.setValue(id, value);
+      });
+
+      PrintHub.printer.calculateMachineCost();
+    },
+
+    calculateMachineCost: () => {
+      const purchasePrice = PrintHub.utils.getValue("calc_purchase_price");
+      const lifetimeHours = PrintHub.utils.getValue("calc_lifetime_hours", 1);
+      const maintenanceCost = PrintHub.utils.getValue("calc_maintenance_cost");
+      const roomCost = PrintHub.utils.getValue("calc_room_cost");
+      const failureRate = PrintHub.utils.getValue("calc_failure_rate");
+
+      const depreciation = purchasePrice / lifetimeHours;
+      const baseCost = depreciation + maintenanceCost + roomCost;
+      const failureCost = baseCost * (failureRate / 100);
+      const totalCost = baseCost + failureCost;
+
+      // Update displays
+      const updates = {
+        calc_depreciation: `CHF ${depreciation.toFixed(2)}/h`,
+        calc_maintenance_display: `CHF ${maintenanceCost.toFixed(2)}/h`,
+        calc_room_display: `CHF ${roomCost.toFixed(2)}/h`,
+        calc_failure_display: `CHF ${failureCost.toFixed(2)}/h`,
+        calc_total_cost: `<strong>CHF ${totalCost.toFixed(2)}/h</strong>`,
+        calc_daily_cost: PrintHub.utils.formatCurrency(totalCost * 24),
+        calc_monthly_cost: PrintHub.utils.formatCurrency(totalCost * 720),
+        calc_print_cost: PrintHub.utils.formatCurrency(totalCost * 4),
+      };
+
+      Object.entries(updates).forEach(([id, text]) => {
+        PrintHub.utils.setText(id, text);
+      });
+
+      PrintHub.state.calculatedValues.machineCost = totalCost;
+    },
+
+    applyCostToForm: () => {
+      const calculatedCost = PrintHub.state.calculatedValues.machineCost;
+
+      if (calculatedCost && calculatedCost > 0) {
+        PrintHub.utils.setValue(
+          "machine_cost_per_hour",
+          calculatedCost.toFixed(2)
+        );
+        PrintHub.printer.updateDailyCostDisplay();
+        PrintHub.modals.hide("costCalculatorModal");
+        PrintHub.utils.showMessage(
+          "Maschinenkosten erfolgreich übernommen!",
+          "success"
+        );
+      } else {
+        PrintHub.utils.showMessage(
+          "Bitte füllen Sie die Berechnungsfelder aus!",
+          "warning"
+        );
+      }
+    },
+  },
+
+  // Discount Profiles
+  discountProfiles: {
+    init: () => {
+      console.log("Initializing discount profiles module");
+
+      PrintHub.discountProfiles.initForm();
+      PrintHub.discountProfiles.initDeleteHandlers();
+    },
+
+    initForm: () => {
+      const formId = "discountProfileForm";
+      const form = PrintHub.utils.getElement(formId);
+      if (!form) return;
+
+      // Reset button
+      PrintHub.utils.addEventSafe("resetFormBtn", "click", () => {
+        form.reset();
+        PrintHub.discountProfiles.updatePreview();
+      });
+
+      // Live preview
+      ["discount_type", "percentage"].forEach((fieldId) => {
+        PrintHub.utils.addEventSafe(
+          fieldId,
+          "change",
+          PrintHub.discountProfiles.updatePreview
+        );
+        PrintHub.utils.addEventSafe(
+          fieldId,
+          "input",
+          PrintHub.discountProfiles.updatePreview
+        );
+      });
+
+      // Initial preview
+      PrintHub.discountProfiles.updatePreview();
+    },
+
+    initDeleteHandlers: () => {
+      PrintHub.modals.init("deleteDiscountProfileModal");
+
+      document.addEventListener("click", (e) => {
+        const deleteBtn = e.target.closest(
+          '[data-action="delete"][data-profile-id]'
+        );
+        if (!deleteBtn) return;
+
+        e.preventDefault();
+        const profileId = deleteBtn.getAttribute("data-profile-id");
+        const profileName = deleteBtn.getAttribute("data-profile-name");
+        const deleteUrl = `/PrintHub/discount_profile/delete_discount_profile/${profileId}`;
+
+        PrintHub.modals.showDeleteModal(
+          "deleteDiscountProfileModal",
+          profileId,
+          profileName,
+          deleteUrl
+        );
+      });
+    },
+
+    updatePreview: () => {
+      const typeElement = PrintHub.utils.getElement("discount_type");
+      const type = typeElement ? typeElement.value : "";
+      const percentage = PrintHub.utils.getValue("percentage");
+      const examplePrice = 100.0;
+
+      let adjustmentAmount, finalPrice, typeDisplay, result;
+
+      if (type === "discount") {
+        typeDisplay = "Rabatt";
+        adjustmentAmount = examplePrice * (percentage / 100);
+        finalPrice = examplePrice - adjustmentAmount;
+        result = `${percentage.toFixed(1)}% günstiger`;
+      } else if (type === "surcharge") {
+        typeDisplay = "Aufschlag";
+        adjustmentAmount = examplePrice * (percentage / 100);
+        finalPrice = examplePrice + adjustmentAmount;
+        result = `${percentage.toFixed(1)}% teurer`;
+      } else {
+        typeDisplay = "-";
+        adjustmentAmount = 0;
+        finalPrice = examplePrice;
+        result = "Typ wählen";
+      }
+
+      const updates = {
+        "preview-type": typeDisplay,
+        "preview-adjustment": PrintHub.utils.formatCurrency(adjustmentAmount),
+        "preview-final": PrintHub.utils.formatCurrency(finalPrice),
+        "preview-result": result,
+      };
+
+      Object.entries(updates).forEach(([id, text]) => {
+        PrintHub.utils.setText(id, text);
+      });
+    },
+  },
+
+  // Generic Cost Module (for energy, work hours, overhead)
+  costModule: {
+    init: (config) => {
+      console.log(`Initializing cost module: ${config.name}`);
+
+      if (config.formId) {
+        PrintHub.costModule.initForm(config);
+      }
+
+      if (config.deleteModalId) {
+        PrintHub.costModule.initDeleteHandlers(config);
+      }
+
+      if (config.liveCalculation) {
+        PrintHub.costModule.initLiveCalculation(config);
+      }
+    },
+
+    initForm: (config) => {
+      const form = PrintHub.utils.getElement(config.formId);
+      if (!form) return;
+
+      // Reset button
+      if (config.resetButtonId) {
+        PrintHub.utils.addEventSafe(config.resetButtonId, "click", () => {
+          form.reset();
+          if (config.liveCalculation) {
+            config.liveCalculation();
+          }
+        });
+      }
+
+      // Date validation
+      if (config.dateFields) {
+        config.dateFields.forEach(({ from, to }) => {
+          PrintHub.utils.addEventSafe(from, "change", () => {
+            const fromElement = PrintHub.utils.getElement(from);
+            const toElement = PrintHub.utils.getElement(to);
+            if (fromElement && toElement && fromElement.value) {
+              toElement.min = fromElement.value;
+            }
+          });
+        });
+      }
+    },
+
+    initDeleteHandlers: (config) => {
+      PrintHub.modals.init(config.deleteModalId);
+
+      document.addEventListener("click", (e) => {
+        const deleteBtn = e.target.closest(
+          `[data-action="delete"][data-${config.dataAttribute}-id]`
+        );
+        if (!deleteBtn) return;
+
+        e.preventDefault();
+        const itemId = deleteBtn.getAttribute(
+          `data-${config.dataAttribute}-id`
+        );
+        const itemName = deleteBtn.getAttribute(
+          `data-${config.dataAttribute}-name`
+        );
+        const deleteUrl = config.deleteUrlTemplate.replace("{id}", itemId);
+
+        PrintHub.modals.showDeleteModal(
+          config.deleteModalId,
+          itemId,
+          itemName,
+          deleteUrl
+        );
+      });
+    },
+
+    initLiveCalculation: (config) => {
+      if (config.calculationFields) {
+        config.calculationFields.forEach((fieldId) => {
+          PrintHub.utils.addEventSafe(fieldId, "input", config.liveCalculation);
+          PrintHub.utils.addEventSafe(
+            fieldId,
+            "change",
+            config.liveCalculation
+          );
+        });
+
+        // Initial calculation
+        config.liveCalculation();
+      }
+    },
+  },
+
+  // Main initialization
+  init: () => {
+    console.log("Initializing PrintHub modules");
+
+    // Add CSS animations
+    PrintHub.addAnimations();
+
+    // Initialize individual modules
+    PrintHub.filament.init();
+    PrintHub.printer.init();
+    PrintHub.discountProfiles.init();
+
+    // Initialize cost modules
+    PrintHub.costModule.init({
+      name: "energy",
+      formId: "energyCostForm",
+      resetButtonId: "resetEnergyFormBtn",
+      deleteModalId: "deleteEnergyCostModal",
+      dataAttribute: "energy",
+      deleteUrlTemplate: "/PrintHub/energy_cost/delete_energy_cost/{id}",
+      dateFields: [{ from: "valid_from", to: "valid_until" }],
+    });
+
+    PrintHub.costModule.init({
+      name: "work",
+      formId: "workHourForm",
+      resetButtonId: "resetWorkFormBtn",
+      deleteModalId: "deleteWorkHourModal",
+      dataAttribute: "work",
+      deleteUrlTemplate: "/PrintHub/work_hour/delete_work_hour/{id}",
+      dateFields: [{ from: "valid_from", to: "valid_until" }],
+    });
+
+    PrintHub.costModule.init({
+      name: "overhead",
+      formId: "overheadProfileForm",
+      resetButtonId: "resetOverheadFormBtn",
+      deleteModalId: "deleteOverheadProfileModal",
+      dataAttribute: "profile",
+      deleteUrlTemplate:
+        "/PrintHub/overhead_profile/delete_overhead_profile/{id}",
+      liveCalculation: PrintHub.overhead.calculate,
+      calculationFields: [
+        "rent_monthly",
+        "heating_electricity",
+        "insurance",
+        "internet",
+        "software_cost",
+        "software_billing",
+        "other_costs",
+        "planned_hours_monthly",
+      ],
+    });
+
+    console.log("PrintHub initialization complete");
+  },
+
+  // Overhead calculations
+  overhead: {
+    calculate: () => {
+      const rent = PrintHub.utils.getValue("rent_monthly");
+      const heating = PrintHub.utils.getValue("heating_electricity");
+      const insurance = PrintHub.utils.getValue("insurance");
+      const internet = PrintHub.utils.getValue("internet");
+      const softwareCost = PrintHub.utils.getValue("software_cost");
+      const otherCosts = PrintHub.utils.getValue("other_costs");
+      const plannedHours = PrintHub.utils.getValue("planned_hours_monthly", 1);
+
+      const softwareBillingElement =
+        PrintHub.utils.getElement("software_billing");
+      const softwareBilling = softwareBillingElement
+        ? softwareBillingElement.value
+        : "monthly";
+      const softwareMonthly =
+        softwareBilling === "yearly" ? softwareCost / 12 : softwareCost;
+
+      const totalMonthly =
+        rent + heating + insurance + internet + softwareMonthly + otherCosts;
+      const overheadHourly = totalMonthly / plannedHours;
+
+      PrintHub.utils.setText(
+        "calc-monthly-total",
+        PrintHub.utils.formatCurrency(totalMonthly)
+      );
+      PrintHub.utils.setText(
+        "calc-overhead-hourly",
+        `${PrintHub.utils.formatCurrency(overheadHourly)}/h`
+      );
+    },
+  },
+
+  // Add CSS animations
+  addAnimations: () => {
+    if (document.getElementById("printhub-animations")) return;
+
+    const animations = `
+      @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes slideOutRight {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+      }
     `;
 
-  document.body.appendChild(messageDiv);
+    const styleSheet = document.createElement("style");
+    styleSheet.id = "printhub-animations";
+    styleSheet.textContent = animations;
+    document.head.appendChild(styleSheet);
+  },
+};
 
-  // Remove after 3 seconds
-  setTimeout(() => {
-    messageDiv.style.animation = "slideOutRight 0.3s ease";
-    setTimeout(() => {
-      if (messageDiv.parentNode) {
-        messageDiv.remove();
-      }
-    }, 300);
-  }, 3000);
-}
+// Global functions for backward compatibility
+window.PrintHub = PrintHub;
+window.openCostCalculator = () => PrintHub.printer.openCostCalculator();
+window.calculateMachineCost = () => PrintHub.printer.calculateMachineCost();
+window.loadExampleValues = () => PrintHub.printer.loadExampleValues();
+window.applyCostToForm = () => PrintHub.printer.applyCostToForm();
+window.updatePreview = () => PrintHub.discountProfiles.updatePreview();
 
-/**
- * Enhanced Form Validation for Printer Form (erweitert bestehende Funktion)
- */
-function validatePrinterFormWithCalculator(e) {
-  const form = e.target;
-  const requiredFields = [
-    "printer_name",
-    "printer_brand",
-    "machine_cost_per_hour",
-  ];
-  let isValid = true;
-  let firstInvalidField = null;
+// Initialize when DOM is ready
+document.addEventListener("DOMContentLoaded", PrintHub.init);
 
-  // Check required fields
-  requiredFields.forEach((fieldName) => {
-    const field = document.getElementById(fieldName);
-    if (!field || !field.value.trim()) {
-      if (field) {
-        field.classList.add("is-invalid");
-        if (!firstInvalidField) firstInvalidField = field;
-      }
-      isValid = false;
-    } else {
-      if (field) field.classList.remove("is-invalid");
-    }
-  });
-
-  // Validate machine cost is positive
-  const costField = document.getElementById("machine_cost_per_hour");
-  if (costField) {
-    const cost = parseFloat(costField.value);
-    if (isNaN(cost) || cost <= 0) {
-      costField.classList.add("is-invalid");
-      if (!firstInvalidField) firstInvalidField = costField;
-      isValid = false;
-
-      // Suggest using calculator
-      showTemporaryMessage(
-        "Verwenden Sie den Rechner-Button für eine genaue Kostenkalkulation!",
-        "info"
-      );
-    } else {
-      costField.classList.remove("is-invalid");
-    }
-  }
-
-  // Validate optional energy consumption
-  const energyField = document.getElementById("energy_consumption");
-  if (energyField && energyField.value.trim()) {
-    const value = parseFloat(energyField.value);
-    if (isNaN(value) || value < 0) {
-      energyField.classList.add("is-invalid");
-      if (!firstInvalidField) firstInvalidField = energyField;
-      isValid = false;
-    } else {
-      energyField.classList.remove("is-invalid");
-    }
-  }
-
-  if (!isValid) {
-    e.preventDefault();
-
-    // Focus first invalid field
-    if (firstInvalidField) {
-      firstInvalidField.focus();
-    }
-
-    showTemporaryMessage(
-      "Bitte füllen Sie alle Pflichtfelder korrekt aus!",
-      "warning"
-    );
-  }
-}
-
-// Add CSS animations for messages
-const messageAnimations = `
-@keyframes slideInRight {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-@keyframes slideOutRight {
-    from {
-        transform: translateX(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-}
-`;
-
-// Add animations to page
-const styleSheet = document.createElement("style");
-styleSheet.textContent = messageAnimations;
-document.head.appendChild(styleSheet);
-
-// Global functions
-window.openCostCalculator = openCostCalculator;
-window.calculateMachineCost = calculateMachineCost;
-window.loadExampleValues = loadExampleValues;
-window.applyCostToForm = applyCostToForm;
-
-// Form zurücksetzen
-document
-  .getElementById("resetEnergyFormBtn")
-  ?.addEventListener("click", function () {
-    document.getElementById("energyCostForm").reset();
-  });
-
-// Nachttarif automatisch aktivieren bei Doppeltarif
-document.getElementById("tariff_type")?.addEventListener("change", function () {
-  const nightRateField = document.getElementById("night_rate");
-  if (this.value.includes("Tag/Nacht") || this.value.includes("Doppeltarif")) {
-    nightRateField.setAttribute("placeholder", "Nachttarif erforderlich");
-    nightRateField.parentElement.parentElement.classList.add("required-field");
-  } else {
-    nightRateField.setAttribute("placeholder", "0.1800");
-    nightRateField.parentElement.parentElement.classList.remove(
-      "required-field"
-    );
-  }
-});
-
-// Gültigkeitsdaten validation
-document.getElementById("valid_from")?.addEventListener("change", function () {
-  const validUntil = document.getElementById("valid_until");
-  if (this.value) {
-    validUntil.min = this.value;
-  }
-});
-
-// Delete Modal Handling
-document.addEventListener("DOMContentLoaded", function () {
-  // Delete Button Click Handler
-  document.querySelectorAll('[data-action="delete"]').forEach((button) => {
-    button.addEventListener("click", function () {
-      const energyCostId = this.getAttribute("data-energy-id");
-      const energyCostName = this.getAttribute("data-energy-name");
-
-      // Modal-Inhalte setzen
-      document.getElementById("deleteEnergyCostName").textContent =
-        energyCostName;
-      document.getElementById(
-        "deleteEnergyCostForm"
-      ).action = `/PrintHub/energy_cost/delete_energy_cost/${energyCostId}`;
-
-      // Modal anzeigen
-      const deleteModal = new bootstrap.Modal(
-        document.getElementById("deleteEnergyCostModal")
-      );
-      deleteModal.show();
-    });
-  });
-
-  // Toggle Active/Inactive Handler (falls gewünscht)
-  document.querySelectorAll('[data-action="toggle"]').forEach((button) => {
-    button.addEventListener("click", function () {
-      const energyCostId = this.getAttribute("data-energy-id");
-
-      // AJAX Request um Status zu ändern (optional)
-      fetch(`/PrintHub/energy_cost/toggle_energy_cost/${energyCostId}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.success) {
-            location.reload(); // Seite neu laden um Änderungen zu zeigen
-          } else {
-            alert("Fehler beim Ändern des Status");
-          }
-        })
-        .catch((error) => {
-          console.error("Error:", error);
-          alert("Fehler beim Ändern des Status");
-        });
-    });
-  });
-});
-
-// Form zurücksetzen
-document
-  .getElementById("resetWorkFormBtn")
-  ?.addEventListener("click", function () {
-    document.getElementById("workHourForm").reset();
-  });
-
-// Gültigkeitsdaten validation
-document.getElementById("valid_from")?.addEventListener("change", function () {
-  const validUntil = document.getElementById("valid_until");
-  if (this.value) {
-    validUntil.min = this.value;
-  }
-});
-
-// Delete Modal Handling
-document.addEventListener("DOMContentLoaded", function () {
-  // Delete Button Click Handler
-  document.querySelectorAll('[data-action="delete"]').forEach((button) => {
-    button.addEventListener("click", function () {
-      const workId = this.getAttribute("data-work-id");
-      const workName = this.getAttribute("data-work-name");
-
-      // Modal-Inhalte setzen
-      document.getElementById("deleteWorkHourName").textContent = workName;
-      document.getElementById(
-        "deleteWorkHourForm"
-      ).action = `/PrintHub/work_hour/delete_work_hour/${workId}`;
-
-      // Modal anzeigen
-      const deleteModal = new bootstrap.Modal(
-        document.getElementById("deleteWorkHourModal")
-      );
-      deleteModal.show();
-    });
-  });
-});
-
-// Form zurücksetzen
-document
-  .getElementById("resetOverheadFormBtn")
-  ?.addEventListener("click", function () {
-    document.getElementById("overheadProfileForm").reset();
-    updateLiveCalculation();
-  });
-
-// Live-Berechnung
-function updateLiveCalculation() {
-  const rent = parseFloat(document.getElementById("rent_monthly").value) || 0;
-  const heating =
-    parseFloat(document.getElementById("heating_electricity").value) || 0;
-  const insurance = parseFloat(document.getElementById("insurance").value) || 0;
-  const internet = parseFloat(document.getElementById("internet").value) || 0;
-  const softwareCost =
-    parseFloat(document.getElementById("software_cost").value) || 0;
-  const softwareBilling = document.getElementById("software_billing").value;
-  const otherCosts =
-    parseFloat(document.getElementById("other_costs").value) || 0;
-  const plannedHours =
-    parseInt(document.getElementById("planned_hours_monthly").value) || 1;
-
-  // Software-Kosten pro Monat berechnen
-  const softwareMonthly =
-    softwareBilling === "yearly" ? softwareCost / 12 : softwareCost;
-
-  // Gesamte Fixkosten
-  const totalMonthly =
-    rent + heating + insurance + internet + softwareMonthly + otherCosts;
-
-  // Overhead pro Stunde
-  const overheadHourly = totalMonthly / plannedHours;
-
-  // Anzeige aktualisieren
-  document.getElementById(
-    "calc-monthly-total"
-  ).textContent = `CHF ${totalMonthly.toFixed(2)}`;
-  document.getElementById(
-    "calc-overhead-hourly"
-  ).textContent = `CHF ${overheadHourly.toFixed(4)}/h`;
-}
-
-// Event Listener für Live-Berechnung
-document.addEventListener("DOMContentLoaded", function () {
-  const calcFields = [
-    "rent_monthly",
-    "heating_electricity",
-    "insurance",
-    "internet",
-    "software_cost",
-    "software_billing",
-    "other_costs",
-    "planned_hours_monthly",
-  ];
-
-  calcFields.forEach((fieldId) => {
-    const field = document.getElementById(fieldId);
-    if (field) {
-      field.addEventListener("input", updateLiveCalculation);
-      field.addEventListener("change", updateLiveCalculation);
-    }
-  });
-
-  // Initial calculation
-  updateLiveCalculation();
-
-  // Delete Button Click Handler
-  document.querySelectorAll('[data-action="delete"]').forEach((button) => {
-    button.addEventListener("click", function () {
-      const profileId = this.getAttribute("data-profile-id");
-      const profileName = this.getAttribute("data-profile-name");
-
-      // Modal-Inhalte setzen
-      document.getElementById("deleteOverheadProfileName").textContent =
-        profileName;
-      document.getElementById(
-        "deleteOverheadProfileForm"
-      ).action = `/PrintHub/overhead_profile/delete_overhead_profile/${profileId}`;
-
-      // Modal anzeigen
-      const deleteModal = new bootstrap.Modal(
-        document.getElementById("deleteOverheadProfileModal")
-      );
-      deleteModal.show();
-    });
-  });
-});
-
-// Form zurücksetzen
-document
-  .getElementById("resetDiscountFormBtn")
-  ?.addEventListener("click", function () {
-    document.getElementById("discountProfileForm").reset();
-    updateDiscountPreview();
-  });
-
-// Rabatt-Vorschau aktualisieren
-function updateDiscountPreview() {
-  const discountPercentage =
-    parseFloat(document.getElementById("discount_percentage").value) || 0;
-  const examplePrice = 100.0;
-
-  const discountAmount = examplePrice * (discountPercentage / 100);
-  const finalPrice = examplePrice - discountAmount;
-
-  document.getElementById(
-    "preview-discount-amount"
-  ).textContent = `CHF ${discountAmount.toFixed(2)}`;
-  document.getElementById(
-    "preview-final-price"
-  ).textContent = `CHF ${finalPrice.toFixed(2)}`;
-  document.getElementById(
-    "preview-savings"
-  ).textContent = `${discountPercentage.toFixed(1)}%`;
-}
-
-// Event Listener
-document.addEventListener("DOMContentLoaded", function () {
-  // Initial preview
-  updateDiscountPreview();
-
-  // Delete Button Click Handler
-  document.querySelectorAll('[data-action="delete"]').forEach((button) => {
-    button.addEventListener("click", function () {
-      const profileId = this.getAttribute("data-profile-id");
-      const profileName = this.getAttribute("data-profile-name");
-
-      // Modal-Inhalte setzen
-      document.getElementById("deleteDiscountProfileName").textContent =
-        profileName;
-      document.getElementById(
-        "deleteDiscountProfileForm"
-      ).action = `/PrintHub/discount_profile/delete_discount_profile/${profileId}`;
-
-      // Modal anzeigen
-      const deleteModal = new bootstrap.Modal(
-        document.getElementById("deleteDiscountProfileModal")
-      );
-      deleteModal.show();
-    });
-  });
-});
+console.log("PrintHub JavaScript loaded successfully");

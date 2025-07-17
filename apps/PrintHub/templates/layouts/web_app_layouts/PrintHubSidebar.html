@@ -68,16 +68,7 @@
         Arbeitszeiten
       </a>
     </li>
-    <li>
-      <a
-        href="#"
-        class="nav-link {% if active_page == 'profit' %}active{% endif %}"
-        data-page="profit"
-      >
-        <i class="bi bi-graph-up"></i>
-        Gewinnmarge
-      </a>
-    </li>
+
     <li>
       <a
         href="{{ url_for('PrintHub.printHub_discount_profiles') }}"
@@ -85,7 +76,7 @@
         data-page="discounts"
       >
         <i class="bi bi-percent"></i>
-        Rabatte
+        Rabatte und Aufschläge
       </a>
     </li>
     <li>
@@ -127,9 +118,6 @@
         link.classList.add("active");
         activeSet = true;
       } else if (currentPath.includes("work") && page === "work") {
-        link.classList.add("active");
-        activeSet = true;
-      } else if (currentPath.includes("profit") && page === "profit") {
         link.classList.add("active");
         activeSet = true;
       } else if (currentPath.includes("discount") && page === "discounts") {

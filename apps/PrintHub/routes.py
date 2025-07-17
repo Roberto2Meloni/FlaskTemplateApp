@@ -974,39 +974,91 @@ def api_overhead_profiles():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-# Zu Ihrer routes.py hinzufügen:
-
-
 @blueprint.route("/printHub_discount_profiles", methods=["GET", "POST"])
 @enabled_required
 def printHub_discount_profiles():
     """Rabatte-Profile-Verwaltung - Anzeigen und Hinzufügen"""
 
+    print("=" * 50)
+    print("DEBUG: Route printHub_discount_profiles aufgerufen")
+    print(f"DEBUG: Request method: {request.method}")
+    print(f"DEBUG: Current user: {current_user}")
+    print(
+        f"DEBUG: Current user username: {getattr(current_user, 'username', 'NO USERNAME')}"
+    )
+
+    # Discount Types für das Template aus dem Model laden
+    try:
+        discount_types = PrintHubDiscountProfile.get_discount_types()
+        print(f"DEBUG: discount_types loaded: {discount_types}")
+    except Exception as e:
+        print(f"DEBUG ERROR: get_discount_types failed: {e}")
+        discount_types = [("discount", "Rabatt"), ("surcharge", "Aufschlag")]
+
     if request.method == "POST":
+        print("=" * 50)
+        print("DEBUG: POST REQUEST - Creating new discount profile")
+
         try:
-            # Form-Daten extrahieren
+            # Form-Daten extrahieren und debuggen
+            print("DEBUG: Extracting form data...")
+
             name = request.form.get("discount_name", "").strip()
-            discount_percentage = request.form.get("discount_percentage", type=float)
+            discount_type = request.form.get("discount_type", "").strip()
+            percentage = request.form.get("percentage", type=float)
             notes = request.form.get("discount_notes", "").strip()
             is_active = request.form.get("is_active") == "on"
 
-            # Validierung
+            print(f"DEBUG: name = '{name}'")
+            print(f"DEBUG: discount_type = '{discount_type}'")
+            print(f"DEBUG: percentage = {percentage}")
+            print(f"DEBUG: notes = '{notes}'")
+            print(f"DEBUG: is_active = {is_active}")
+
+            # Alle Form-Felder anzeigen
+            print("DEBUG: ALL FORM DATA:")
+            for key, value in request.form.items():
+                print(f"  {key}: '{value}'")
+
+            # Validierung mit Debug
+            print("DEBUG: Starting validation...")
+
             if not name:
-                flash("Bitte geben Sie einen Namen für das Rabatt-Profil ein!", "error")
+                print("DEBUG: VALIDATION ERROR - Name is empty")
+                flash("Bitte geben Sie einen Namen für das Profil ein!", "error")
                 return redirect(url_for("PrintHub.printHub_discount_profiles"))
 
-            if discount_percentage is None:
-                flash("Bitte geben Sie einen Rabatt-Prozentsatz ein!", "error")
+            if discount_type not in ["discount", "surcharge"]:
+                print(
+                    f"DEBUG: VALIDATION ERROR - Invalid discount_type: '{discount_type}'"
+                )
+                flash(
+                    "Bitte wählen Sie einen gültigen Typ (Rabatt oder Aufschlag)!",
+                    "error",
+                )
                 return redirect(url_for("PrintHub.printHub_discount_profiles"))
 
-            if discount_percentage < 0 or discount_percentage > 100:
-                flash("Rabatt-Prozentsatz muss zwischen 0% und 100% liegen!", "error")
+            if percentage is None:
+                print("DEBUG: VALIDATION ERROR - Percentage is None")
+                flash("Bitte geben Sie einen Prozentsatz ein!", "error")
                 return redirect(url_for("PrintHub.printHub_discount_profiles"))
 
-            # Neues Rabatt-Profil erstellen
+            if percentage < 0 or percentage > 100:
+                print(
+                    f"DEBUG: VALIDATION ERROR - Percentage out of range: {percentage}"
+                )
+                flash("Prozentsatz muss zwischen 0% und 100% liegen!", "error")
+                return redirect(url_for("PrintHub.printHub_discount_profiles"))
+
+            print("DEBUG: Validation passed!")
+
+            # Neues Rabatt/Aufschlag-Profil erstellen
+            print("DEBUG: Creating new discount profile object...")
+
             new_discount_profile = PrintHubDiscountProfile(
                 name=name,
-                discount_percentage=discount_percentage,
+                discount_type=discount_type,
+                percentage=percentage,
                 notes=notes if notes else None,
                 is_active=is_active,
                 created_by=current_user.username,
@@ -1014,89 +1066,161 @@ def printHub_discount_profiles():
                 updated_at=get_current_time(),
             )
 
+            print(f"DEBUG: Created object: {new_discount_profile}")
+            print(f"DEBUG: Object name: {new_discount_profile.name}")
+            print(f"DEBUG: Object type: {new_discount_profile.discount_type}")
+            print(f"DEBUG: Object percentage: {new_discount_profile.percentage}")
+            print(f"DEBUG: Object created_by: {new_discount_profile.created_by}")
+
             # In Datenbank speichern
+            print("DEBUG: Adding to database session...")
             db.session.add(new_discount_profile)
+
+            print("DEBUG: Committing to database...")
             db.session.commit()
 
+            print("DEBUG: SUCCESS - Profile saved to database!")
+
+            type_display = "Rabatt" if discount_type == "discount" else "Aufschlag"
             flash(
-                f'Rabatt-Profil "{name}" ({discount_percentage}%) erfolgreich hinzugefügt!',
+                f'{type_display}-Profil "{name}" ({percentage}%) erfolgreich hinzugefügt!',
                 "success",
             )
+
             current_app.logger.info(
-                f"User {current_user.username} added discount profile: {name}"
+                f"User {current_user.username} added {discount_type} profile: {name}"
             )
 
         except Exception as e:
+            print(f"DEBUG ERROR: Exception during POST: {e}")
+            print(f"DEBUG ERROR: Exception type: {type(e)}")
+            import traceback
+
+            print(f"DEBUG ERROR: Full traceback:")
+            traceback.print_exc()
+
+            # Rollback bei Fehler
+            db.session.rollback()
             flash("Ein unerwarteter Fehler ist aufgetreten.", "error")
             current_app.logger.error(f"Unexpected error adding discount profile: {e}")
 
+        print("DEBUG: Redirecting after POST...")
         return redirect(url_for("PrintHub.printHub_discount_profiles"))
 
     # GET Request - Rabatte-Profile laden
+    print("DEBUG: GET request - loading profiles")
+
     try:
         # Suchparameter
         search_term = request.args.get("search", "").strip()
         show_inactive = request.args.get("show_inactive", "").strip() == "true"
 
+        print(f"DEBUG: search_term: '{search_term}'")
+        print(f"DEBUG: show_inactive: {show_inactive}")
+        print(f"DEBUG: current_user.username: '{current_user.username}'")
+
+        # Erstmal ALLE Profile laden (ohne Benutzer-Filter)
+        print("DEBUG: Loading ALL profiles (no user filter)")
+        all_profiles = PrintHubDiscountProfile.query.all()
+        print(f"DEBUG: Total profiles in database: {len(all_profiles)}")
+
+        for profile in all_profiles:
+            print(
+                f"DEBUG: Profile {profile.id}: name='{profile.name}', created_by='{profile.created_by}', type='{profile.discount_type}'"
+            )
+
+        # Jetzt mit Benutzer-Filter
+        print(f"DEBUG: Loading profiles for user: '{current_user.username}'")
+        user_profiles = PrintHubDiscountProfile.query.filter_by(
+            created_by=current_user.username
+        ).all()
+        print(f"DEBUG: User profiles found: {len(user_profiles)}")
+
         # Rabatte-Profile laden
         if search_term:
+            print("DEBUG: Using search method")
             discount_profiles = PrintHubDiscountProfile.search(
                 username=current_user.username,
                 search_term=search_term,
                 include_inactive=show_inactive,
             )
         else:
+            print("DEBUG: Using get_by_user method")
             discount_profiles = PrintHubDiscountProfile.get_by_user(
                 current_user.username, include_inactive=show_inactive
             )
 
+        print(f"DEBUG: Final discount_profiles count: {len(discount_profiles)}")
+
         # Statistiken berechnen
         active_profiles = [dp for dp in discount_profiles if dp.is_active]
+        print(f"DEBUG: Active profiles: {len(active_profiles)}")
 
         stats = {
             "total_profiles": len(discount_profiles),
             "active_profiles": len(active_profiles),
-            "avg_discount": (
-                sum(float(dp.discount_percentage) for dp in active_profiles)
+            "discount_profiles": len([dp for dp in active_profiles if dp.is_discount]),
+            "surcharge_profiles": len(
+                [dp for dp in active_profiles if dp.is_surcharge]
+            ),
+            "avg_percentage": (
+                sum(float(dp.percentage) for dp in active_profiles)
                 / len(active_profiles)
                 if active_profiles
                 else 0
             ),
-            "highest_discount": max(
-                active_profiles, key=lambda x: x.discount_percentage, default=None
+            "highest_percentage": max(
+                active_profiles, key=lambda x: x.percentage, default=None
             ),
-            "lowest_discount": min(
-                active_profiles, key=lambda x: x.discount_percentage, default=None
+            "lowest_percentage": min(
+                active_profiles, key=lambda x: x.percentage, default=None
             ),
         }
+
+        print(f"DEBUG: Stats calculated: {stats}")
+        print("DEBUG: About to render template")
 
         return render_template(
             "PrintHubDiscountProfiles.html",
             user=current_user,
             config=config,
-            active_page="discounts",
+            active_page="discount_profiles",
             discount_profiles=discount_profiles,
+            discount_types=discount_types,
             stats=stats,
             search_term=search_term,
             show_inactive=show_inactive,
         )
 
     except Exception as e:
+        print(f"DEBUG ERROR: Exception in GET request: {e}")
+        print(f"DEBUG ERROR: Exception type: {type(e)}")
+        import traceback
+
+        print(f"DEBUG ERROR: Traceback: {traceback.format_exc()}")
+
         flash("Fehler beim Laden der Rabatt-Profile.", "error")
         current_app.logger.error(f"Error loading discount profiles: {e}")
+
+        # Statistik-Struktur für Fehlerfall
+        empty_stats = {
+            "total_profiles": 0,
+            "active_profiles": 0,
+            "discount_profiles": 0,
+            "surcharge_profiles": 0,
+            "avg_percentage": 0,
+            "highest_percentage": None,
+            "lowest_percentage": None,
+        }
+
         return render_template(
             "PrintHubDiscountProfiles.html",
             user=current_user,
             config=config,
-            active_page="discounts",
+            active_page="discount_profiles",
             discount_profiles=[],
-            stats={
-                "total_profiles": 0,
-                "active_profiles": 0,
-                "avg_discount": 0,
-                "highest_discount": None,
-                "lowest_discount": None,
-            },
+            discount_types=discount_types,
+            stats=empty_stats,
             search_term="",
             show_inactive=False,
         )
@@ -1122,18 +1246,19 @@ def delete_discount_profile(profile_id):
             return redirect(url_for("PrintHub.printHub_discount_profiles"))
 
         profile_name = discount_profile.name
-        discount_percentage = discount_profile.discount_percentage
+        discount_percentage = discount_profile.percentage
+        discount_type_display = discount_profile.discount_type_display
 
         # Rabatt-Profil löschen
         db.session.delete(discount_profile)
         db.session.commit()
 
         flash(
-            f'Rabatt-Profil "{profile_name}" ({discount_percentage}%) erfolgreich gelöscht!',
+            f'{discount_type_display}-Profil "{profile_name}" ({discount_percentage}%) erfolgreich gelöscht!',
             "success",
         )
         current_app.logger.info(
-            f"User {current_user.username} deleted discount profile: {profile_name}"
+            f"User {current_user.username} deleted {discount_profile.discount_type} profile: {profile_name}"
         )
 
     except Exception as e:
@@ -1149,13 +1274,87 @@ def api_discount_profiles():
     """API: Alle Rabatt-Profile als JSON"""
     try:
         show_inactive = request.args.get("show_inactive", "false").lower() == "true"
-        discount_profiles = PrintHubDiscountProfile.get_by_user(
-            current_user.username, include_inactive=show_inactive
-        )
+        search_term = request.args.get("search", "").strip()
+
+        # Profile laden
+        if search_term:
+            discount_profiles = PrintHubDiscountProfile.search(
+                username=current_user.username,
+                search_term=search_term,
+                include_inactive=show_inactive,
+            )
+        else:
+            discount_profiles = PrintHubDiscountProfile.get_by_user(
+                current_user.username, include_inactive=show_inactive
+            )
+
+        # Statistiken berechnen
+        active_profiles = [dp for dp in discount_profiles if dp.is_active]
+        stats = {
+            "total_profiles": len(discount_profiles),
+            "active_profiles": len(active_profiles),
+            "discount_profiles": len([dp for dp in active_profiles if dp.is_discount]),
+            "surcharge_profiles": len(
+                [dp for dp in active_profiles if dp.is_surcharge]
+            ),
+            "avg_percentage": (
+                sum(float(dp.percentage) for dp in active_profiles)
+                / len(active_profiles)
+                if active_profiles
+                else 0
+            ),
+        }
 
         return jsonify(
-            {"success": True, "data": [dp.to_dict() for dp in discount_profiles]}
+            {
+                "success": True,
+                "data": [dp.to_dict() for dp in discount_profiles],
+                "stats": stats,
+            }
         )
+
     except Exception as e:
         current_app.logger.error(f"Error in API discount profiles: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@blueprint.route("/api/discount_profiles/<int:profile_id>/calculate", methods=["POST"])
+@enabled_required
+def api_calculate_discount(profile_id):
+    """API: Berechnet Rabatt/Aufschlag für einen gegebenen Preis"""
+    try:
+        # Profil laden
+        discount_profile = PrintHubDiscountProfile.query.filter_by(
+            id=profile_id, created_by=current_user.username
+        ).first()
+
+        if not discount_profile:
+            return jsonify({"success": False, "error": "Profil nicht gefunden"}), 404
+
+        # Preis aus Request extrahieren
+        data = request.get_json()
+        if not data or "price" not in data:
+            return jsonify({"success": False, "error": "Preis erforderlich"}), 400
+
+        try:
+            original_price = float(data["price"])
+        except (ValueError, TypeError):
+            return jsonify({"success": False, "error": "Ungültiger Preis"}), 400
+
+        if original_price < 0:
+            return jsonify({"success": False, "error": "Preis muss positiv sein"}), 400
+
+        # Berechnung durchführen
+        pricing_details = discount_profile.get_pricing_details(original_price)
+
+        return jsonify(
+            {
+                "success": True,
+                "profile": discount_profile.to_dict(),
+                "calculation": pricing_details,
+            }
+        )
+
+    except Exception as e:
+        current_app.logger.error(f"Error calculating discount: {e}")
         return jsonify({"success": False, "error": str(e)}), 500

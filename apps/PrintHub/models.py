@@ -594,10 +594,13 @@ class PrintHubDiscountProfile(db.Model):
     __tablename__ = "printhub_discount_profile"
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)  # Name des Rabatt-Profils
-    discount_percentage = db.Column(
+    name = db.Column(db.String(100), nullable=False)  # Name des Profils
+    discount_type = db.Column(
+        db.String(20), nullable=False, default="discount"
+    )  # "discount" oder "surcharge"
+    percentage = db.Column(
         db.Numeric(5, 2), nullable=False
-    )  # Rabatt in % (0-100)
+    )  # 0.00 bis 100.00 (immer positiv)
     notes = db.Column(db.Text, nullable=True)  # Notizen/Beschreibung
 
     # Status
@@ -609,19 +612,27 @@ class PrintHubDiscountProfile(db.Model):
     updated_at = db.Column(db.DateTime, nullable=False)
 
     def __repr__(self):
-        return f"<PrintHubDiscountProfile {self.name} ({self.discount_percentage}%)>"
+        return f"<PrintHubDiscountProfile {self.name} ({self.discount_type}: {self.percentage}%)>"
+
+    @staticmethod
+    def get_discount_types():
+        """Verfügbare Rabatt/Aufschlag-Typen"""
+        return [("discount", "Rabatt"), ("surcharge", "Aufschlag")]
 
     @staticmethod
     def get_by_user(username, include_inactive=False):
-        """Alle Rabatt-Profile eines Benutzers"""
+        """Alle Rabatt/Aufschlag-Profile eines Benutzers"""
         query = PrintHubDiscountProfile.query.filter_by(created_by=username)
         if not include_inactive:
             query = query.filter_by(is_active=True)
-        return query.order_by(PrintHubDiscountProfile.discount_percentage.desc()).all()
+        return query.order_by(
+            PrintHubDiscountProfile.discount_type.asc(),  # Rabatte zuerst
+            PrintHubDiscountProfile.percentage.desc(),  # Dann nach Höhe
+        ).all()
 
     @staticmethod
     def search(username, search_term=None, include_inactive=False):
-        """Rabatt-Profile suchen"""
+        """Rabatt/Aufschlag-Profile suchen"""
         query = PrintHubDiscountProfile.query.filter_by(created_by=username)
 
         if not include_inactive:
@@ -636,17 +647,51 @@ class PrintHubDiscountProfile(db.Model):
                 )
             )
 
-        return query.order_by(PrintHubDiscountProfile.discount_percentage.desc()).all()
+        return query.order_by(
+            PrintHubDiscountProfile.discount_type.asc(),
+            PrintHubDiscountProfile.percentage.desc(),
+        ).all()
 
     @property
-    def discount_percentage_display(self):
-        """Formatierte Anzeige des Rabatt-Prozentsatzes"""
-        return f"{float(self.discount_percentage):.1f}%"
+    def discount_type_display(self):
+        """Anzeige-Text für Discount-Typ"""
+        type_options = dict(self.get_discount_types())
+        return type_options.get(self.discount_type, "Unbekannt")
 
     @property
-    def discount_factor(self):
-        """Rabatt-Faktor für Berechnungen (z.B. 0.9 für 10% Rabatt)"""
-        return 1 - (float(self.discount_percentage) / 100)
+    def percentage_display(self):
+        """Formatierte Anzeige mit Typ"""
+        return f"{float(self.percentage):.1f}% {self.discount_type_display}"
+
+    @property
+    def calculation_factor(self):
+        """Berechnungsfaktor (z.B. 0.9 für 10% Rabatt, 1.3 für 30% Aufschlag)"""
+        if self.discount_type == "discount":
+            return 1 - (float(self.percentage) / 100)  # Rabatt = weniger bezahlen
+        elif self.discount_type == "surcharge":
+            return 1 + (float(self.percentage) / 100)  # Aufschlag = mehr bezahlen
+        else:
+            return 1.0  # Neutral
+
+    @property
+    def signed_percentage(self):
+        """Gibt den Prozentsatz mit Vorzeichen zurück (für Berechnungen)"""
+        if self.discount_type == "discount":
+            return float(self.percentage)  # Positiv für Rabatt
+        elif self.discount_type == "surcharge":
+            return -float(self.percentage)  # Negativ für Aufschlag
+        else:
+            return 0.0
+
+    @property
+    def is_discount(self):
+        """Prüft ob es ein Rabatt ist"""
+        return self.discount_type == "discount"
+
+    @property
+    def is_surcharge(self):
+        """Prüft ob es ein Aufschlag ist"""
+        return self.discount_type == "surcharge"
 
     @property
     def status_color(self):
@@ -654,42 +699,54 @@ class PrintHubDiscountProfile(db.Model):
         return "success" if self.is_active else "secondary"
 
     @property
-    def discount_badge_class(self):
-        """CSS-Klasse für Rabatt-Badge basierend auf Höhe"""
-        discount = float(self.discount_percentage)
-        if discount >= 20:
-            return "badge-danger"  # Hoher Rabatt (rot)
-        elif discount >= 10:
-            return "badge-warning"  # Mittlerer Rabatt (orange)
-        elif discount >= 5:
-            return "badge-info"  # Niedriger Rabatt (blau)
+    def type_badge_class(self):
+        """CSS-Klasse basierend auf Typ"""
+        if self.is_discount:
+            return "badge-success"  # Grün für Rabatte
+        elif self.is_surcharge:
+            return "badge-warning"  # Orange für Aufschläge
         else:
-            return "badge-success"  # Sehr niedriger Rabatt (grün)
+            return "badge-secondary"  # Grau für neutral
 
-    def calculate_discount_amount(self, original_price):
-        """Berechnet den Rabatt-Betrag für einen gegebenen Preis"""
-        discount_amount = float(original_price) * (
-            float(self.discount_percentage) / 100
-        )
-        return round(discount_amount, 2)
+    @property
+    def amount_badge_class(self):
+        """CSS-Klasse für Betrag-Badge basierend auf Höhe"""
+        value = float(self.percentage)
+        if value >= 30:
+            return "badge-danger"  # Hoher Betrag (rot)
+        elif value >= 15:
+            return "badge-warning"  # Mittlerer Betrag (orange)
+        elif value >= 5:
+            return "badge-info"  # Niedriger Betrag (blau)
+        else:
+            return "badge-light"  # Sehr niedriger Betrag (hell)
 
-    def calculate_discounted_price(self, original_price):
-        """Berechnet den Preis nach Rabatt-Abzug"""
-        discounted_price = float(original_price) * self.discount_factor
-        return round(discounted_price, 2)
+    def calculate_adjustment_amount(self, original_price):
+        """Berechnet den Anpassungs-Betrag für einen gegebenen Preis"""
+        adjustment = float(original_price) * (float(self.percentage) / 100)
+        return round(adjustment, 2)
 
-    def get_discount_details(self, original_price):
-        """Gibt detaillierte Rabatt-Informationen zurück"""
-        discount_amount = self.calculate_discount_amount(original_price)
-        discounted_price = self.calculate_discounted_price(original_price)
+    def calculate_final_price(self, original_price):
+        """Berechnet den Endpreis nach Anpassung"""
+        final_price = float(original_price) * self.calculation_factor
+        return round(final_price, 2)
+
+    def get_pricing_details(self, original_price):
+        """Gibt detaillierte Preis-Informationen zurück"""
+        adjustment_amount = self.calculate_adjustment_amount(original_price)
+        final_price = self.calculate_final_price(original_price)
 
         return {
             "original_price": round(float(original_price), 2),
-            "discount_percentage": float(self.discount_percentage),
-            "discount_amount": discount_amount,
-            "discounted_price": discounted_price,
-            "savings": discount_amount,
-            "discount_name": self.name,
+            "type": self.discount_type,
+            "type_display": self.discount_type_display,
+            "percentage": float(self.percentage),
+            "adjustment_amount": adjustment_amount,
+            "final_price": final_price,
+            "is_discount": self.is_discount,
+            "is_surcharge": self.is_surcharge,
+            "profile_name": self.name,
+            "calculation_factor": self.calculation_factor,
         }
 
     def to_dict(self):
@@ -697,10 +754,16 @@ class PrintHubDiscountProfile(db.Model):
         return {
             "id": self.id,
             "name": self.name,
-            "discount_percentage": float(self.discount_percentage),
-            "discount_percentage_display": self.discount_percentage_display,
-            "discount_factor": self.discount_factor,
-            "discount_badge_class": self.discount_badge_class,
+            "discount_type": self.discount_type,
+            "discount_type_display": self.discount_type_display,
+            "percentage": float(self.percentage),
+            "percentage_display": self.percentage_display,
+            "signed_percentage": self.signed_percentage,
+            "calculation_factor": self.calculation_factor,
+            "is_discount": self.is_discount,
+            "is_surcharge": self.is_surcharge,
+            "type_badge_class": self.type_badge_class,
+            "amount_badge_class": self.amount_badge_class,
             "is_active": self.is_active,
             "status_color": self.status_color,
             "notes": self.notes,
