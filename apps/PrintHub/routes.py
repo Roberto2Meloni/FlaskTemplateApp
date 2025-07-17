@@ -258,25 +258,22 @@ def printHub_printers():
                 energy_consumption=energy_consumption if energy_consumption else None,
                 notes=notes if notes else None,
                 created_by=current_user.username,
-                created_at=get_current_time(),
-                updated_at=get_current_time(),
             )
 
-            # In Datenbank speichern
             db.session.add(new_printer)
-            print("Printer added to database")
+            print("Printer added to reset session")
             db.session.commit()
-            print("Session committed")
+            print("Reset session commit successful!")
 
             flash(f'Drucker "{name}" erfolgreich hinzugefügt!', "success")
             current_app.logger.info(
                 f"User {current_user.username} added printer: {name}"
             )
+
         except Exception as e:
-            # Kein manueller rollback() - SQLAlchemy macht das automatisch
             flash("Ein unerwarteter Fehler ist aufgetreten.", "error")
-            current_app.logger.error(f"Unexpected error adding printer: {e}")
-            print(f"Unexpected error adding printer: {e}")
+            current_app.logger.error(f"Error with reset session: {e}")
+            print(f"Error with reset session: {e}")
 
         return redirect(url_for("PrintHub.printHub_printers"))
 
