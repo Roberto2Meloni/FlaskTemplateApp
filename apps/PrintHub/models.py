@@ -243,3 +243,96 @@ class PrintHubPrinter(db.Model):
             )
 
         return query.order_by(cls.created_at.desc()).all()
+
+
+# Model für Energiekosten (PrintHubEnergyCost)
+class PrintHubEnergyCost(db.Model):
+    __tablename__ = "printhub_energy_cost"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)  # z.B. "Grundtarif 2024"
+    provider = db.Column(db.String(100), nullable=False)  # z.B. "EWZ", "Axpo"
+    cost_per_kwh = db.Column(db.Numeric(10, 4), nullable=False)  # CHF pro kWh
+    base_fee_monthly = db.Column(
+        db.Numeric(10, 2), nullable=True
+    )  # Monatliche Grundgebühr
+    tariff_type = db.Column(
+        db.String(50), nullable=True
+    )  # "Einfach", "Tag/Nacht", "Smart"
+    valid_from = db.Column(db.Date, nullable=True)
+    valid_until = db.Column(db.Date, nullable=True)
+    night_rate = db.Column(
+        db.Numeric(10, 4), nullable=True
+    )  # Nachttarif falls verfügbar
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    notes = db.Column(db.Text, nullable=True)
+
+    # Metadata
+    created_by = db.Column(db.String(100), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False)
+    updated_at = db.Column(db.DateTime, nullable=False)
+
+    @staticmethod
+    def get_tariff_types():
+        return [
+            "Einfachtarif",
+            "Doppeltarif (Tag/Nacht)",
+            "Smart Tarif",
+            "Gewerbe",
+            "Industrie",
+        ]
+
+    @staticmethod
+    def get_by_user(username, include_inactive=False):
+        query = PrintHubEnergyCost.query.filter_by(created_by=username)
+        if not include_inactive:
+            query = query.filter_by(is_active=True)
+        return query.order_by(PrintHubEnergyCost.cost_per_kwh.asc()).all()
+
+    @staticmethod
+    def search(username, search_term=None, provider=None, include_inactive=False):
+        query = PrintHubEnergyCost.query.filter_by(created_by=username)
+
+        if not include_inactive:
+            query = query.filter_by(is_active=True)
+
+        if search_term:
+            search_pattern = f"%{search_term}%"
+            query = query.filter(
+                db.or_(
+                    PrintHubEnergyCost.name.ilike(search_pattern),
+                    PrintHubEnergyCost.provider.ilike(search_pattern),
+                    PrintHubEnergyCost.notes.ilike(search_pattern),
+                )
+            )
+
+        if provider:
+            query = query.filter(PrintHubEnergyCost.provider.ilike(f"%{provider}%"))
+
+        return query.order_by(PrintHubEnergyCost.cost_per_kwh.asc()).all()
+
+    @property
+    def annual_base_fee(self):
+        return float(self.base_fee_monthly or 0) * 12
+
+    @property
+    def cost_per_kwh_display(self):
+        return f"CHF {float(self.cost_per_kwh):.4f}"
+
+    @property
+    def is_current(self):
+        today = datetime.now().date()
+        if self.valid_from and today < self.valid_from:
+            return False
+        if self.valid_until and today > self.valid_until:
+            return False
+        return True
+
+    @property
+    def status_color(self):
+        if not self.is_active:
+            return "secondary"
+        elif not self.is_current:
+            return "warning"
+        else:
+            return "success"

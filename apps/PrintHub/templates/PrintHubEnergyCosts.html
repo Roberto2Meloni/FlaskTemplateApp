@@ -1,0 +1,426 @@
+{% extends "layouts/web_app_layouts/web_app_base.html" %}
+{% block content %}
+<div class="printhub-container">
+  <!-- Sidebar -->
+  {% include "layouts/web_app_layouts/PrintHubSidebar.html" %}
+
+  <!-- Main Content -->
+  <div class="printhub-content">
+    <div class="content-header">
+      <h1><i class="bi bi-lightning-charge"></i> Energiekosten Verwaltung</h1>
+      <p class="lead">Verwalten Sie Ihre Stromtarife und Energiekosten</p>
+    </div>
+
+    <!-- Statistiken -->
+    {% if stats.total_tariffs > 0 %}
+    <div class="stats-container">
+      <div class="row">
+        <div class="col-md-2">
+          <div class="stat-item">
+            <span class="stat-value">{{ stats.active_tariffs }}</span>
+            <small>Aktive Tarife</small>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-item">
+            <span class="stat-value">CHF {{ "%.4f"|format(stats.avg_cost_per_kwh) }}/kWh</span>
+            <small>Ø Kosten/kWh</small>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="stat-item">
+            <span class="stat-value">CHF {{ "%.0f"|format(stats.total_monthly_base_fees) }}</span>
+            <small>Grundgebühren/Monat</small>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="stat-item text-success">
+            <span class="stat-value">
+              {% if stats.cheapest_tariff %}
+              CHF {{ "%.4f"|format(stats.cheapest_tariff.cost_per_kwh) }}
+              {% else %}
+              -
+              {% endif %}
+            </span>
+            <small>Günstigster Tarif</small>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-item text-warning">
+            <span class="stat-value">
+              {% if stats.most_expensive_tariff %}
+              CHF {{ "%.4f"|format(stats.most_expensive_tariff.cost_per_kwh) }}
+              {% else %}
+              -
+              {% endif %}
+            </span>
+            <small>Teuerster Tarif</small>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <!-- Energietarif hinzufügen Form -->
+    <div class="filament-form-container">
+      <h3 class="text-prusa-orange mb-4">
+        <i class="bi bi-plus-circle"></i> Neuen Energietarif hinzufügen
+      </h3>
+
+      <form id="energyCostForm" method="POST" action="{{ url_for('PrintHub.printHub_energy_costs') }}">
+        <!-- Grunddaten -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group mb-3">
+              <label for="energy_name">
+                <i class="bi bi-fonts"></i> Tarif-Name
+              </label>
+              <input type="text" class="form-control" id="energy_name" name="energy_name" 
+                     placeholder="z.B. Grundtarif 2024, Nachtstrom" required />
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="form-group mb-3">
+              <label for="energy_provider">
+                <i class="bi bi-building"></i> Anbieter/Stromversorger
+              </label>
+              <input type="text" class="form-control" id="energy_provider" name="energy_provider" 
+                     placeholder="z.B. EWZ, Axpo, BKW" required />
+            </div>
+          </div>
+        </div>
+
+        <!-- Kosten -->
+        <div class="row">
+          <div class="col-md-4">
+            <div class="form-group mb-3">
+              <label for="cost_per_kwh">
+                <i class="bi bi-currency-dollar"></i> Kosten pro kWh (CHF)
+              </label>
+              <div class="input-group">
+                <input type="number" class="form-control" id="cost_per_kwh" name="cost_per_kwh" 
+                       placeholder="0.2500" min="0" step="0.0001" required />
+                <div class="input-group-append">
+                  <span class="input-group-text">CHF/kWh</span>
+                </div>
+              </div>
+              <small class="form-text text-muted">Schweizer Durchschnitt: ca. CHF 0.25/kWh</small>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="form-group mb-3">
+              <label for="base_fee_monthly">
+                <i class="bi bi-calendar-month"></i> Grundgebühr/Monat (CHF) - optional
+              </label>
+              <div class="input-group">
+                <input type="number" class="form-control" id="base_fee_monthly" name="base_fee_monthly" 
+                       placeholder="25.00" min="0" step="0.01" />
+                <div class="input-group-append">
+                  <span class="input-group-text">CHF/Monat</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="form-group mb-3">
+              <label for="night_rate">
+                <i class="bi bi-moon"></i> Nachttarif (CHF/kWh) - optional
+              </label>
+              <div class="input-group">
+                <input type="number" class="form-control" id="night_rate" name="night_rate" 
+                       placeholder="0.1800" min="0" step="0.0001" />
+                <div class="input-group-append">
+                  <span class="input-group-text">CHF/kWh</span>
+                </div>
+              </div>
+              <small class="form-text text-muted">Falls Doppeltarif (Tag/Nacht)</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tarif-Details -->
+        <div class="row">
+          <div class="col-md-4">
+            <div class="form-group mb-3">
+              <label for="tariff_type">
+                <i class="bi bi-gear"></i> Tarif-Typ
+              </label>
+              <select class="form-control" id="tariff_type" name="tariff_type">
+                <option value="">-- Tarif-Typ auswählen --</option>
+                {% for tariff_type in tariff_types %}
+                <option value="{{ tariff_type }}">{{ tariff_type }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="form-group mb-3">
+              <label for="valid_from">
+                <i class="bi bi-calendar-check"></i> Gültig von
+              </label>
+              <input type="date" class="form-control" id="valid_from" name="valid_from" />
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="form-group mb-3">
+              <label for="valid_until">
+                <i class="bi bi-calendar-x"></i> Gültig bis
+              </label>
+              <input type="date" class="form-control" id="valid_until" name="valid_until" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Status und Notizen -->
+        <div class="row">
+          <div class="col-md-2">
+            <div class="form-group mb-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                <label class="form-check-label" for="is_active">
+                  <i class="bi bi-toggle-on"></i> Aktiv
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-10">
+            <div class="form-group mb-4">
+              <label for="energy_notes">
+                <i class="bi bi-sticky"></i> Notizen (optional)
+              </label>
+              <textarea class="form-control" id="energy_notes" name="energy_notes" rows="2" 
+                        placeholder="Besonderheiten, Vertragsdaten, etc."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between">
+          <button type="button" class="btn btn-secondary-prusa" id="resetEnergyFormBtn">
+            <i class="bi bi-x-circle"></i> Zurücksetzen
+          </button>
+          <button type="submit" class="btn btn-prusa">
+            <i class="bi bi-save"></i> Tarif speichern
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Energietarife Liste -->
+    <div class="filament-list-container">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="text-prusa-orange mb-0">
+          <i class="bi bi-list-ul"></i> Vorhandene Energietarife
+        </h3>
+        <span class="badge badge-secondary">{{ stats.total_tariffs }} Tarife</span>
+      </div>
+
+      <!-- Filter und Suche -->
+      <div class="filter-container">
+        <form method="GET" class="filter-row">
+          <div class="col-md-4">
+            <input type="text" name="search" class="form-control search-box" 
+                   placeholder="🔍 Tarife durchsuchen..." value="{{ search_term }}" />
+          </div>
+          <div class="col-md-3">
+            <select name="provider" class="form-control">
+              <option value="">-- Alle Anbieter --</option>
+              {% for provider in providers %}
+              <option value="{{ provider }}" {{ 'selected' if provider == filter_provider }}>
+                {{ provider }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="show_inactive" 
+                     value="true" {{ 'checked' if show_inactive }}>
+              <label class="form-check-label">Inaktive anzeigen</label>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-prusa btn-sm">Filtern</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Energietarif Items -->
+      {% if energy_costs %}
+      {% for energy_cost in energy_costs %}
+      <div class="filament-item">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center mb-2">
+              <h5 class="filament-name mb-0">{{ energy_cost.name }}</h5>
+              <span class="badge badge-{{ energy_cost.status_color }} ms-2">
+                {% if not energy_cost.is_active %}Inaktiv
+                {% elif not energy_cost.is_current %}Abgelaufen
+                {% else %}Aktiv{% endif %}
+              </span>
+            </div>
+            
+            <div class="filament-info">
+              <p class="mb-1"><strong>Anbieter:</strong> {{ energy_cost.provider }}</p>
+              <p class="mb-1">
+                <strong>Kosten:</strong> {{ energy_cost.cost_per_kwh_display }}/kWh
+                {% if energy_cost.night_rate %}
+                (Nacht: CHF {{ "%.4f"|format(energy_cost.night_rate) }}/kWh)
+                {% endif %}
+              </p>
+              
+              {% if energy_cost.base_fee_monthly %}
+              <p class="mb-1">
+                <strong>Grundgebühr:</strong> CHF {{ "%.2f"|format(energy_cost.base_fee_monthly) }}/Monat 
+                (CHF {{ "%.0f"|format(energy_cost.annual_base_fee) }}/Jahr)
+              </p>
+              {% endif %}
+              
+              {% if energy_cost.tariff_type %}
+              <p class="mb-1"><strong>Tarif-Typ:</strong> {{ energy_cost.tariff_type }}</p>
+              {% endif %}
+              
+              {% if energy_cost.valid_from or energy_cost.valid_until %}
+              <p class="mb-1">
+                <strong>Gültigkeit:</strong>
+                {% if energy_cost.valid_from %}ab {{ energy_cost.valid_from.strftime('%d.%m.%Y') }}{% endif %}
+                {% if energy_cost.valid_until %}bis {{ energy_cost.valid_until.strftime('%d.%m.%Y') }}{% endif %}
+              </p>
+              {% endif %}
+              
+              {% if energy_cost.notes %}
+              <p class="mb-1"><strong>Notizen:</strong> {{ energy_cost.notes }}</p>
+              {% endif %}
+
+              <small class="text-muted">
+                Erstellt: {{ energy_cost.created_at.strftime('%d.%m.%Y %H:%M') if energy_cost.created_at }} 
+                | Von: {{ energy_cost.created_by }}
+                {% if energy_cost.updated_at and energy_cost.updated_at != energy_cost.created_at %}
+                | Aktualisiert: {{ energy_cost.updated_at.strftime('%d.%m.%Y %H:%M') }}
+                {% endif %}
+              </small>
+            </div>
+          </div>
+          
+          <div class="action-buttons">
+            <button class="btn btn-sm btn-outline-danger btn-sm-prusa" 
+                    data-action="delete" 
+                    data-energy-id="{{ energy_cost.id }}" 
+                    data-energy-name="{{ energy_cost.name }}" 
+                    title="Löschen">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <div class="empty-state">
+        <i class="bi bi-lightning-charge"></i>
+        <h4>Keine Energietarife gefunden</h4>
+        {% if search_term or filter_provider %}
+        <p>Keine Tarife entsprechen Ihren Suchkriterien.</p>
+        <a href="{{ url_for('PrintHub.printHub_energy_costs') }}" class="btn btn-prusa">Filter zurücksetzen</a>
+        {% else %}
+        <p>Fügen Sie Ihren ersten Energietarif hinzu, um loszulegen!</p>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteEnergyCostModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content bg-dark text-light">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title">Energietarif löschen</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>
+          Möchten Sie den Energietarif "<span id="deleteEnergyCostName"></span>"
+          wirklich löschen?
+        </p>
+        <p class="text-warning">
+          <small>Diese Aktion kann nicht rückgängig gemacht werden.</small>
+        </p>
+      </div>
+      <div class="modal-footer border-secondary">
+        <button type="button" class="btn btn-secondary-prusa" data-bs-dismiss="modal">
+          Abbrechen
+        </button>
+        <form id="deleteEnergyCostForm" method="POST">
+          <button type="submit" class="btn btn-danger">Löschen</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Form zurücksetzen
+document.getElementById('resetEnergyFormBtn')?.addEventListener('click', function() {
+  document.getElementById('energyCostForm').reset();
+});
+
+// Nachttarif automatisch aktivieren bei Doppeltarif
+document.getElementById('tariff_type')?.addEventListener('change', function() {
+  const nightRateField = document.getElementById('night_rate');
+  if (this.value.includes('Tag/Nacht') || this.value.includes('Doppeltarif')) {
+    nightRateField.setAttribute('placeholder', 'Nachttarif erforderlich');
+    nightRateField.parentElement.parentElement.classList.add('required-field');
+  } else {
+    nightRateField.setAttribute('placeholder', '0.1800');
+    nightRateField.parentElement.parentElement.classList.remove('required-field');
+  }
+});
+
+// Gültigkeitsdaten validation
+document.getElementById('valid_from')?.addEventListener('change', function() {
+  const validUntil = document.getElementById('valid_until');
+  if (this.value) {
+    validUntil.min = this.value;
+  }
+});
+
+// Delete Modal Handling
+document.addEventListener('DOMContentLoaded', function() {
+  // Delete Button Click Handler
+  document.querySelectorAll('[data-action="delete"]').forEach(button => {
+    button.addEventListener('click', function() {
+      const energyCostId = this.getAttribute('data-energy-id');
+      const energyCostName = this.getAttribute('data-energy-name');
+      
+      // Modal-Inhalte setzen
+      document.getElementById('deleteEnergyCostName').textContent = energyCostName;
+      document.getElementById('deleteEnergyCostForm').action = 
+        `/PrintHub/energy_cost/delete_energy_cost/${energyCostId}`;
+      
+      // Modal anzeigen
+      const deleteModal = new bootstrap.Modal(document.getElementById('deleteEnergyCostModal'));
+      deleteModal.show();
+    });
+  });
+});
+</script>
+
+{% endblock %}

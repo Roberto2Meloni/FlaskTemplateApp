@@ -778,3 +778,83 @@ window.openCostCalculator = openCostCalculator;
 window.calculateMachineCost = calculateMachineCost;
 window.loadExampleValues = loadExampleValues;
 window.applyCostToForm = applyCostToForm;
+
+// Form zurücksetzen
+document
+  .getElementById("resetEnergyFormBtn")
+  ?.addEventListener("click", function () {
+    document.getElementById("energyCostForm").reset();
+  });
+
+// Nachttarif automatisch aktivieren bei Doppeltarif
+document.getElementById("tariff_type")?.addEventListener("change", function () {
+  const nightRateField = document.getElementById("night_rate");
+  if (this.value.includes("Tag/Nacht") || this.value.includes("Doppeltarif")) {
+    nightRateField.setAttribute("placeholder", "Nachttarif erforderlich");
+    nightRateField.parentElement.parentElement.classList.add("required-field");
+  } else {
+    nightRateField.setAttribute("placeholder", "0.1800");
+    nightRateField.parentElement.parentElement.classList.remove(
+      "required-field"
+    );
+  }
+});
+
+// Gültigkeitsdaten validation
+document.getElementById("valid_from")?.addEventListener("change", function () {
+  const validUntil = document.getElementById("valid_until");
+  if (this.value) {
+    validUntil.min = this.value;
+  }
+});
+
+// Delete Modal Handling
+document.addEventListener("DOMContentLoaded", function () {
+  // Delete Button Click Handler
+  document.querySelectorAll('[data-action="delete"]').forEach((button) => {
+    button.addEventListener("click", function () {
+      const energyCostId = this.getAttribute("data-energy-id");
+      const energyCostName = this.getAttribute("data-energy-name");
+
+      // Modal-Inhalte setzen
+      document.getElementById("deleteEnergyCostName").textContent =
+        energyCostName;
+      document.getElementById(
+        "deleteEnergyCostForm"
+      ).action = `/PrintHub/energy_cost/delete_energy_cost/${energyCostId}`;
+
+      // Modal anzeigen
+      const deleteModal = new bootstrap.Modal(
+        document.getElementById("deleteEnergyCostModal")
+      );
+      deleteModal.show();
+    });
+  });
+
+  // Toggle Active/Inactive Handler (falls gewünscht)
+  document.querySelectorAll('[data-action="toggle"]').forEach((button) => {
+    button.addEventListener("click", function () {
+      const energyCostId = this.getAttribute("data-energy-id");
+
+      // AJAX Request um Status zu ändern (optional)
+      fetch(`/PrintHub/energy_cost/toggle_energy_cost/${energyCostId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            location.reload(); // Seite neu laden um Änderungen zu zeigen
+          } else {
+            alert("Fehler beim Ändern des Status");
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          alert("Fehler beim Ändern des Status");
+        });
+    });
+  });
+});
