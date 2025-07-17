@@ -20,6 +20,8 @@ from .models import (
     get_current_time,
     PrintHubPrinter,
     PrintHubEnergyCost,
+    PrintHubWorkHours,
+    PrintHubOverheadProfile,
 )
 
 from sqlalchemy.exc import IntegrityError
@@ -586,3 +588,386 @@ def delete_energy_cost(energy_cost_id):
         current_app.logger.error(f"Error deleting energy cost: {e}")
 
     return redirect(url_for("PrintHub.printHub_energy_costs"))
+
+
+# Zu Ihrer routes.py hinzufügen:
+
+
+@blueprint.route("/printHub_work_hours", methods=["GET", "POST"])
+@enabled_required
+def printHub_work_hours():
+    """Arbeitszeiten-Verwaltung - Anzeigen und Hinzufügen"""
+
+    if request.method == "POST":
+        try:
+            # Form-Daten extrahieren
+            name = request.form.get("worker_name", "").strip()
+            role = request.form.get("worker_role", "").strip()
+            cost_per_hour = request.form.get("cost_per_hour", type=float)
+
+            # Validierung
+            if not all([name, role]) or not cost_per_hour:
+                flash("Bitte füllen Sie alle Pflichtfelder aus!", "error")
+                return redirect(url_for("PrintHub.printHub_work_hours"))
+
+            if cost_per_hour <= 0:
+                flash("Kosten pro Stunde müssen größer als 0 sein!", "error")
+                return redirect(url_for("PrintHub.printHub_work_hours"))
+
+            # Neue Arbeitszeit erstellen
+            new_work_hour = PrintHubWorkHours(
+                name=name,
+                role=role,
+                cost_per_hour=cost_per_hour,
+                created_by=current_user.username,
+                created_at=get_current_time(),
+                updated_at=get_current_time(),
+            )
+
+            # In Datenbank speichern
+            db.session.add(new_work_hour)
+            db.session.commit()
+
+            flash(f'Arbeitszeit für "{name}" erfolgreich hinzugefügt!', "success")
+            current_app.logger.info(
+                f"User {current_user.username} added work hour: {name}"
+            )
+
+        except Exception as e:
+            flash("Ein unerwarteter Fehler ist aufgetreten.", "error")
+            current_app.logger.error(f"Unexpected error adding work hour: {e}")
+
+        return redirect(url_for("PrintHub.printHub_work_hours"))
+
+    # GET Request - Arbeitszeiten laden
+    try:
+        # Suchparameter
+        search_term = request.args.get("search", "").strip()
+        filter_role = request.args.get("role", "").strip()
+
+        # Arbeitszeiten laden
+        if search_term or filter_role:
+            work_hours = PrintHubWorkHours.search(
+                username=current_user.username,
+                search_term=search_term if search_term else None,
+                role=filter_role if filter_role else None,
+            )
+        else:
+            work_hours = PrintHubWorkHours.get_by_user(current_user.username)
+
+        # Statistiken berechnen
+        stats = {
+            "total_workers": len(work_hours),
+            "avg_cost_per_hour": (
+                sum(float(wh.cost_per_hour) for wh in work_hours) / len(work_hours)
+                if work_hours
+                else 0
+            ),
+            "cheapest_worker": min(
+                work_hours, key=lambda x: x.cost_per_hour, default=None
+            ),
+            "most_expensive_worker": max(
+                work_hours, key=lambda x: x.cost_per_hour, default=None
+            ),
+            "roles": list(set(wh.role for wh in work_hours if wh.role)),
+            "total_daily_cost": sum(wh.daily_cost for wh in work_hours),
+            "total_monthly_cost": sum(wh.monthly_cost for wh in work_hours),
+        }
+
+        return render_template(
+            "PrintHubWorkHours.html",
+            user=current_user,
+            config=config,
+            active_page="work_hours",
+            work_hours=work_hours,
+            stats=stats,
+            roles=PrintHubWorkHours.get_roles(),
+            search_term=search_term,
+            filter_role=filter_role,
+        )
+
+    except Exception as e:
+        flash("Fehler beim Laden der Arbeitszeiten.", "error")
+        current_app.logger.error(f"Error loading work hours: {e}")
+        return render_template(
+            "PrintHubWorkHours.html",
+            user=current_user,
+            config=config,
+            active_page="work_hours",
+            work_hours=[],
+            stats={
+                "total_workers": 0,
+                "avg_cost_per_hour": 0,
+                "cheapest_worker": None,
+                "most_expensive_worker": None,
+                "roles": [],
+                "total_daily_cost": 0,
+                "total_monthly_cost": 0,
+            },
+            roles=PrintHubWorkHours.get_roles(),
+            search_term="",
+            filter_role="",
+        )
+
+
+@blueprint.route("/work_hour/delete_work_hour/<int:work_hour_id>", methods=["POST"])
+@enabled_required
+def delete_work_hour(work_hour_id):
+    """Arbeitszeit löschen - nur eigene Arbeitszeiten"""
+    try:
+        # Arbeitszeit laden und prüfen ob sie dem aktuellen Benutzer gehört
+        work_hour = PrintHubWorkHours.query.filter_by(
+            id=work_hour_id, created_by=current_user.username
+        ).first()
+
+        if not work_hour:
+            flash(
+                "Arbeitszeit nicht gefunden oder Sie haben keine Berechtigung zum Löschen.",
+                "error",
+            )
+            return redirect(url_for("PrintHub.printHub_work_hours"))
+
+        worker_name = work_hour.name
+        worker_role = work_hour.role
+
+        # Arbeitszeit löschen
+        db.session.delete(work_hour)
+        db.session.commit()
+
+        flash(
+            f'Arbeitszeit für "{worker_name}" ({worker_role}) erfolgreich gelöscht!',
+            "success",
+        )
+        current_app.logger.info(
+            f"User {current_user.username} deleted work hour: {worker_name} ({worker_role})"
+        )
+
+    except Exception as e:
+        flash("Fehler beim Löschen der Arbeitszeit.", "error")
+        current_app.logger.error(f"Error deleting work hour: {e}")
+
+    return redirect(url_for("PrintHub.printHub_work_hours"))
+
+
+@blueprint.route("/api/work_hours", methods=["GET"])
+@enabled_required
+def api_work_hours():
+    """API: Alle Arbeitszeiten als JSON"""
+    try:
+        work_hours = PrintHubWorkHours.get_by_user(current_user.username)
+        return jsonify({"success": True, "data": [wh.to_dict() for wh in work_hours]})
+    except Exception as e:
+        current_app.logger.error(f"Error in API work hours: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# Zu Ihrer routes.py hinzufügen:
+
+
+@blueprint.route("/printHub_overhead_profiles", methods=["GET", "POST"])
+@enabled_required
+def printHub_overhead_profiles():
+    """Overhead-Profile-Verwaltung - Anzeigen und Hinzufügen"""
+
+    if request.method == "POST":
+        try:
+            # Form-Daten extrahieren
+            name = request.form.get("profile_name", "").strip()
+            location = request.form.get("location", "").strip()
+            rent_monthly = request.form.get("rent_monthly", type=float) or 0
+            heating_electricity = (
+                request.form.get("heating_electricity", type=float) or 0
+            )
+            insurance = request.form.get("insurance", type=float) or 0
+            internet = request.form.get("internet", type=float) or 0
+            software_cost = request.form.get("software_cost", type=float) or 0
+            software_billing = request.form.get("software_billing", "").strip()
+            other_costs = request.form.get("other_costs", type=float) or 0
+            planned_hours_monthly = request.form.get("planned_hours_monthly", type=int)
+            is_active = request.form.get("is_active") == "on"
+            notes = request.form.get("overhead_notes", "").strip()
+
+            # Validierung
+            if not name:
+                flash("Bitte geben Sie einen Profil-Namen ein!", "error")
+                return redirect(url_for("PrintHub.printHub_overhead_profiles"))
+
+            if not planned_hours_monthly or planned_hours_monthly <= 0:
+                flash("Geplante Stunden pro Monat müssen größer als 0 sein!", "error")
+                return redirect(url_for("PrintHub.printHub_overhead_profiles"))
+
+            if software_billing not in ["monthly", "yearly"]:
+                software_billing = "monthly"
+
+            # Neue Overhead-Profil erstellen
+            new_overhead_profile = PrintHubOverheadProfile(
+                name=name,
+                location=location if location else None,
+                rent_monthly=rent_monthly,
+                heating_electricity=heating_electricity,
+                insurance=insurance,
+                internet=internet,
+                software_cost=software_cost,
+                software_billing=software_billing,
+                other_costs=other_costs,
+                planned_hours_monthly=planned_hours_monthly,
+                is_active=is_active,
+                notes=notes if notes else None,
+                created_by=current_user.username,
+                created_at=get_current_time(),
+                updated_at=get_current_time(),
+            )
+
+            # In Datenbank speichern
+            db.session.add(new_overhead_profile)
+            db.session.commit()
+
+            flash(f'Overhead-Profil "{name}" erfolgreich hinzugefügt!', "success")
+            current_app.logger.info(
+                f"User {current_user.username} added overhead profile: {name}"
+            )
+
+        except Exception as e:
+            flash("Ein unerwarteter Fehler ist aufgetreten.", "error")
+            current_app.logger.error(f"Unexpected error adding overhead profile: {e}")
+
+        return redirect(url_for("PrintHub.printHub_overhead_profiles"))
+
+    # GET Request - Overhead-Profile laden
+    try:
+        # Suchparameter
+        search_term = request.args.get("search", "").strip()
+        show_inactive = request.args.get("show_inactive", "").strip() == "true"
+
+        # Overhead-Profile laden
+        if search_term:
+            overhead_profiles = PrintHubOverheadProfile.search(
+                username=current_user.username,
+                search_term=search_term,
+                include_inactive=show_inactive,
+            )
+        else:
+            overhead_profiles = PrintHubOverheadProfile.get_by_user(
+                current_user.username, include_inactive=show_inactive
+            )
+
+        # Statistiken berechnen
+        active_profiles = [op for op in overhead_profiles if op.is_active]
+
+        stats = {
+            "total_profiles": len(overhead_profiles),
+            "active_profiles": len(active_profiles),
+            "avg_overhead_per_hour": (
+                sum(op.overhead_per_hour for op in active_profiles)
+                / len(active_profiles)
+                if active_profiles
+                else 0
+            ),
+            "cheapest_overhead": min(
+                active_profiles, key=lambda x: x.overhead_per_hour, default=None
+            ),
+            "most_expensive_overhead": max(
+                active_profiles, key=lambda x: x.overhead_per_hour, default=None
+            ),
+            "total_monthly_costs": sum(
+                op.total_monthly_costs for op in active_profiles
+            ),
+            "total_planned_hours": sum(
+                op.planned_hours_monthly for op in active_profiles
+            ),
+        }
+
+        return render_template(
+            "PrintHubOverheadProfiles.html",
+            user=current_user,
+            config=config,
+            active_page="overhead_profiles",
+            overhead_profiles=overhead_profiles,
+            stats=stats,
+            software_billing_options=PrintHubOverheadProfile.get_software_billing_options(),
+            search_term=search_term,
+            show_inactive=show_inactive,
+        )
+
+    except Exception as e:
+        flash("Fehler beim Laden der Overhead-Profile.", "error")
+        current_app.logger.error(f"Error loading overhead profiles: {e}")
+        return render_template(
+            "PrintHubOverheadProfiles.html",
+            user=current_user,
+            config=config,
+            active_page="overhead_profiles",
+            overhead_profiles=[],
+            stats={
+                "total_profiles": 0,
+                "active_profiles": 0,
+                "avg_overhead_per_hour": 0,
+                "cheapest_overhead": None,
+                "most_expensive_overhead": None,
+                "total_monthly_costs": 0,
+                "total_planned_hours": 0,
+            },
+            software_billing_options=PrintHubOverheadProfile.get_software_billing_options(),
+            search_term="",
+            show_inactive=False,
+        )
+
+
+@blueprint.route(
+    "/overhead_profile/delete_overhead_profile/<int:profile_id>", methods=["POST"]
+)
+@enabled_required
+def delete_overhead_profile(profile_id):
+    """Overhead-Profil löschen - nur eigene Profile"""
+    try:
+        # Overhead-Profil laden und prüfen ob es dem aktuellen Benutzer gehört
+        overhead_profile = PrintHubOverheadProfile.query.filter_by(
+            id=profile_id, created_by=current_user.username
+        ).first()
+
+        if not overhead_profile:
+            flash(
+                "Overhead-Profil nicht gefunden oder Sie haben keine Berechtigung zum Löschen.",
+                "error",
+            )
+            return redirect(url_for("PrintHub.printHub_overhead_profiles"))
+
+        profile_name = overhead_profile.name
+        profile_location = overhead_profile.location
+
+        # Overhead-Profil löschen
+        db.session.delete(overhead_profile)
+        db.session.commit()
+
+        location_text = f" ({profile_location})" if profile_location else ""
+        flash(
+            f'Overhead-Profil "{profile_name}"{location_text} erfolgreich gelöscht!',
+            "success",
+        )
+        current_app.logger.info(
+            f"User {current_user.username} deleted overhead profile: {profile_name}"
+        )
+
+    except Exception as e:
+        flash("Fehler beim Löschen des Overhead-Profils.", "error")
+        current_app.logger.error(f"Error deleting overhead profile: {e}")
+
+    return redirect(url_for("PrintHub.printHub_overhead_profiles"))
+
+
+@blueprint.route("/api/overhead_profiles", methods=["GET"])
+@enabled_required
+def api_overhead_profiles():
+    """API: Alle Overhead-Profile als JSON"""
+    try:
+        show_inactive = request.args.get("show_inactive", "false").lower() == "true"
+        overhead_profiles = PrintHubOverheadProfile.get_by_user(
+            current_user.username, include_inactive=show_inactive
+        )
+
+        return jsonify(
+            {"success": True, "data": [op.to_dict() for op in overhead_profiles]}
+        )
+    except Exception as e:
+        current_app.logger.error(f"Error in API overhead profiles: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500

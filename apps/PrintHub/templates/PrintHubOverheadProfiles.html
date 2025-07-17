@@ -1,0 +1,435 @@
+{% extends "layouts/web_app_layouts/web_app_base.html" %}
+{% block content %}
+<div class="printhub-container">
+  <!-- Sidebar -->
+  {% include "layouts/web_app_layouts/PrintHubSidebar.html" %}
+
+  <!-- Main Content -->
+  <div class="printhub-content">
+    <div class="content-header">
+      <h1><i class="bi bi-building"></i> Overhead-Profile Verwaltung</h1>
+      <p class="lead">Verwalten Sie Ihre Overhead-Kosten für verschiedene Standorte</p>
+    </div>
+
+    <!-- Statistiken -->
+    {% if stats.total_profiles > 0 %}
+    <div class="stats-container">
+      <div class="row">
+        <div class="col-md-2">
+          <div class="stat-item">
+            <span class="stat-value">{{ stats.active_profiles }}</span>
+            <small>Aktive Profile</small>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="stat-item">
+            <span class="stat-value">CHF {{ "%.2f"|format(stats.avg_overhead_per_hour) }}/h</span>
+            <small>Ø Overhead/Stunde</small>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="stat-item">
+            <span class="stat-value">CHF {{ "%.0f"|format(stats.total_monthly_costs) }}</span>
+            <small>Gesamte Fixkosten/Monat</small>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="stat-item">
+            <span class="stat-value">{{ stats.total_planned_hours }}h</span>
+            <small>Geplante Stunden/Monat</small>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="stat-item text-success">
+            <span class="stat-value">
+              {% if stats.cheapest_overhead %}
+              CHF {{ "%.2f"|format(stats.cheapest_overhead.overhead_per_hour) }}
+              {% else %}
+              -
+              {% endif %}
+            </span>
+            <small>Günstigstes Profil</small>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="stat-item text-warning">
+            <span class="stat-value">
+              {% if stats.most_expensive_overhead %}
+              CHF {{ "%.2f"|format(stats.most_expensive_overhead.overhead_per_hour) }}
+              {% else %}
+              -
+              {% endif %}
+            </span>
+            <small>Teuerstes Profil</small>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <!-- Overhead-Profil hinzufügen Form -->
+    <div class="filament-form-container">
+      <h3 class="text-prusa-orange mb-4">
+        <i class="bi bi-plus-circle"></i> Neues Overhead-Profil hinzufügen
+      </h3>
+
+      <form id="overheadProfileForm" method="POST" action="{{ url_for('PrintHub.printHub_overhead_profiles') }}">
+        <!-- Grunddaten -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group mb-3">
+              <label for="profile_name">
+                <i class="bi bi-tag"></i> Profil-Name
+              </label>
+              <input type="text" class="form-control" id="profile_name" name="profile_name" 
+                     placeholder="z.B. Werkstatt Keller, Gewerberaum" required />
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="form-group mb-3">
+              <label for="location">
+                <i class="bi bi-geo-alt"></i> Standort/Beschreibung (optional)
+              </label>
+              <input type="text" class="form-control" id="location" name="location" 
+                     placeholder="z.B. Zuhause, Musterstraße 1" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Fixkosten pro Monat -->
+        <h5 class="text-prusa-orange mb-3">Fixkosten pro Monat (CHF)</h5>
+        <div class="row">
+          <div class="col-md-3">
+            <div class="form-group mb-3">
+              <label for="rent_monthly">
+                <i class="bi bi-house"></i> Miete (anteilig)
+              </label>
+              <div class="input-group">
+                <input type="number" class="form-control" id="rent_monthly" name="rent_monthly" 
+                       placeholder="300.00" min="0" step="0.01" />
+                <div class="input-group-append">
+                  <span class="input-group-text">CHF</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="form-group mb-3">
+              <label for="heating_electricity">
+                <i class="bi bi-lightning"></i> Heizung/Strom
+              </label>
+              <div class="input-group">
+                <input type="number" class="form-control" id="heating_electricity" name="heating_electricity" 
+                       placeholder="80.00" min="0" step="0.01" />
+                <div class="input-group-append">
+                  <span class="input-group-text">CHF</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="form-group mb-3">
+              <label for="insurance">
+                <i class="bi bi-shield-check"></i> Versicherung
+              </label>
+              <div class="input-group">
+                <input type="number" class="form-control" id="insurance" name="insurance" 
+                       placeholder="40.00" min="0" step="0.01" />
+                <div class="input-group-append">
+                  <span class="input-group-text">CHF</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="form-group mb-3">
+              <label for="internet">
+                <i class="bi bi-wifi"></i> Internet/Telefon
+              </label>
+              <div class="input-group">
+                <input type="number" class="form-control" id="internet" name="internet" 
+                       placeholder="25.00" min="0" step="0.01" />
+                <div class="input-group-append">
+                  <span class="input-group-text">CHF</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Software und weitere Kosten -->
+        <div class="row">
+          <div class="col-md-3">
+            <div class="form-group mb-3">
+              <label for="software_cost">
+                <i class="bi bi-laptop"></i> Software-Lizenzen
+              </label>
+              <div class="input-group">
+                <input type="number" class="form-control" id="software_cost" name="software_cost" 
+                       placeholder="50.00" min="0" step="0.01" />
+                <div class="input-group-append">
+                  <span class="input-group-text">CHF</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="form-group mb-3">
+              <label for="software_billing">
+                <i class="bi bi-calendar"></i> Software-Abrechnung
+              </label>
+              <select class="form-control" id="software_billing" name="software_billing">
+                {% for value, label in software_billing_options %}
+                <option value="{{ value }}" {{ 'selected' if value == 'monthly' }}>{{ label }}</option>
+                {% endfor %}
+              </select>
+              <small class="form-text text-muted">Wird automatisch auf Monat umgerechnet</small>
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="form-group mb-3">
+              <label for="other_costs">
+                <i class="bi bi-plus-circle"></i> Weitere Kosten
+              </label>
+              <div class="input-group">
+                <input type="number" class="form-control" id="other_costs" name="other_costs" 
+                       placeholder="0.00" min="0" step="0.01" />
+                <div class="input-group-append">
+                  <span class="input-group-text">CHF</span>
+                </div>
+              </div>
+              <small class="form-text text-muted">Wartung, Reinigung, etc.</small>
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="form-group mb-3">
+              <label for="planned_hours_monthly">
+                <i class="bi bi-clock"></i> Geplante Stunden/Monat
+              </label>
+              <div class="input-group">
+                <input type="number" class="form-control" id="planned_hours_monthly" name="planned_hours_monthly" 
+                       placeholder="120" min="1" step="1" required />
+                <div class="input-group-append">
+                  <span class="input-group-text">h</span>
+                </div>
+              </div>
+              <small class="form-text text-muted">Produktionsstunden für Overhead-Berechnung</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status und Notizen -->
+        <div class="row">
+          <div class="col-md-2">
+            <div class="form-group mb-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                <label class="form-check-label" for="is_active">
+                  <i class="bi bi-toggle-on"></i> Aktiv
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-10">
+            <div class="form-group mb-4">
+              <label for="overhead_notes">
+                <i class="bi bi-sticky"></i> Notizen (optional)
+              </label>
+              <textarea class="form-control" id="overhead_notes" name="overhead_notes" rows="2" 
+                        placeholder="Besonderheiten, Verträge, etc."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live-Berechnung -->
+        <div class="row">
+          <div class="col-md-12">
+            <div class="alert alert-info">
+              <h6><i class="bi bi-calculator"></i> Live-Berechnung:</h6>
+              <div id="live-calculation">
+                <strong>Gesamte Fixkosten/Monat:</strong> <span id="calc-monthly-total">CHF 0.00</span><br>
+                <strong>Overhead pro Stunde:</strong> <span id="calc-overhead-hourly">CHF 0.00/h</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between">
+          <button type="button" class="btn btn-secondary-prusa" id="resetOverheadFormBtn">
+            <i class="bi bi-x-circle"></i> Zurücksetzen
+          </button>
+          <button type="submit" class="btn btn-prusa">
+            <i class="bi bi-save"></i> Profil speichern
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Overhead-Profile Liste -->
+    <div class="filament-list-container">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="text-prusa-orange mb-0">
+          <i class="bi bi-list-ul"></i> Overhead-Profile
+        </h3>
+        <span class="badge badge-secondary">{{ stats.total_profiles }} Profile</span>
+      </div>
+
+      <!-- Filter und Suche -->
+      <div class="filter-container">
+        <form method="GET" class="filter-row">
+          <div class="col-md-8">
+            <input type="text" name="search" class="form-control search-box" 
+                   placeholder="🔍 Profile durchsuchen..." value="{{ search_term }}" />
+          </div>
+          <div class="col-md-2">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="show_inactive" 
+                     value="true" {{ 'checked' if show_inactive }}>
+              <label class="form-check-label">Inaktive anzeigen</label>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-prusa btn-sm">Filtern</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Overhead-Profil Items -->
+      {% if overhead_profiles %}
+      {% for profile in overhead_profiles %}
+      <div class="filament-item">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center mb-2">
+              <h5 class="filament-name mb-0">{{ profile.name }}</h5>
+              <span class="badge badge-{{ profile.status_color }} ms-2">
+                {{ 'Aktiv' if profile.is_active else 'Inaktiv' }}
+              </span>
+              <span class="badge badge-primary ms-2">
+                CHF {{ "%.2f"|format(profile.overhead_per_hour) }}/h
+              </span>
+            </div>
+            
+            <div class="filament-info">
+              {% if profile.location %}
+              <p class="mb-1"><strong>Standort:</strong> {{ profile.location }}</p>
+              {% endif %}
+              
+              <div class="row">
+                <div class="col-md-6">
+                  <p class="mb-1"><strong>Fixkosten/Monat:</strong></p>
+                  <ul class="mb-2" style="font-size: 0.9em;">
+                    {% if profile.rent_monthly > 0 %}<li>Miete: CHF {{ "%.2f"|format(profile.rent_monthly) }}</li>{% endif %}
+                    {% if profile.heating_electricity > 0 %}<li>Heizung/Strom: CHF {{ "%.2f"|format(profile.heating_electricity) }}</li>{% endif %}
+                    {% if profile.insurance > 0 %}<li>Versicherung: CHF {{ "%.2f"|format(profile.insurance) }}</li>{% endif %}
+                    {% if profile.internet > 0 %}<li>Internet: CHF {{ "%.2f"|format(profile.internet) }}</li>{% endif %}
+                    {% if profile.software_cost > 0 %}<li>Software: CHF {{ "%.2f"|format(profile.software_cost_monthly) }} ({{ profile.software_billing_display }})</li>{% endif %}
+                    {% if profile.other_costs > 0 %}<li>Weitere: CHF {{ "%.2f"|format(profile.other_costs) }}</li>{% endif %}
+                  </ul>
+                </div>
+                <div class="col-md-6">
+                  <p class="mb-1">
+                    <strong>Gesamte Fixkosten:</strong> CHF {{ "%.2f"|format(profile.total_monthly_costs) }}/Monat
+                  </p>
+                  <p class="mb-1">
+                    <strong>Geplante Stunden:</strong> {{ profile.planned_hours_monthly }}h/Monat
+                  </p>
+                  <p class="mb-1">
+                    <strong>Overhead pro Stunde:</strong> CHF {{ "%.4f"|format(profile.overhead_per_hour) }}/h
+                  </p>
+                </div>
+              </div>
+              
+              {% if profile.notes %}
+              <p class="mb-1"><strong>Notizen:</strong> {{ profile.notes }}</p>
+              {% endif %}
+
+              <small class="text-muted">
+                Erstellt: {{ profile.created_at.strftime('%d.%m.%Y %H:%M') if profile.created_at }} 
+                | Von: {{ profile.created_by }}
+                {% if profile.updated_at and profile.updated_at != profile.created_at %}
+                | Aktualisiert: {{ profile.updated_at.strftime('%d.%m.%Y %H:%M') }}
+                {% endif %}
+              </small>
+            </div>
+          </div>
+          
+          <div class="action-buttons">
+            <button class="btn btn-sm btn-outline-danger btn-sm-prusa" 
+                    data-action="delete" 
+                    data-profile-id="{{ profile.id }}" 
+                    data-profile-name="{{ profile.name }}" 
+                    title="Löschen">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <div class="empty-state">
+        <i class="bi bi-building"></i>
+        <h4>Keine Overhead-Profile gefunden</h4>
+        {% if search_term %}
+        <p>Keine Profile entsprechen Ihren Suchkriterien.</p>
+        <a href="{{ url_for('PrintHub.printHub_overhead_profiles') }}" class="btn btn-prusa">Filter zurücksetzen</a>
+        {% else %}
+        <p>Erstellen Sie Ihr erstes Overhead-Profil!</p>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteOverheadProfileModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content bg-dark text-light">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title">Overhead-Profil löschen</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>
+          Möchten Sie das Overhead-Profil "<span id="deleteOverheadProfileName"></span>"
+          wirklich löschen?
+        </p>
+        <p class="text-warning">
+          <small>Diese Aktion kann nicht rückgängig gemacht werden.</small>
+        </p>
+      </div>
+      <div class="modal-footer border-secondary">
+        <button type="button" class="btn btn-secondary-prusa" data-bs-dismiss="modal">
+          Abbrechen
+        </button>
+        <form id="deleteOverheadProfileForm" method="POST">
+          <button type="submit" class="btn btn-danger">Löschen</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}

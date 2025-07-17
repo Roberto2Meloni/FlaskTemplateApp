@@ -60,7 +60,7 @@
     </li>
     <li>
       <a
-        href="#"
+        href="{{ url_for('PrintHub.printHub_work_hours') }}"
         class="nav-link {% if active_page == 'work' %}active{% endif %}"
         data-page="work"
       >
@@ -90,7 +90,7 @@
     </li>
     <li>
       <a
-        href="#"
+        href="{{ url_for('PrintHub.printHub_overhead_profiles') }}"
         class="nav-link {% if active_page == 'overhead' %}active{% endif %}"
         data-page="overhead"
       >

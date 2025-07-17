@@ -336,3 +336,255 @@ class PrintHubEnergyCost(db.Model):
             return "warning"
         else:
             return "success"
+
+
+# Zu Ihrer models.py hinzufügen:
+
+
+class PrintHubWorkHours(db.Model):
+    __tablename__ = "printhub_work_hours"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)  # Name des Mitarbeiters
+    role = db.Column(db.String(50), nullable=False)  # Rolle/Position
+    cost_per_hour = db.Column(
+        db.Numeric(8, 2), nullable=False
+    )  # Kosten pro Stunde in CHF
+
+    # Metadata
+    created_by = db.Column(db.String(100), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False)
+    updated_at = db.Column(db.DateTime, nullable=False)
+
+    def __repr__(self):
+        return f"<PrintHubWorkHours {self.name} ({self.role})>"
+
+    @staticmethod
+    def get_roles():
+        """Verfügbare Rollen/Positionen"""
+        return [
+            "3D-Designer",
+            "CAD-Spezialist",
+            "Techniker",
+            "Qualitätskontrolle",
+            "Post-Processing",
+            "Projektmanager",
+            "Allrounder",
+            "Praktikant",
+            "Freelancer",
+        ]
+
+    @staticmethod
+    def get_by_user(username):
+        """Alle Arbeitszeiten eines Benutzers"""
+        return (
+            PrintHubWorkHours.query.filter_by(created_by=username)
+            .order_by(PrintHubWorkHours.cost_per_hour.desc())
+            .all()
+        )
+
+    @staticmethod
+    def search(username, search_term=None, role=None):
+        """Arbeitszeiten suchen"""
+        query = PrintHubWorkHours.query.filter_by(created_by=username)
+
+        if search_term:
+            search_pattern = f"%{search_term}%"
+            query = query.filter(
+                db.or_(
+                    PrintHubWorkHours.name.ilike(search_pattern),
+                    PrintHubWorkHours.role.ilike(search_pattern),
+                )
+            )
+
+        if role:
+            query = query.filter(PrintHubWorkHours.role.ilike(f"%{role}%"))
+
+        return query.order_by(PrintHubWorkHours.cost_per_hour.desc()).all()
+
+    @property
+    def cost_per_hour_display(self):
+        """Formatierte Anzeige der Kosten pro Stunde"""
+        return f"CHF {float(self.cost_per_hour):.2f}"
+
+    @property
+    def daily_cost(self):
+        """Tageskosten bei 8h Arbeitszeit"""
+        return float(self.cost_per_hour) * 8
+
+    @property
+    def monthly_cost(self):
+        """Monatliche Kosten bei 160h (20 Arbeitstage × 8h)"""
+        return float(self.cost_per_hour) * 160
+
+    def estimate_project_cost(self, hours_needed):
+        """Schätzt Projektkosten basierend auf benötigten Stunden"""
+        cost = float(self.cost_per_hour) * hours_needed
+        return {
+            "hours": hours_needed,
+            "hourly_rate": float(self.cost_per_hour),
+            "total_cost": round(cost, 2),
+        }
+
+    def to_dict(self):
+        """Konvertiert zu Dictionary für JSON-API"""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "role": self.role,
+            "cost_per_hour": float(self.cost_per_hour),
+            "cost_per_hour_display": self.cost_per_hour_display,
+            "daily_cost": self.daily_cost,
+            "monthly_cost": self.monthly_cost,
+            "created_by": self.created_by,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+# Zu Ihrer models.py hinzufügen:
+
+
+class PrintHubOverheadProfile(db.Model):
+    __tablename__ = "printhub_overhead_profile"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)  # Name des Profils
+    location = db.Column(db.String(200), nullable=True)  # Standort/Beschreibung
+
+    # Fixkosten pro Monat (alle in CHF)
+    rent_monthly = db.Column(db.Numeric(10, 2), nullable=False, default=0)  # Miete
+    heating_electricity = db.Column(
+        db.Numeric(10, 2), nullable=False, default=0
+    )  # Heizung/Strom
+    insurance = db.Column(db.Numeric(10, 2), nullable=False, default=0)  # Versicherung
+    internet = db.Column(db.Numeric(10, 2), nullable=False, default=0)  # Internet
+
+    # Software-Lizenzen
+    software_cost = db.Column(
+        db.Numeric(10, 2), nullable=False, default=0
+    )  # Software-Kosten
+    software_billing = db.Column(
+        db.String(20), nullable=False, default="monthly"
+    )  # "monthly" oder "yearly"
+
+    other_costs = db.Column(
+        db.Numeric(10, 2), nullable=False, default=0
+    )  # Weitere Kosten
+
+    # Produktionsplanung
+    planned_hours_monthly = db.Column(
+        db.Integer, nullable=False, default=100
+    )  # Geplante Stunden/Monat
+
+    # Status
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    notes = db.Column(db.Text, nullable=True)
+
+    # Metadata
+    created_by = db.Column(db.String(100), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False)
+    updated_at = db.Column(db.DateTime, nullable=False)
+
+    def __repr__(self):
+        return f"<PrintHubOverheadProfile {self.name}>"
+
+    @staticmethod
+    def get_software_billing_options():
+        """Verfügbare Abrechnungsarten für Software"""
+        return [("monthly", "Monatlich"), ("yearly", "Jährlich")]
+
+    @staticmethod
+    def get_by_user(username, include_inactive=False):
+        """Alle Overhead-Profile eines Benutzers"""
+        query = PrintHubOverheadProfile.query.filter_by(created_by=username)
+        if not include_inactive:
+            query = query.filter_by(is_active=True)
+        return query.order_by(PrintHubOverheadProfile.name.asc()).all()
+
+    @staticmethod
+    def search(username, search_term=None, include_inactive=False):
+        """Overhead-Profile suchen"""
+        query = PrintHubOverheadProfile.query.filter_by(created_by=username)
+
+        if not include_inactive:
+            query = query.filter_by(is_active=True)
+
+        if search_term:
+            search_pattern = f"%{search_term}%"
+            query = query.filter(
+                db.or_(
+                    PrintHubOverheadProfile.name.ilike(search_pattern),
+                    PrintHubOverheadProfile.location.ilike(search_pattern),
+                    PrintHubOverheadProfile.notes.ilike(search_pattern),
+                )
+            )
+
+        return query.order_by(PrintHubOverheadProfile.name.asc()).all()
+
+    @property
+    def software_cost_monthly(self):
+        """Gibt Software-Kosten pro Monat zurück (konvertiert von yearly falls nötig)"""
+        if self.software_billing == "yearly":
+            return float(self.software_cost) / 12
+        return float(self.software_cost)
+
+    @property
+    def total_monthly_costs(self):
+        """Gesamte monatliche Fixkosten"""
+        return (
+            float(self.rent_monthly)
+            + float(self.heating_electricity)
+            + float(self.insurance)
+            + float(self.internet)
+            + self.software_cost_monthly
+            + float(self.other_costs)
+        )
+
+    @property
+    def overhead_per_hour(self):
+        """Overhead-Kosten pro Stunde"""
+        if self.planned_hours_monthly > 0:
+            return self.total_monthly_costs / self.planned_hours_monthly
+        return 0.0
+
+    @property
+    def status_color(self):
+        """Bootstrap-Farbe für Status-Badge"""
+        return "success" if self.is_active else "secondary"
+
+    @property
+    def software_billing_display(self):
+        """Anzeige-Text für Software-Abrechnung"""
+        billing_options = dict(self.get_software_billing_options())
+        return billing_options.get(self.software_billing, "Unbekannt")
+
+    def calculate_overhead_for_hours(self, hours):
+        """Berechnet Overhead-Kosten für gegebene Stunden"""
+        return round(self.overhead_per_hour * hours, 2)
+
+    def to_dict(self):
+        """Konvertiert zu Dictionary für JSON-API"""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "location": self.location,
+            "rent_monthly": float(self.rent_monthly),
+            "heating_electricity": float(self.heating_electricity),
+            "insurance": float(self.insurance),
+            "internet": float(self.internet),
+            "software_cost": float(self.software_cost),
+            "software_billing": self.software_billing,
+            "software_billing_display": self.software_billing_display,
+            "software_cost_monthly": self.software_cost_monthly,
+            "other_costs": float(self.other_costs),
+            "planned_hours_monthly": self.planned_hours_monthly,
+            "total_monthly_costs": self.total_monthly_costs,
+            "overhead_per_hour": round(self.overhead_per_hour, 4),
+            "is_active": self.is_active,
+            "status_color": self.status_color,
+            "notes": self.notes,
+            "created_by": self.created_by,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }

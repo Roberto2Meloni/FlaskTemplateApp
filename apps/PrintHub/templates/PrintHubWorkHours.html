@@ -1,0 +1,262 @@
+{% extends "layouts/web_app_layouts/web_app_base.html" %}
+{% block content %}
+<div class="printhub-container">
+  <!-- Sidebar -->
+  {% include "layouts/web_app_layouts/PrintHubSidebar.html" %}
+
+  <!-- Main Content -->
+  <div class="printhub-content">
+    <div class="content-header">
+      <h1><i class="bi bi-clock-history"></i> Arbeitszeiten Verwaltung</h1>
+      <p class="lead">Verwalten Sie Ihre Mitarbeiter und deren Stundensätze</p>
+    </div>
+
+    <!-- Statistiken -->
+    {% if stats.total_workers > 0 %}
+    <div class="stats-container">
+      <div class="row">
+        <div class="col-md-2">
+          <div class="stat-item">
+            <span class="stat-value">{{ stats.total_workers }}</span>
+            <small>Mitarbeiter</small>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="stat-item">
+            <span class="stat-value">CHF {{ "%.2f"|format(stats.avg_cost_per_hour) }}/h</span>
+            <small>Ø Stundensatz</small>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="stat-item">
+            <span class="stat-value">CHF {{ "%.0f"|format(stats.total_daily_cost) }}</span>
+            <small>Tageskosten (8h)</small>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="stat-item">
+            <span class="stat-value">CHF {{ "%.0f"|format(stats.total_monthly_cost) }}</span>
+            <small>Monatskosten (160h)</small>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="stat-item text-success">
+            <span class="stat-value">
+              {% if stats.cheapest_worker %}
+              CHF {{ "%.2f"|format(stats.cheapest_worker.cost_per_hour) }}
+              {% else %}
+              -
+              {% endif %}
+            </span>
+            <small>Günstigster</small>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="stat-item text-warning">
+            <span class="stat-value">
+              {% if stats.most_expensive_worker %}
+              CHF {{ "%.2f"|format(stats.most_expensive_worker.cost_per_hour) }}
+              {% else %}
+              -
+              {% endif %}
+            </span>
+            <small>Teuerster</small>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <!-- Arbeitszeit hinzufügen Form -->
+    <div class="filament-form-container">
+      <h3 class="text-prusa-orange mb-4">
+        <i class="bi bi-plus-circle"></i> Neue Arbeitszeit hinzufügen
+      </h3>
+
+      <form id="workHourForm" method="POST" action="{{ url_for('PrintHub.printHub_work_hours') }}">
+        <div class="row">
+          <div class="col-md-4">
+            <div class="form-group mb-3">
+              <label for="worker_name">
+                <i class="bi bi-person"></i> Name des Mitarbeiters
+              </label>
+              <input type="text" class="form-control" id="worker_name" name="worker_name" 
+                     placeholder="z.B. Max Mustermann" required />
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="form-group mb-3">
+              <label for="worker_role">
+                <i class="bi bi-briefcase"></i> Rolle/Position
+              </label>
+              <select class="form-control" id="worker_role" name="worker_role" required>
+                <option value="">-- Rolle auswählen --</option>
+                {% for role in roles %}
+                <option value="{{ role }}">{{ role }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="form-group mb-3">
+              <label for="cost_per_hour">
+                <i class="bi bi-currency-dollar"></i> Kosten pro Stunde (CHF)
+              </label>
+              <div class="input-group">
+                <input type="number" class="form-control" id="cost_per_hour" name="cost_per_hour" 
+                       placeholder="65.00" min="0" step="0.01" required />
+                <div class="input-group-append">
+                  <span class="input-group-text">CHF/h</span>
+                </div>
+              </div>
+              <small class="form-text text-muted">Schweizer Durchschnitt Designer: CHF 65-85/h</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between">
+          <button type="button" class="btn btn-secondary-prusa" id="resetWorkFormBtn">
+            <i class="bi bi-x-circle"></i> Zurücksetzen
+          </button>
+          <button type="submit" class="btn btn-prusa">
+            <i class="bi bi-save"></i> Arbeitszeit speichern
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Arbeitszeiten Liste -->
+    <div class="filament-list-container">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="text-prusa-orange mb-0">
+          <i class="bi bi-list-ul"></i> Mitarbeiter Arbeitszeiten
+        </h3>
+        <span class="badge badge-secondary">{{ stats.total_workers }} Mitarbeiter</span>
+      </div>
+
+      <!-- Filter und Suche -->
+      <div class="filter-container">
+        <form method="GET" class="filter-row">
+          <div class="col-md-5">
+            <input type="text" name="search" class="form-control search-box" 
+                   placeholder="🔍 Mitarbeiter durchsuchen..." value="{{ search_term }}" />
+          </div>
+          <div class="col-md-5">
+            <select name="role" class="form-control">
+              <option value="">-- Alle Rollen --</option>
+              {% for role in stats.roles %}
+              <option value="{{ role }}" {{ 'selected' if role == filter_role }}>
+                {{ role }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-prusa btn-sm">Filtern</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Arbeitszeit Items -->
+      {% if work_hours %}
+      {% for work_hour in work_hours %}
+      <div class="filament-item">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center mb-2">
+              <h5 class="filament-name mb-0">{{ work_hour.name }}</h5>
+            </div>
+            
+            <div class="filament-info">
+              <p class="mb-1"><strong>Rolle:</strong> {{ work_hour.role }}</p>
+              <p class="mb-1">
+                <strong>Stundensatz:</strong> {{ work_hour.cost_per_hour_display }}/h
+              </p>
+              <p class="mb-1">
+                <strong>Tageskosten:</strong> CHF {{ "%.2f"|format(work_hour.daily_cost) }} (8h)
+                | <strong>Monatskosten:</strong> CHF {{ "%.0f"|format(work_hour.monthly_cost) }} (160h)
+              </p>
+
+              <small class="text-muted">
+                Erstellt: {{ work_hour.created_at.strftime('%d.%m.%Y %H:%M') if work_hour.created_at }} 
+                | Von: {{ work_hour.created_by }}
+                {% if work_hour.updated_at and work_hour.updated_at != work_hour.created_at %}
+                | Aktualisiert: {{ work_hour.updated_at.strftime('%d.%m.%Y %H:%M') }}
+                {% endif %}
+              </small>
+            </div>
+          </div>
+          
+          <div class="action-buttons">
+            <button class="btn btn-sm btn-outline-danger btn-sm-prusa" 
+                    data-action="delete" 
+                    data-work-id="{{ work_hour.id }}" 
+                    data-work-name="{{ work_hour.name }}" 
+                    title="Löschen">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <div class="empty-state">
+        <i class="bi bi-clock-history"></i>
+        <h4>Keine Arbeitszeiten gefunden</h4>
+        {% if search_term or filter_role %}
+        <p>Keine Mitarbeiter entsprechen Ihren Suchkriterien.</p>
+        <a href="{{ url_for('PrintHub.printHub_work_hours') }}" class="btn btn-prusa">Filter zurücksetzen</a>
+        {% else %}
+        <p>Fügen Sie Ihre ersten Mitarbeiter-Arbeitszeiten hinzu!</p>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteWorkHourModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content bg-dark text-light">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title">Arbeitszeit löschen</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>
+          Möchten Sie die Arbeitszeit für "<span id="deleteWorkHourName"></span>"
+          wirklich löschen?
+        </p>
+        <p class="text-warning">
+          <small>Diese Aktion kann nicht rückgängig gemacht werden.</small>
+        </p>
+      </div>
+      <div class="modal-footer border-secondary">
+        <button type="button" class="btn btn-secondary-prusa" data-bs-dismiss="modal">
+          Abbrechen
+        </button>
+        <form id="deleteWorkHourForm" method="POST">
+          <button type="submit" class="btn btn-danger">Löschen</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}

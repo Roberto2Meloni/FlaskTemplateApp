@@ -858,3 +858,130 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 });
+
+// Form zurücksetzen
+document
+  .getElementById("resetWorkFormBtn")
+  ?.addEventListener("click", function () {
+    document.getElementById("workHourForm").reset();
+  });
+
+// Gültigkeitsdaten validation
+document.getElementById("valid_from")?.addEventListener("change", function () {
+  const validUntil = document.getElementById("valid_until");
+  if (this.value) {
+    validUntil.min = this.value;
+  }
+});
+
+// Delete Modal Handling
+document.addEventListener("DOMContentLoaded", function () {
+  // Delete Button Click Handler
+  document.querySelectorAll('[data-action="delete"]').forEach((button) => {
+    button.addEventListener("click", function () {
+      const workId = this.getAttribute("data-work-id");
+      const workName = this.getAttribute("data-work-name");
+
+      // Modal-Inhalte setzen
+      document.getElementById("deleteWorkHourName").textContent = workName;
+      document.getElementById(
+        "deleteWorkHourForm"
+      ).action = `/PrintHub/work_hour/delete_work_hour/${workId}`;
+
+      // Modal anzeigen
+      const deleteModal = new bootstrap.Modal(
+        document.getElementById("deleteWorkHourModal")
+      );
+      deleteModal.show();
+    });
+  });
+});
+
+// Form zurücksetzen
+document
+  .getElementById("resetOverheadFormBtn")
+  ?.addEventListener("click", function () {
+    document.getElementById("overheadProfileForm").reset();
+    updateLiveCalculation();
+  });
+
+// Live-Berechnung
+function updateLiveCalculation() {
+  const rent = parseFloat(document.getElementById("rent_monthly").value) || 0;
+  const heating =
+    parseFloat(document.getElementById("heating_electricity").value) || 0;
+  const insurance = parseFloat(document.getElementById("insurance").value) || 0;
+  const internet = parseFloat(document.getElementById("internet").value) || 0;
+  const softwareCost =
+    parseFloat(document.getElementById("software_cost").value) || 0;
+  const softwareBilling = document.getElementById("software_billing").value;
+  const otherCosts =
+    parseFloat(document.getElementById("other_costs").value) || 0;
+  const plannedHours =
+    parseInt(document.getElementById("planned_hours_monthly").value) || 1;
+
+  // Software-Kosten pro Monat berechnen
+  const softwareMonthly =
+    softwareBilling === "yearly" ? softwareCost / 12 : softwareCost;
+
+  // Gesamte Fixkosten
+  const totalMonthly =
+    rent + heating + insurance + internet + softwareMonthly + otherCosts;
+
+  // Overhead pro Stunde
+  const overheadHourly = totalMonthly / plannedHours;
+
+  // Anzeige aktualisieren
+  document.getElementById(
+    "calc-monthly-total"
+  ).textContent = `CHF ${totalMonthly.toFixed(2)}`;
+  document.getElementById(
+    "calc-overhead-hourly"
+  ).textContent = `CHF ${overheadHourly.toFixed(4)}/h`;
+}
+
+// Event Listener für Live-Berechnung
+document.addEventListener("DOMContentLoaded", function () {
+  const calcFields = [
+    "rent_monthly",
+    "heating_electricity",
+    "insurance",
+    "internet",
+    "software_cost",
+    "software_billing",
+    "other_costs",
+    "planned_hours_monthly",
+  ];
+
+  calcFields.forEach((fieldId) => {
+    const field = document.getElementById(fieldId);
+    if (field) {
+      field.addEventListener("input", updateLiveCalculation);
+      field.addEventListener("change", updateLiveCalculation);
+    }
+  });
+
+  // Initial calculation
+  updateLiveCalculation();
+
+  // Delete Button Click Handler
+  document.querySelectorAll('[data-action="delete"]').forEach((button) => {
+    button.addEventListener("click", function () {
+      const profileId = this.getAttribute("data-profile-id");
+      const profileName = this.getAttribute("data-profile-name");
+
+      // Modal-Inhalte setzen
+      document.getElementById("deleteOverheadProfileName").textContent =
+        profileName;
+      document.getElementById(
+        "deleteOverheadProfileForm"
+      ).action = `/PrintHub/overhead_profile/delete_overhead_profile/${profileId}`;
+
+      // Modal anzeigen
+      const deleteModal = new bootstrap.Modal(
+        document.getElementById("deleteOverheadProfileModal")
+      );
+      deleteModal.show();
+    });
+  });
+});
