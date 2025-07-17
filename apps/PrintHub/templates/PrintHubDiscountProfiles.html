@@ -1,0 +1,376 @@
+{% extends "layouts/web_app_layouts/web_app_base.html" %} {% block content %}
+<div class="printhub-container">
+  <!-- Sidebar -->
+  {% include "layouts/web_app_layouts/PrintHubSidebar.html" %}
+
+  <!-- Main Content -->
+  <div class="printhub-content">
+    <div class="content-header">
+      <h1><i class="bi bi-percent"></i> Rabatte-Profile Verwaltung</h1>
+      <p class="lead">
+        Verwalten Sie Ihre Rabatt-Profile für verschiedene Kundengruppen
+      </p>
+    </div>
+
+    <!-- Statistiken -->
+    {% if stats.total_profiles > 0 %}
+    <div class="stats-container">
+      <div class="row">
+        <div class="col-md-2">
+          <div class="stat-item">
+            <span class="stat-value">{{ stats.active_profiles }}</span>
+            <small>Aktive Profile</small>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="stat-item">
+            <span class="stat-value"
+              >{{ "%.1f"|format(stats.avg_discount) }}%</span
+            >
+            <small>Ø Rabatt</small>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="stat-item text-success">
+            <span class="stat-value">
+              {% if stats.lowest_discount %} {{ stats.lowest_discount.name }}:
+              {{ "%.1f"|format(stats.lowest_discount.discount_percentage) }}% {%
+              else %} - {% endif %}
+            </span>
+            <small>Niedrigster Rabatt</small>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="stat-item text-warning">
+            <span class="stat-value">
+              {% if stats.highest_discount %} {{ stats.highest_discount.name }}:
+              {{ "%.1f"|format(stats.highest_discount.discount_percentage) }}%
+              {% else %} - {% endif %}
+            </span>
+            <small>Höchster Rabatt</small>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %} {% for category, message in messages %}
+    <div
+      class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show"
+      role="alert"
+    >
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %} {% endif %} {% endwith %}
+
+    <!-- Rabatt-Profil hinzufügen Form -->
+    <div class="filament-form-container">
+      <h3 class="text-prusa-orange mb-4">
+        <i class="bi bi-plus-circle"></i> Neues Rabatt-Profil hinzufügen
+      </h3>
+
+      <form
+        id="discountProfileForm"
+        method="POST"
+        action="{{ url_for('PrintHub.printHub_discount_profiles') }}"
+      >
+        <div class="row">
+          <div class="col-md-4">
+            <div class="form-group mb-3">
+              <label for="discount_name">
+                <i class="bi bi-tag"></i> Name des Rabatt-Profils
+              </label>
+              <input
+                type="text"
+                class="form-control"
+                id="discount_name"
+                name="discount_name"
+                placeholder="z.B. Stammkunde, Mengenrabatt, Student"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="form-group mb-3">
+              <label for="discount_percentage">
+                <i class="bi bi-percent"></i> Rabatt-Prozentsatz
+              </label>
+              <div class="input-group">
+                <input
+                  type="number"
+                  class="form-control"
+                  id="discount_percentage"
+                  name="discount_percentage"
+                  placeholder="10.0"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  required
+                  onchange="updateDiscountPreview()"
+                  oninput="updateDiscountPreview()"
+                />
+                <div class="input-group-append">
+                  <span class="input-group-text">%</span>
+                </div>
+              </div>
+              <small class="form-text text-muted"
+                >0% bis 100% (Dezimalstellen möglich)</small
+              >
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="form-group mb-3">
+              <div class="form-check" style="margin-top: 32px">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="is_active"
+                  name="is_active"
+                  checked
+                />
+                <label class="form-check-label" for="is_active">
+                  <i class="bi bi-toggle-on"></i> Aktiv
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notizen -->
+        <div class="row">
+          <div class="col-md-12">
+            <div class="form-group mb-4">
+              <label for="discount_notes">
+                <i class="bi bi-sticky"></i> Notizen/Beschreibung (optional)
+              </label>
+              <textarea
+                class="form-control"
+                id="discount_notes"
+                name="discount_notes"
+                rows="2"
+                placeholder="Beschreibung des Rabatts, Anwendungsbereich, Bedingungen, etc."
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rabatt-Vorschau -->
+        <div class="row">
+          <div class="col-md-12">
+            <div class="alert alert-info">
+              <h6><i class="bi bi-eye"></i> Rabatt-Vorschau:</h6>
+              <div id="discount-preview">
+                <div class="row">
+                  <div class="col-md-3">
+                    <strong>Beispielpreis:</strong> CHF 100.00
+                  </div>
+                  <div class="col-md-3">
+                    <strong>Rabatt:</strong>
+                    <span id="preview-discount-amount">CHF 0.00</span>
+                  </div>
+                  <div class="col-md-3">
+                    <strong>Endpreis:</strong>
+                    <span id="preview-final-price">CHF 100.00</span>
+                  </div>
+                  <div class="col-md-3">
+                    <strong>Ersparnis:</strong>
+                    <span id="preview-savings">0.0%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between">
+          <button
+            type="button"
+            class="btn btn-secondary-prusa"
+            id="resetDiscountFormBtn"
+          >
+            <i class="bi bi-x-circle"></i> Zurücksetzen
+          </button>
+          <button type="submit" class="btn btn-prusa">
+            <i class="bi bi-save"></i> Rabatt-Profil speichern
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Rabatte-Profile Liste -->
+    <div class="filament-list-container">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="text-prusa-orange mb-0">
+          <i class="bi bi-list-ul"></i> Rabatt-Profile
+        </h3>
+        <span class="badge badge-secondary"
+          >{{ stats.total_profiles }} Profile</span
+        >
+      </div>
+
+      <!-- Filter und Suche -->
+      <div class="filter-container">
+        <form method="GET" class="filter-row">
+          <div class="col-md-8">
+            <input
+              type="text"
+              name="search"
+              class="form-control search-box"
+              placeholder="🔍 Rabatt-Profile durchsuchen..."
+              value="{{ search_term }}"
+            />
+          </div>
+          <div class="col-md-2">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox"
+              name="show_inactive" value="true" {{ 'checked' if show_inactive
+              }}>
+              <label class="form-check-label">Inaktive anzeigen</label>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-prusa btn-sm">Filtern</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Rabatt-Profil Items -->
+      {% if discount_profiles %} {% for profile in discount_profiles %}
+      <div class="filament-item">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center mb-2">
+              <h5 class="filament-name mb-0">{{ profile.name }}</h5>
+              <span class="badge badge-{{ profile.status_color }} ms-2">
+                {{ 'Aktiv' if profile.is_active else 'Inaktiv' }}
+              </span>
+              <span class="badge {{ profile.discount_badge_class }} ms-2">
+                {{ profile.discount_percentage_display }} Rabatt
+              </span>
+            </div>
+
+            <div class="filament-info">
+              <p class="mb-1">
+                <strong>Rabatt:</strong> {{ profile.discount_percentage_display
+                }} (Faktor: {{ "%.3f"|format(profile.discount_factor) }})
+              </p>
+
+              <!-- Beispielberechnung -->
+              <div class="row mb-2">
+                <div class="col-md-12">
+                  <strong>Beispielberechnungen:</strong>
+                  <ul style="font-size: 0.9em; margin-bottom: 0.5rem">
+                    <li>
+                      CHF 50.00 → CHF {{
+                      "%.2f"|format(profile.calculate_discounted_price(50)) }}
+                      (Ersparnis: CHF {{
+                      "%.2f"|format(profile.calculate_discount_amount(50)) }})
+                    </li>
+                    <li>
+                      CHF 100.00 → CHF {{
+                      "%.2f"|format(profile.calculate_discounted_price(100)) }}
+                      (Ersparnis: CHF {{
+                      "%.2f"|format(profile.calculate_discount_amount(100)) }})
+                    </li>
+                    <li>
+                      CHF 200.00 → CHF {{
+                      "%.2f"|format(profile.calculate_discounted_price(200)) }}
+                      (Ersparnis: CHF {{
+                      "%.2f"|format(profile.calculate_discount_amount(200)) }})
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              {% if profile.notes %}
+              <p class="mb-1"><strong>Notizen:</strong> {{ profile.notes }}</p>
+              {% endif %}
+
+              <small class="text-muted">
+                Erstellt: {{ profile.created_at.strftime('%d.%m.%Y %H:%M') if
+                profile.created_at }} | Von: {{ profile.created_by }} {% if
+                profile.updated_at and profile.updated_at != profile.created_at
+                %} | Aktualisiert: {{ profile.updated_at.strftime('%d.%m.%Y
+                %H:%M') }} {% endif %}
+              </small>
+            </div>
+          </div>
+
+          <div class="action-buttons">
+            <button
+              class="btn btn-sm btn-outline-danger btn-sm-prusa"
+              data-action="delete"
+              data-profile-id="{{ profile.id }}"
+              data-profile-name="{{ profile.name }}"
+              title="Löschen"
+            >
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      {% endfor %} {% else %}
+      <div class="empty-state">
+        <i class="bi bi-percent"></i>
+        <h4>Keine Rabatt-Profile gefunden</h4>
+        {% if search_term %}
+        <p>Keine Profile entsprechen Ihren Suchkriterien.</p>
+        <a
+          href="{{ url_for('PrintHub.printHub_discount_profiles') }}"
+          class="btn btn-prusa"
+          >Filter zurücksetzen</a
+        >
+        {% else %}
+        <p>Erstellen Sie Ihr erstes Rabatt-Profil!</p>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteDiscountProfileModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content bg-dark text-light">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title">Rabatt-Profil löschen</h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p>
+          Möchten Sie das Rabatt-Profil "<span
+            id="deleteDiscountProfileName"
+          ></span
+          >" wirklich löschen?
+        </p>
+        <p class="text-warning">
+          <small>Diese Aktion kann nicht rückgängig gemacht werden.</small>
+        </p>
+      </div>
+      <div class="modal-footer border-secondary">
+        <button
+          type="button"
+          class="btn btn-secondary-prusa"
+          data-bs-dismiss="modal"
+        >
+          Abbrechen
+        </button>
+        <form id="deleteDiscountProfileForm" method="POST">
+          <button type="submit" class="btn btn-danger">Löschen</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

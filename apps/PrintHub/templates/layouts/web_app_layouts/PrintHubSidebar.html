@@ -80,7 +80,7 @@
     </li>
     <li>
       <a
-        href="#"
+        href="{{ url_for('PrintHub.printHub_discount_profiles') }}"
         class="nav-link {% if active_page == 'discounts' %}active{% endif %}"
         data-page="discounts"
       >
@@ -106,17 +106,14 @@
   document.addEventListener("DOMContentLoaded", function () {
     const currentPath = window.location.pathname;
     const navLinks = document.querySelectorAll(".sidebar-nav .nav-link");
-
     // Entferne alle aktiven Klassen
     navLinks.forEach((link) => {
       link.classList.remove("active");
     });
-
     // Setze aktive Klasse basierend auf URL
     let activeSet = false;
     navLinks.forEach((link) => {
       const page = link.dataset.page;
-
       if (currentPath.includes("filaments") && page === "filaments") {
         link.classList.add("active");
         activeSet = true;
@@ -135,7 +132,8 @@
       } else if (currentPath.includes("profit") && page === "profit") {
         link.classList.add("active");
         activeSet = true;
-      } else if (currentPath.includes("discounts") && page === "discounts") {
+      } else if (currentPath.includes("discount") && page === "discounts") {
+        // ← KORRIGIERT: "discounts" → "discount" (passt zu "printHub_discount_profiles")
         link.classList.add("active");
         activeSet = true;
       } else if (currentPath.includes("overhead") && page === "overhead") {
@@ -143,7 +141,6 @@
         activeSet = true;
       }
     });
-
     // Wenn keine spezifische Seite aktiv ist, setze Dashboard als aktiv
     if (!activeSet) {
       const dashboardLink = document.querySelector(

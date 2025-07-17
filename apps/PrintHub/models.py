@@ -588,3 +588,123 @@ class PrintHubOverheadProfile(db.Model):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+
+
+class PrintHubDiscountProfile(db.Model):
+    __tablename__ = "printhub_discount_profile"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)  # Name des Rabatt-Profils
+    discount_percentage = db.Column(
+        db.Numeric(5, 2), nullable=False
+    )  # Rabatt in % (0-100)
+    notes = db.Column(db.Text, nullable=True)  # Notizen/Beschreibung
+
+    # Status
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+
+    # Metadata
+    created_by = db.Column(db.String(100), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False)
+    updated_at = db.Column(db.DateTime, nullable=False)
+
+    def __repr__(self):
+        return f"<PrintHubDiscountProfile {self.name} ({self.discount_percentage}%)>"
+
+    @staticmethod
+    def get_by_user(username, include_inactive=False):
+        """Alle Rabatt-Profile eines Benutzers"""
+        query = PrintHubDiscountProfile.query.filter_by(created_by=username)
+        if not include_inactive:
+            query = query.filter_by(is_active=True)
+        return query.order_by(PrintHubDiscountProfile.discount_percentage.desc()).all()
+
+    @staticmethod
+    def search(username, search_term=None, include_inactive=False):
+        """Rabatt-Profile suchen"""
+        query = PrintHubDiscountProfile.query.filter_by(created_by=username)
+
+        if not include_inactive:
+            query = query.filter_by(is_active=True)
+
+        if search_term:
+            search_pattern = f"%{search_term}%"
+            query = query.filter(
+                db.or_(
+                    PrintHubDiscountProfile.name.ilike(search_pattern),
+                    PrintHubDiscountProfile.notes.ilike(search_pattern),
+                )
+            )
+
+        return query.order_by(PrintHubDiscountProfile.discount_percentage.desc()).all()
+
+    @property
+    def discount_percentage_display(self):
+        """Formatierte Anzeige des Rabatt-Prozentsatzes"""
+        return f"{float(self.discount_percentage):.1f}%"
+
+    @property
+    def discount_factor(self):
+        """Rabatt-Faktor für Berechnungen (z.B. 0.9 für 10% Rabatt)"""
+        return 1 - (float(self.discount_percentage) / 100)
+
+    @property
+    def status_color(self):
+        """Bootstrap-Farbe für Status-Badge"""
+        return "success" if self.is_active else "secondary"
+
+    @property
+    def discount_badge_class(self):
+        """CSS-Klasse für Rabatt-Badge basierend auf Höhe"""
+        discount = float(self.discount_percentage)
+        if discount >= 20:
+            return "badge-danger"  # Hoher Rabatt (rot)
+        elif discount >= 10:
+            return "badge-warning"  # Mittlerer Rabatt (orange)
+        elif discount >= 5:
+            return "badge-info"  # Niedriger Rabatt (blau)
+        else:
+            return "badge-success"  # Sehr niedriger Rabatt (grün)
+
+    def calculate_discount_amount(self, original_price):
+        """Berechnet den Rabatt-Betrag für einen gegebenen Preis"""
+        discount_amount = float(original_price) * (
+            float(self.discount_percentage) / 100
+        )
+        return round(discount_amount, 2)
+
+    def calculate_discounted_price(self, original_price):
+        """Berechnet den Preis nach Rabatt-Abzug"""
+        discounted_price = float(original_price) * self.discount_factor
+        return round(discounted_price, 2)
+
+    def get_discount_details(self, original_price):
+        """Gibt detaillierte Rabatt-Informationen zurück"""
+        discount_amount = self.calculate_discount_amount(original_price)
+        discounted_price = self.calculate_discounted_price(original_price)
+
+        return {
+            "original_price": round(float(original_price), 2),
+            "discount_percentage": float(self.discount_percentage),
+            "discount_amount": discount_amount,
+            "discounted_price": discounted_price,
+            "savings": discount_amount,
+            "discount_name": self.name,
+        }
+
+    def to_dict(self):
+        """Konvertiert zu Dictionary für JSON-API"""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "discount_percentage": float(self.discount_percentage),
+            "discount_percentage_display": self.discount_percentage_display,
+            "discount_factor": self.discount_factor,
+            "discount_badge_class": self.discount_badge_class,
+            "is_active": self.is_active,
+            "status_color": self.status_color,
+            "notes": self.notes,
+            "created_by": self.created_by,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }

@@ -985,3 +985,58 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 });
+
+// Form zurücksetzen
+document
+  .getElementById("resetDiscountFormBtn")
+  ?.addEventListener("click", function () {
+    document.getElementById("discountProfileForm").reset();
+    updateDiscountPreview();
+  });
+
+// Rabatt-Vorschau aktualisieren
+function updateDiscountPreview() {
+  const discountPercentage =
+    parseFloat(document.getElementById("discount_percentage").value) || 0;
+  const examplePrice = 100.0;
+
+  const discountAmount = examplePrice * (discountPercentage / 100);
+  const finalPrice = examplePrice - discountAmount;
+
+  document.getElementById(
+    "preview-discount-amount"
+  ).textContent = `CHF ${discountAmount.toFixed(2)}`;
+  document.getElementById(
+    "preview-final-price"
+  ).textContent = `CHF ${finalPrice.toFixed(2)}`;
+  document.getElementById(
+    "preview-savings"
+  ).textContent = `${discountPercentage.toFixed(1)}%`;
+}
+
+// Event Listener
+document.addEventListener("DOMContentLoaded", function () {
+  // Initial preview
+  updateDiscountPreview();
+
+  // Delete Button Click Handler
+  document.querySelectorAll('[data-action="delete"]').forEach((button) => {
+    button.addEventListener("click", function () {
+      const profileId = this.getAttribute("data-profile-id");
+      const profileName = this.getAttribute("data-profile-name");
+
+      // Modal-Inhalte setzen
+      document.getElementById("deleteDiscountProfileName").textContent =
+        profileName;
+      document.getElementById(
+        "deleteDiscountProfileForm"
+      ).action = `/PrintHub/discount_profile/delete_discount_profile/${profileId}`;
+
+      // Modal anzeigen
+      const deleteModal = new bootstrap.Modal(
+        document.getElementById("deleteDiscountProfileModal")
+      );
+      deleteModal.show();
+    });
+  });
+});

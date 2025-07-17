@@ -22,6 +22,7 @@ from .models import (
     PrintHubEnergyCost,
     PrintHubWorkHours,
     PrintHubOverheadProfile,
+    PrintHubDiscountProfile,
 )
 
 from sqlalchemy.exc import IntegrityError
@@ -970,4 +971,191 @@ def api_overhead_profiles():
         )
     except Exception as e:
         current_app.logger.error(f"Error in API overhead profiles: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# Zu Ihrer routes.py hinzufügen:
+
+
+@blueprint.route("/printHub_discount_profiles", methods=["GET", "POST"])
+@enabled_required
+def printHub_discount_profiles():
+    """Rabatte-Profile-Verwaltung - Anzeigen und Hinzufügen"""
+
+    if request.method == "POST":
+        try:
+            # Form-Daten extrahieren
+            name = request.form.get("discount_name", "").strip()
+            discount_percentage = request.form.get("discount_percentage", type=float)
+            notes = request.form.get("discount_notes", "").strip()
+            is_active = request.form.get("is_active") == "on"
+
+            # Validierung
+            if not name:
+                flash("Bitte geben Sie einen Namen für das Rabatt-Profil ein!", "error")
+                return redirect(url_for("PrintHub.printHub_discount_profiles"))
+
+            if discount_percentage is None:
+                flash("Bitte geben Sie einen Rabatt-Prozentsatz ein!", "error")
+                return redirect(url_for("PrintHub.printHub_discount_profiles"))
+
+            if discount_percentage < 0 or discount_percentage > 100:
+                flash("Rabatt-Prozentsatz muss zwischen 0% und 100% liegen!", "error")
+                return redirect(url_for("PrintHub.printHub_discount_profiles"))
+
+            # Neues Rabatt-Profil erstellen
+            new_discount_profile = PrintHubDiscountProfile(
+                name=name,
+                discount_percentage=discount_percentage,
+                notes=notes if notes else None,
+                is_active=is_active,
+                created_by=current_user.username,
+                created_at=get_current_time(),
+                updated_at=get_current_time(),
+            )
+
+            # In Datenbank speichern
+            db.session.add(new_discount_profile)
+            db.session.commit()
+
+            flash(
+                f'Rabatt-Profil "{name}" ({discount_percentage}%) erfolgreich hinzugefügt!',
+                "success",
+            )
+            current_app.logger.info(
+                f"User {current_user.username} added discount profile: {name}"
+            )
+
+        except Exception as e:
+            flash("Ein unerwarteter Fehler ist aufgetreten.", "error")
+            current_app.logger.error(f"Unexpected error adding discount profile: {e}")
+
+        return redirect(url_for("PrintHub.printHub_discount_profiles"))
+
+    # GET Request - Rabatte-Profile laden
+    try:
+        # Suchparameter
+        search_term = request.args.get("search", "").strip()
+        show_inactive = request.args.get("show_inactive", "").strip() == "true"
+
+        # Rabatte-Profile laden
+        if search_term:
+            discount_profiles = PrintHubDiscountProfile.search(
+                username=current_user.username,
+                search_term=search_term,
+                include_inactive=show_inactive,
+            )
+        else:
+            discount_profiles = PrintHubDiscountProfile.get_by_user(
+                current_user.username, include_inactive=show_inactive
+            )
+
+        # Statistiken berechnen
+        active_profiles = [dp for dp in discount_profiles if dp.is_active]
+
+        stats = {
+            "total_profiles": len(discount_profiles),
+            "active_profiles": len(active_profiles),
+            "avg_discount": (
+                sum(float(dp.discount_percentage) for dp in active_profiles)
+                / len(active_profiles)
+                if active_profiles
+                else 0
+            ),
+            "highest_discount": max(
+                active_profiles, key=lambda x: x.discount_percentage, default=None
+            ),
+            "lowest_discount": min(
+                active_profiles, key=lambda x: x.discount_percentage, default=None
+            ),
+        }
+
+        return render_template(
+            "PrintHubDiscountProfiles.html",
+            user=current_user,
+            config=config,
+            active_page="discounts",
+            discount_profiles=discount_profiles,
+            stats=stats,
+            search_term=search_term,
+            show_inactive=show_inactive,
+        )
+
+    except Exception as e:
+        flash("Fehler beim Laden der Rabatt-Profile.", "error")
+        current_app.logger.error(f"Error loading discount profiles: {e}")
+        return render_template(
+            "PrintHubDiscountProfiles.html",
+            user=current_user,
+            config=config,
+            active_page="discounts",
+            discount_profiles=[],
+            stats={
+                "total_profiles": 0,
+                "active_profiles": 0,
+                "avg_discount": 0,
+                "highest_discount": None,
+                "lowest_discount": None,
+            },
+            search_term="",
+            show_inactive=False,
+        )
+
+
+@blueprint.route(
+    "/discount_profile/delete_discount_profile/<int:profile_id>", methods=["POST"]
+)
+@enabled_required
+def delete_discount_profile(profile_id):
+    """Rabatt-Profil löschen - nur eigene Profile"""
+    try:
+        # Rabatt-Profil laden und prüfen ob es dem aktuellen Benutzer gehört
+        discount_profile = PrintHubDiscountProfile.query.filter_by(
+            id=profile_id, created_by=current_user.username
+        ).first()
+
+        if not discount_profile:
+            flash(
+                "Rabatt-Profil nicht gefunden oder Sie haben keine Berechtigung zum Löschen.",
+                "error",
+            )
+            return redirect(url_for("PrintHub.printHub_discount_profiles"))
+
+        profile_name = discount_profile.name
+        discount_percentage = discount_profile.discount_percentage
+
+        # Rabatt-Profil löschen
+        db.session.delete(discount_profile)
+        db.session.commit()
+
+        flash(
+            f'Rabatt-Profil "{profile_name}" ({discount_percentage}%) erfolgreich gelöscht!',
+            "success",
+        )
+        current_app.logger.info(
+            f"User {current_user.username} deleted discount profile: {profile_name}"
+        )
+
+    except Exception as e:
+        flash("Fehler beim Löschen des Rabatt-Profils.", "error")
+        current_app.logger.error(f"Error deleting discount profile: {e}")
+
+    return redirect(url_for("PrintHub.printHub_discount_profiles"))
+
+
+@blueprint.route("/api/discount_profiles", methods=["GET"])
+@enabled_required
+def api_discount_profiles():
+    """API: Alle Rabatt-Profile als JSON"""
+    try:
+        show_inactive = request.args.get("show_inactive", "false").lower() == "true"
+        discount_profiles = PrintHubDiscountProfile.get_by_user(
+            current_user.username, include_inactive=show_inactive
+        )
+
+        return jsonify(
+            {"success": True, "data": [dp.to_dict() for dp in discount_profiles]}
+        )
+    except Exception as e:
+        current_app.logger.error(f"Error in API discount profiles: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
