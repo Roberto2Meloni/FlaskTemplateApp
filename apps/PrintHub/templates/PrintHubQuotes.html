@@ -1,0 +1,267 @@
+{% extends "layouts/web_app_layouts/web_app_base.html" %} {% block content %}
+<div class="printhub-container">
+  {% include "layouts/web_app_layouts/PrintHubSidebar.html" %}
+
+  <div class="printhub-content">
+    <div class="content-header">
+      <h1><i class="bi bi-file-earmark-text"></i> Offerten</h1>
+      <p class="lead">Übersicht aller erstellten 3D-Druck Offerten</p>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %} {% for category, message in messages %}
+    <div
+      class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show"
+      role="alert"
+    >
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %} {% endif %} {% endwith %}
+
+    <!-- Statistiken -->
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <div class="stat-card">
+          <div class="stat-icon">
+            <i class="bi bi-file-earmark-text"></i>
+          </div>
+          <div class="stat-content">
+            <h3>{{ stats.total_quotes }}</h3>
+            <p>Offerten gesamt</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card">
+          <div class="stat-icon">
+            <i class="bi bi-currency-exchange"></i>
+          </div>
+          <div class="stat-content">
+            <h3>CHF {{ "%.0f"|format(stats.total_value) }}</h3>
+            <p>Gesamtwert</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card">
+          <div class="stat-icon">
+            <i class="bi bi-graph-up"></i>
+          </div>
+          <div class="stat-content">
+            <h3>CHF {{ "%.0f"|format(stats.avg_quote_value) }}</h3>
+            <p>Durchschnittswert</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card">
+          <div class="stat-icon">
+            <i class="bi bi-check-circle"></i>
+          </div>
+          <div class="stat-content">
+            <h3>{{ stats.status_counts.get('accepted', 0) }}</h3>
+            <p>Angenommen</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Aktionen -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h3 class="text-prusa-orange mb-0">
+        <i class="bi bi-list"></i> Alle Offerten
+      </h3>
+      <div>
+        <div class="form-check form-switch d-inline-block me-3">
+          <input class="form-check-input" type="checkbox" id="includeArchived"
+          {{ 'checked' if include_archived }}>
+          <label class="form-check-label" for="includeArchived">
+            Archivierte anzeigen
+          </label>
+        </div>
+        <a
+          href="{{ url_for('PrintHub.printHub_quote_calculator') }}"
+          class="btn btn-prusa"
+        >
+          <i class="bi bi-plus"></i> Neue Offerte
+        </a>
+      </div>
+    </div>
+
+    <!-- Offerten Liste -->
+    <div class="filament-list-container">
+      {% if quotes %} {% for quote in quotes %}
+      <div class="filament-item">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center mb-2">
+              <h5 class="filament-name mb-0">{{ quote.order_name }}</h5>
+              <span class="badge badge-{{ quote.status_color }} ms-2"
+                >{{ quote.status_display }}</span
+              >
+              {% if quote.is_archived %}
+              <span class="badge badge-secondary ms-1">Archiviert</span>
+              {% endif %}
+            </div>
+
+            <div class="filament-info">
+              <div class="row">
+                <div class="col-md-3">
+                  <small><strong>Kunde:</strong></small
+                  ><br />
+                  <span>{{ quote.customer_name or 'Nicht angegeben' }}</span>
+                </div>
+                <div class="col-md-2">
+                  <small><strong>Erstellt:</strong></small
+                  ><br />
+                  <span>{{ quote.created_at.strftime('%d.%m.%Y') }}</span>
+                </div>
+                <div class="col-md-2">
+                  <small><strong>Druckaufträge:</strong></small
+                  ><br />
+                  <span>{{ quote.suborders|length }} Stück</span>
+                </div>
+                <div class="col-md-2">
+                  <small><strong>Druckzeit:</strong></small
+                  ><br />
+                  <span>{{ "%.1f"|format(quote.total_time) }}h</span>
+                </div>
+                <div class="col-md-3">
+                  <small><strong>Gesamtkosten:</strong></small
+                  ><br />
+                  <span class="text-prusa-orange h5"
+                    >CHF {{ "%.2f"|format(quote.total_cost) }}</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="action-buttons">
+            <a
+              href="{{ url_for('PrintHub.printHub_quote_detail', quote_id=quote.id) }}"
+              class="btn btn-sm btn-outline-primary"
+              title="Anzeigen"
+            >
+              <i class="bi bi-eye"></i>
+            </a>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary"
+              title="PDF generieren"
+              onclick="generatePdf({{ quote.id }})"
+            >
+              <i class="bi bi-file-pdf"></i>
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-warning"
+              title="Duplizieren"
+              onclick="duplicateQuote({{ quote.id }})"
+            >
+              <i class="bi bi-copy"></i>
+            </button>
+            {% if quote.status == 'draft' %}
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-danger"
+              title="Löschen"
+              onclick="deleteQuote({{ quote.id }})"
+            >
+              <i class="bi bi-trash"></i>
+            </button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %} {% else %}
+      <div class="text-center py-5">
+        <i class="bi bi-file-earmark-x display-1 text-muted"></i>
+        <h4 class="mt-3">Keine Offerten gefunden</h4>
+        <p class="text-muted">Erstellen Sie Ihre erste 3D-Druck Offerte!</p>
+        <a
+          href="{{ url_for('PrintHub.printHub_quote_calculator') }}"
+          class="btn btn-prusa"
+        >
+          <i class="bi bi-plus"></i> Erste Offerte erstellen
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+  // Archivierte Offerten Toggle
+  document
+    .getElementById("includeArchived")
+    .addEventListener("change", function () {
+      const url = new URL(window.location);
+      if (this.checked) {
+        url.searchParams.set("include_archived", "true");
+      } else {
+        url.searchParams.delete("include_archived");
+      }
+      window.location.href = url.toString();
+    });
+
+  // PDF generieren
+  function generatePdf(quoteId) {
+    window.open(`/PrintHub/quote/${quoteId}/pdf`, "_blank");
+  }
+
+  // Offerte duplizieren
+  function duplicateQuote(quoteId) {
+    if (confirm("Möchten Sie diese Offerte duplizieren?")) {
+      fetch(`/PrintHub/api/quote/${quoteId}/duplicate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            window.location.href = `/PrintHub/quote/${data.new_quote_id}`;
+          } else {
+            alert("Fehler beim Duplizieren: " + data.error);
+          }
+        })
+        .catch((error) => {
+          alert("Fehler beim Duplizieren der Offerte");
+          console.error("Error:", error);
+        });
+    }
+  }
+
+  // Offerte löschen
+  function deleteQuote(quoteId) {
+    if (
+      confirm(
+        "Sind Sie sicher, dass Sie diese Offerte löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
+      )
+    ) {
+      fetch(`/PrintHub/api/quote/${quoteId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            location.reload();
+          } else {
+            alert("Fehler beim Löschen: " + data.error);
+          }
+        })
+        .catch((error) => {
+          alert("Fehler beim Löschen der Offerte");
+          console.error("Error:", error);
+        });
+    }
+  }
+</script>
+{% endblock %}

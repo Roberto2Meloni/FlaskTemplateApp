@@ -1,0 +1,408 @@
+{% extends "layouts/web_app_layouts/web_app_base.html" %} {% block content %}
+<div class="printhub-container">
+  {% include "layouts/web_app_layouts/PrintHubSidebar.html" %}
+
+  <div class="printhub-content">
+    <div
+      class="content-header d-flex justify-content-between align-items-center"
+    >
+      <div>
+        <h1><i class="bi bi-file-earmark-text"></i> {{ quote.order_name }}</h1>
+        <p class="lead">Offerten-Details und Kostenaufschlüsselung</p>
+      </div>
+      <div>
+        <span class="badge badge-{{ quote.status_color }} badge-lg"
+          >{{ quote.status_display }}</span
+        >
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav aria-label="breadcrumb" class="mb-4">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+          <a href="{{ url_for('PrintHub.printHub_quotes') }}">Offerten</a>
+        </li>
+        <li class="breadcrumb-item active">{{ quote.order_name }}</li>
+      </ol>
+    </nav>
+
+    <!-- Offerten-Kopf -->
+    <div class="card mb-4" style="background-color: #ff6600">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Übersicht</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <h6 class="text-prusa-orange">Auftragsdaten</h6>
+            <p><strong>Auftragsname:</strong> {{ quote.order_name }}</p>
+            <p>
+              <strong>Kunde:</strong> {{ quote.customer_name or 'Nicht
+              angegeben' }}
+            </p>
+            <p>
+              <strong>Erstellt:</strong> {{ quote.created_at.strftime('%d.%m.%Y
+              %H:%M') }}
+            </p>
+            <p>
+              <strong>Status:</strong>
+              <span class="badge badge-{{ quote.status_color }}"
+                >{{ quote.status_display }}</span
+              >
+            </p>
+          </div>
+          <div class="col-md-6">
+            <h6 class="text-prusa-orange">Zeiten & Kosten</h6>
+            <p>
+              <strong>Druckzeit gesamt:</strong> {{
+              "%.1f"|format(quote.total_time) }} Stunden
+            </p>
+            <p>
+              <strong>Arbeitszeit gesamt:</strong> {{
+              "%.1f"|format(quote.total_work_time) }} Stunden
+            </p>
+            <p>
+              <strong>Anzahl Druckaufträge:</strong> {{ quote.suborders|length
+              }}
+            </p>
+            <p>
+              <strong>Gesamtkosten:</strong>
+              <span class="text-prusa-black h4"
+                >CHF {{ "%.2f"|format(quote.total_cost) }}</span
+              >
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kostenaufschlüsselung -->
+    <div class="card mb-4" style="background-color: #ff6600">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-pie-chart"></i> Kostenaufschlüsselung
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-2">
+            <div class="text-center">
+              <h4 class="text-primary">
+                CHF {{ "%.2f"|format(quote.total_machine_cost) }}
+              </h4>
+              <small>Maschinenkosten</small>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="text-center">
+              <h4 class="text-success">
+                CHF {{ "%.2f"|format(quote.total_material_cost) }}
+              </h4>
+              <small>Materialkosten</small>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="text-center">
+              <h4 class="text-warning">
+                CHF {{ "%.2f"|format(quote.total_energy_cost) }}
+              </h4>
+              <small>Energiekosten</small>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="text-center">
+              <h4 class="text-info">
+                CHF {{ "%.2f"|format(quote.total_work_cost) }}
+              </h4>
+              <small>Arbeitskosten</small>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="text-center">
+              <h4 class="text-secondary">
+                CHF {{ "%.2f"|format(quote.total_overhead_cost) }}
+              </h4>
+              <small>Overhead</small>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="text-center">
+              <h4 class="text-prusa-black">
+                CHF {{ "%.2f"|format(quote.total_cost) }}
+              </h4>
+              <small><strong>Gesamtkosten</strong></small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Druckaufträge -->
+    <div class="card mb-4" style="background-color: #ff6600">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-layers"></i> Druckaufträge im Detail
+        </h5>
+      </div>
+      <div class="card-body">
+        {% for suborder in quote.suborders %}
+        <div class="filament-item mb-3">
+          <div class="d-flex justify-content-between align-items-start">
+            <div class="flex-grow-1">
+              <div class="d-flex align-items-center mb-2">
+                <h5 class="filament-name mb-0">{{ suborder.name }}</h5>
+                <span class="badge badge-secondary ms-2"
+                  >{{ "%.1f"|format(suborder.print_time_hours) }}h Druck</span
+                >
+                <span class="badge badge-info ms-1"
+                  >{{ "%.1f"|format(suborder.work_time_hours) }}h Arbeit</span
+                >
+              </div>
+
+              <div class="filament-info">
+                <div class="row mb-2">
+                  <div class="col-md-6">
+                    <p class="mb-1">
+                      <strong>Drucker:</strong> {{ suborder.printer_name }}
+                    </p>
+                    <p class="mb-1">
+                      <strong>Filament:</strong> {{ suborder.filament_name }}
+                    </p>
+                  </div>
+                  <div class="col-md-6">
+                    <p class="mb-1">
+                      <strong>Filamentverbrauch:</strong> {{
+                      suborder.filament_usage_grams }}g
+                    </p>
+                    <p class="mb-1">
+                      <strong>Druckzeit:</strong> {{
+                      "%.2f"|format(suborder.print_time_hours) }}h
+                    </p>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-2">
+                    <small>Maschinenkosten:</small><br />
+                    <span class="text-primary"
+                      >CHF {{ "%.2f"|format(suborder.machine_cost) }}</span
+                    >
+                  </div>
+                  <div class="col-md-2">
+                    <small>Materialkosten:</small><br />
+                    <span class="text-success"
+                      >CHF {{ "%.2f"|format(suborder.material_cost) }}</span
+                    >
+                  </div>
+                  <div class="col-md-2">
+                    <small>Energiekosten:</small><br />
+                    <span class="text-warning"
+                      >CHF {{ "%.2f"|format(suborder.energy_cost) }}</span
+                    >
+                  </div>
+                  <div class="col-md-2">
+                    <small>Arbeitskosten:</small><br />
+                    <span class="text-info"
+                      >CHF {{ "%.2f"|format(suborder.work_cost) }}</span
+                    >
+                  </div>
+                  <div class="col-md-2">
+                    <small>Overhead:</small><br />
+                    <span class="text-secondary"
+                      >CHF {{ "%.2f"|format(suborder.overhead_cost) }}</span
+                    >
+                  </div>
+                  <div class="col-md-2">
+                    <small><strong>Teilsumme:</strong></small
+                    ><br />
+                    <span class="text-prusa-orange"
+                      ><strong
+                        >CHF {{ "%.2f"|format(suborder.suborder_total)
+                        }}</strong
+                      ></span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Aktionen -->
+    <div class="card mb-4" style="background-color: #ff6600">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-gear"></i> Aktionen</h5>
+      </div>
+      <div class="card-body">
+        <div class="action-buttons">
+          <button
+            type="button"
+            class="btn btn-outline-primary"
+            onclick="window.print()"
+          >
+            <i class="bi bi-printer"></i> Drucken
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            onclick="generatePdf({{ quote.id }})"
+          >
+            <i class="bi bi-file-pdf"></i> Als PDF
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-warning"
+            onclick="duplicateQuote({{ quote.id }})"
+          >
+            <i class="bi bi-copy"></i> Duplizieren
+          </button>
+
+          {% if quote.status == 'draft' %}
+          <button
+            type="button"
+            class="btn btn-outline-success"
+            onclick="updateStatus({{ quote.id }}, 'sent')"
+          >
+            <i class="bi bi-send"></i> Als gesendet markieren
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary"
+            onclick="editQuote({{ quote.id }})"
+          >
+            <i class="bi bi-pencil"></i> Bearbeiten
+          </button>
+          {% endif %} {% if quote.status == 'sent' %}
+          <button
+            type="button"
+            class="btn btn-outline-success"
+            onclick="updateStatus({{ quote.id }}, 'accepted')"
+          >
+            <i class="bi bi-check-circle"></i> Als angenommen markieren
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-danger"
+            onclick="updateStatus({{ quote.id }}, 'rejected')"
+          >
+            <i class="bi bi-x-circle"></i> Als abgelehnt markieren
+          </button>
+          {% endif %}
+
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            onclick="toggleArchive({{ quote.id }}, {{ 'true' if quote.is_archived else 'false' }})"
+          >
+            <i class="bi bi-archive"></i>
+            {{ 'Aus Archiv holen' if quote.is_archived else 'Archivieren' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // PDF generieren
+  function generatePdf(quoteId) {
+    window.open(`/PrintHub/quote/${quoteId}/pdf`, "_blank");
+  }
+
+  // Status aktualisieren
+  function updateStatus(quoteId, newStatus) {
+    const statusTexts = {
+      sent: "gesendet",
+      accepted: "angenommen",
+      rejected: "abgelehnt",
+    };
+
+    if (
+      confirm(
+        `Möchten Sie diese Offerte als "${statusTexts[newStatus]}" markieren?`
+      )
+    ) {
+      fetch(`/PrintHub/api/quote/${quoteId}/status`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: newStatus }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            location.reload();
+          } else {
+            alert("Fehler beim Aktualisieren: " + data.error);
+          }
+        })
+        .catch((error) => {
+          alert("Fehler beim Aktualisieren des Status");
+          console.error("Error:", error);
+        });
+    }
+  }
+
+  // Offerte duplizieren
+  function duplicateQuote(quoteId) {
+    if (confirm("Möchten Sie diese Offerte duplizieren?")) {
+      fetch(`/PrintHub/api/quote/${quoteId}/duplicate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            window.location.href = `/PrintHub/quote/${data.new_quote_id}`;
+          } else {
+            alert("Fehler beim Duplizieren: " + data.error);
+          }
+        })
+        .catch((error) => {
+          alert("Fehler beim Duplizieren der Offerte");
+          console.error("Error:", error);
+        });
+    }
+  }
+
+  // Archivierung umschalten
+  function toggleArchive(quoteId, isCurrentlyArchived) {
+    const action =
+      isCurrentlyArchived === "true" ? "aus dem Archiv holen" : "archivieren";
+
+    if (confirm(`Möchten Sie diese Offerte ${action}?`)) {
+      fetch(`/PrintHub/api/quote/${quoteId}/archive`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ archived: isCurrentlyArchived !== "true" }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            location.reload();
+          } else {
+            alert("Fehler beim Archivieren: " + data.error);
+          }
+        })
+        .catch((error) => {
+          alert("Fehler beim Archivieren der Offerte");
+          console.error("Error:", error);
+        });
+    }
+  }
+
+  // Zur Bearbeitung weiterleiten
+  function editQuote(quoteId) {
+    window.location.href = `/PrintHub/quote_calculator?edit=${quoteId}`;
+  }
+</script>
+{% endblock %}

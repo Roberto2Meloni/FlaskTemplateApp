@@ -1,142 +1,114 @@
-<!-- Sidebar -->
+<!-- Erweiterte PrintHub Sidebar -->
 <div class="printhub-sidebar">
-  <h3>
-    <a
-      href="{{ url_for('PrintHub.PrintHub_index') }}"
-      style="color: inherit; text-decoration: none"
-      >PrintHub</a
-    >
-  </h3>
-  <ul class="sidebar-nav">
-    <li>
-      <a
-        href="{{ url_for('PrintHub.PrintHub_index') }}"
-        class="nav-link {% if not active_page or active_page == 'dashboard' %}active{% endif %}"
-        data-page="dashboard"
-      >
-        <i class="bi bi-house-fill"></i>
-        Dashboard
-      </a>
-    </li>
-    <li>
-      <a
-        href="#"
-        class="nav-link {% if active_page == 'calculator' %}active{% endif %}"
-        data-page="calculator"
-      >
-        <i class="bi bi-calculator"></i>
-        Berechner
-      </a>
-    </li>
-    <li>
-      <a
-        href="{{ url_for('PrintHub.printHub_filaments') }}"
-        class="nav-link {% if active_page == 'filaments' %}active{% endif %}"
-        data-page="filaments"
-      >
-        <i class="bi bi-disc"></i>
-        Filamente
-      </a>
-    </li>
-    <li>
-      <a
-        href="{{ url_for('PrintHub.printHub_printers') }}"
-        class="nav-link {% if active_page == 'printers' %}active{% endif %}"
-        data-page="printers"
-      >
-        <i class="bi bi-printer"></i>
-        3D Drucker
-      </a>
-    </li>
-    <li>
-      <a
-        href="{{ url_for('PrintHub.printHub_energy_costs') }}"
-        class="nav-link {% if active_page == 'energy' %}active{% endif %}"
-        data-page="energy"
-      >
-        <i class="bi bi-lightning-charge"></i>
-        Energie Kosten
-      </a>
-    </li>
-    <li>
-      <a
-        href="{{ url_for('PrintHub.printHub_work_hours') }}"
-        class="nav-link {% if active_page == 'work' %}active{% endif %}"
-        data-page="work"
-      >
-        <i class="bi bi-clock"></i>
-        Arbeitszeiten
-      </a>
-    </li>
+  <div class="sidebar-header">
+    <h3><i class="bi bi-printer"></i> PrintHub</h3>
+    <p class="text-muted">3D-Druck Kalkulation</p>
+  </div>
 
-    <li>
-      <a
-        href="{{ url_for('PrintHub.printHub_discount_profiles') }}"
-        class="nav-link {% if active_page == 'discounts' %}active{% endif %}"
-        data-page="discounts"
-      >
-        <i class="bi bi-percent"></i>
-        Rabatte und Aufschläge
-      </a>
-    </li>
-    <li>
-      <a
-        href="{{ url_for('PrintHub.printHub_overhead_profiles') }}"
-        class="nav-link {% if active_page == 'overhead' %}active{% endif %}"
-        data-page="overhead"
-      >
-        <i class="bi bi-gear"></i>
-        Overhead
-      </a>
-    </li>
-  </ul>
+  <nav class="sidebar-nav">
+    <ul class="nav nav-pills flex-column">
+      <!-- Dashboard -->
+      <li class="nav-item">
+        <a
+          class="nav-link {{ 'active' if active_page == 'dashboard' else '' }}"
+          href="{{ url_for('PrintHub.PrintHub_index') }}"
+        >
+          <i class="bi bi-house"></i> Dashboard
+        </a>
+      </li>
+
+      <!-- Offerten Section -->
+      <li class="nav-section">
+        <span class="nav-section-title">
+          <i class="bi bi-file-earmark-text"></i> Offerten
+        </span>
+      </li>
+
+      <li class="nav-item">
+        <a
+          class="nav-link {{ 'active' if active_page == 'quote_calculator' else '' }}"
+          href="{{ url_for('PrintHub.printHub_quote_calculator') }}"
+        >
+          <i class="bi bi-calculator"></i> Offerten-Rechner
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a
+          class="nav-link {{ 'active' if active_page == 'quotes' else '' }}"
+          href="{{ url_for('PrintHub.printHub_quotes') }}"
+        >
+          <i class="bi bi-list"></i> Alle Offerten
+        </a>
+      </li>
+
+      <!-- Hardware Section -->
+      <li class="nav-section">
+        <span class="nav-section-title">
+          <i class="bi bi-gear"></i> Hardware
+        </span>
+      </li>
+
+      <li class="nav-item">
+        <a
+          class="nav-link {{ 'active' if active_page == 'printers' else '' }}"
+          href="{{ url_for('PrintHub.printHub_printers') }}"
+        >
+          <i class="bi bi-printer"></i> Drucker
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a
+          class="nav-link {{ 'active' if active_page == 'filaments' else '' }}"
+          href="{{ url_for('PrintHub.printHub_filaments') }}"
+        >
+          <i class="bi bi-disc"></i> Filamente
+        </a>
+      </li>
+
+      <!-- Kalkulation Section -->
+      <li class="nav-section">
+        <span class="nav-section-title">
+          <i class="bi bi-calculator"></i> Kalkulation
+        </span>
+      </li>
+
+      <li class="nav-item">
+        <a
+          class="nav-link {{ 'active' if active_page == 'energy_costs' else '' }}"
+          href="{{ url_for('PrintHub.printHub_energy_costs') }}"
+        >
+          <i class="bi bi-lightning-charge"></i> Energiekosten
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a
+          class="nav-link {{ 'active' if active_page == 'work_hours' else '' }}"
+          href="{{ url_for('PrintHub.printHub_work_hours') }}"
+        >
+          <i class="bi bi-clock"></i> Arbeitszeiten
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a
+          class="nav-link {{ 'active' if active_page == 'overhead_profiles' else '' }}"
+          href="{{ url_for('PrintHub.printHub_overhead_profiles') }}"
+        >
+          <i class="bi bi-gear"></i> Overhead-Profile
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a
+          class="nav-link {{ 'active' if active_page == 'discount_profiles' else '' }}"
+          href="{{ url_for('PrintHub.printHub_discount_profiles') }}"
+        >
+          <i class="bi bi-percent"></i> Rabatt/Aufschlag
+        </a>
+      </li>
+    </ul>
+  </nav>
 </div>
-
-<script>
-  // JavaScript für automatische aktive Seite basierend auf URL (Fallback)
-  document.addEventListener("DOMContentLoaded", function () {
-    const currentPath = window.location.pathname;
-    const navLinks = document.querySelectorAll(".sidebar-nav .nav-link");
-    // Entferne alle aktiven Klassen
-    navLinks.forEach((link) => {
-      link.classList.remove("active");
-    });
-    // Setze aktive Klasse basierend auf URL
-    let activeSet = false;
-    navLinks.forEach((link) => {
-      const page = link.dataset.page;
-      if (currentPath.includes("filaments") && page === "filaments") {
-        link.classList.add("active");
-        activeSet = true;
-      } else if (currentPath.includes("calculator") && page === "calculator") {
-        link.classList.add("active");
-        activeSet = true;
-      } else if (currentPath.includes("printers") && page === "printers") {
-        link.classList.add("active");
-        activeSet = true;
-      } else if (currentPath.includes("energy") && page === "energy") {
-        link.classList.add("active");
-        activeSet = true;
-      } else if (currentPath.includes("work") && page === "work") {
-        link.classList.add("active");
-        activeSet = true;
-      } else if (currentPath.includes("discount") && page === "discounts") {
-        // ← KORRIGIERT: "discounts" → "discount" (passt zu "printHub_discount_profiles")
-        link.classList.add("active");
-        activeSet = true;
-      } else if (currentPath.includes("overhead") && page === "overhead") {
-        link.classList.add("active");
-        activeSet = true;
-      }
-    });
-    // Wenn keine spezifische Seite aktiv ist, setze Dashboard als aktiv
-    if (!activeSet) {
-      const dashboardLink = document.querySelector(
-        '.nav-link[data-page="dashboard"]'
-      );
-      if (dashboardLink) {
-        dashboardLink.classList.add("active");
-      }
-    }
-  });
-</script>

@@ -5,93 +5,324 @@
   <!-- Main Content -->
   <div class="printhub-content">
     <div class="content-header">
-      <h1>PrintHub Dashboard</h1>
+      <h1><i class="bi bi-house"></i> PrintHub Dashboard</h1>
       <p class="lead">Willkommen im 3D-Druck Kalkulationssystem</p>
     </div>
 
-    <!-- Page Content -->
-    <div id="page-content">
-      {% block page_content %}
-      <div class="row">
-        <div class="col-md-6 col-lg-4 mb-4">
-          <div class="card dashboard-card h-100 shadow-sm">
-            <div class="card-body text-center">
-              <i class="fas fa-calculator fa-3x text-primary mb-3"></i>
-              <h5 class="card-title">Schnellberechner</h5>
-              <p class="card-text">
-                Berechnen Sie schnell die Kosten für Ihren 3D-Druck
-              </p>
-              <a href="#" class="btn btn-primary">Starten</a>
-            </div>
+    <!-- Schnellstatistiken -->
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <div class="stat-card">
+          <div class="stat-icon">
+            <i class="bi bi-file-earmark-text"></i>
+          </div>
+          <div class="stat-content">
+            <h3>{{ recent_quotes|length }}</h3>
+            <p>Offerten (letzte 30 Tage)</p>
           </div>
         </div>
-
-        <div class="col-md-6 col-lg-4 mb-4">
-          <div class="card dashboard-card h-100 shadow-sm">
-            <div class="card-body text-center">
-              <i class="fas fa-spool fa-3x text-success mb-3"></i>
-              <h5 class="card-title">Filament-Verwaltung</h5>
-              <p class="card-text">
-                Verwalten Sie Ihre Filamente und deren Eigenschaften
-              </p>
-              <a href="#" class="btn btn-success">Verwalten</a>
-            </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card">
+          <div class="stat-icon">
+            <i class="bi bi-currency-exchange"></i>
+          </div>
+          <div class="stat-content">
+            <h3>CHF {{ "%.0f"|format(total_quote_value) }}</h3>
+            <p>Gesamtwert Offerten</p>
           </div>
         </div>
-
-        <div class="col-md-6 col-lg-4 mb-4">
-          <div class="card dashboard-card h-100 shadow-sm">
-            <div class="card-body text-center">
-              <i class="fas fa-print fa-3x text-info mb-3"></i>
-              <h5 class="card-title">Drucker-Setup</h5>
-              <p class="card-text">
-                Konfigurieren Sie Ihre 3D-Drucker und deren Parameter
-              </p>
-              <a href="#" class="btn btn-info">Einrichten</a>
-            </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card">
+          <div class="stat-icon">
+            <i class="bi bi-printer"></i>
+          </div>
+          <div class="stat-content">
+            <h3>{{ printer_count }}</h3>
+            <p>Drucker konfiguriert</p>
           </div>
         </div>
-
-        <div class="col-md-6 col-lg-4 mb-4">
-          <div class="card dashboard-card h-100 shadow-sm">
-            <div class="card-body text-center">
-              <i class="fas fa-bolt fa-3x text-warning mb-3"></i>
-              <h5 class="card-title">Energie-Kosten</h5>
-              <p class="card-text">
-                Berechnen Sie die Stromkosten für Ihre Druckaufträge
-              </p>
-              <a href="#" class="btn btn-warning">Berechnen</a>
-            </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card">
+          <div class="stat-icon">
+            <i class="bi bi-disc"></i>
+          </div>
+          <div class="stat-content">
+            <h3>{{ filament_count }}</h3>
+            <p>Filamente verfügbar</p>
           </div>
         </div>
+      </div>
+    </div>
 
-        <div class="col-md-6 col-lg-4 mb-4">
-          <div class="card dashboard-card h-100 shadow-sm">
-            <div class="card-body text-center">
-              <i class="fas fa-chart-line fa-3x text-danger mb-3"></i>
-              <h5 class="card-title">Gewinnmarge</h5>
-              <p class="card-text">
-                Analysieren Sie Ihre Gewinnmargen und Rentabilität
-              </p>
-              <a href="#" class="btn btn-danger">Analysieren</a>
+    <!-- Letzte Offerten -->
+    <div class="row mb-4">
+      <div class="col-md-8">
+        <div class="card" style="background-color: #ff6600">
+          <div
+            class="card-header d-flex justify-content-between align-items-center"
+          >
+            <h5 class="mb-0">
+              <i class="bi bi-file-earmark-text"></i> Letzte Offerten
+            </h5>
+            <a
+              href="{{ url_for('PrintHub.printHub_quotes') }}"
+              class="btn btn-sm btn-outline-light"
+            >
+              Alle anzeigen
+            </a>
+          </div>
+          <div class="card-body">
+            {% if recent_quotes %}
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Auftragsname</th>
+                    <th>Kunde</th>
+                    <th>Status</th>
+                    <th>Kosten</th>
+                    <th>Datum</th>
+                    <th>Aktionen</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for quote in recent_quotes[:5] %}
+                  <tr>
+                    <td>
+                      <strong>{{ quote.order_name }}</strong>
+                    </td>
+                    <td>{{ quote.customer_name or '-' }}</td>
+                    <td>
+                      <span class="badge badge-{{ quote.status_color }}">
+                        {{ quote.status_display }}
+                      </span>
+                    </td>
+                    <td>
+                      <strong class="text-prusa-orange"
+                        >CHF {{ "%.2f"|format(quote.total_cost) }}</strong
+                      >
+                    </td>
+                    <td>{{ quote.created_at.strftime('%d.%m.%Y') }}</td>
+                    <td>
+                      <a
+                        href="{{ url_for('PrintHub.printHub_quote_detail', quote_id=quote.id) }}"
+                        class="btn btn-sm btn-outline-primary"
+                        title="Anzeigen"
+                      >
+                        <i class="bi bi-eye"></i>
+                      </a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
             </div>
+            {% else %}
+            <div class="text-center py-4">
+              <i class="bi bi-file-earmark-x display-4 text-muted"></i>
+              <h6 class="mt-3">Noch keine Offerten vorhanden</h6>
+              <p class="text-muted">Erstellen Sie Ihre erste Offerte!</p>
+              <a
+                href="{{ url_for('PrintHub.printHub_quote_calculator') }}"
+                class="btn btn-prusa"
+              >
+                <i class="bi bi-plus"></i> Erste Offerte erstellen
+              </a>
+            </div>
+            {% endif %}
           </div>
         </div>
+      </div>
 
-        <div class="col-md-6 col-lg-4 mb-4">
-          <div class="card dashboard-card h-100 shadow-sm">
-            <div class="card-body text-center">
-              <i class="fas fa-cogs fa-3x text-secondary mb-3"></i>
-              <h5 class="card-title">Overhead-Kosten</h5>
-              <p class="card-text">
-                Verwalten Sie Ihre Gemeinkosten und Betriebsausgaben
-              </p>
-              <a href="#" class="btn btn-secondary">Verwalten</a>
+      <!-- Schnellaktionen -->
+      <div class="col-md-4">
+        <div class="card" style="background-color: #ff6600">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="bi bi-lightning"></i> Schnellaktionen
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="d-grid gap-2">
+              <a
+                href="{{ url_for('PrintHub.printHub_quote_calculator') }}"
+                class="btn btn-prusa btn-lg"
+              >
+                <i class="bi bi-calculator"></i> Neue Offerte
+              </a>
+              <a
+                href="{{ url_for('PrintHub.printHub_quotes') }}"
+                class="btn btn-outline-light"
+              >
+                <i class="bi bi-list"></i> Alle Offerten
+              </a>
+              <hr />
+              <a
+                href="{{ url_for('PrintHub.printHub_filaments') }}"
+                class="btn btn-outline-light btn-sm"
+              >
+                <i class="bi bi-disc"></i> Filament hinzufügen
+              </a>
+              <a
+                href="{{ url_for('PrintHub.printHub_printers') }}"
+                class="btn btn-outline-light btn-sm"
+              >
+                <i class="bi bi-printer"></i> Drucker hinzufügen
+              </a>
             </div>
           </div>
         </div>
       </div>
-      {% endblock %}
+    </div>
+
+    <!-- Funktionskarten -->
+    <div class="row">
+      <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card h-100 shadow-sm">
+          <div class="card-body text-center">
+            <i class="bi bi-calculator fa-3x text-primary mb-3"></i>
+            <h5 class="card-title">Offerten-Rechner</h5>
+            <p class="card-text">
+              Erstellen Sie präzise Kostenvoranschläge für 3D-Druckaufträge
+            </p>
+            <a
+              href="{{ url_for('PrintHub.printHub_quote_calculator') }}"
+              class="btn btn-primary"
+            >
+              <i class="bi bi-calculator"></i> Rechner starten
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card h-100 shadow-sm">
+          <div class="card-body text-center">
+            <i class="bi bi-file-earmark-text fa-3x text-success mb-3"></i>
+            <h5 class="card-title">Offerten-Verwaltung</h5>
+            <p class="card-text">
+              Verwalten Sie alle Ihre erstellten Offerten und deren Status
+            </p>
+            <a
+              href="{{ url_for('PrintHub.printHub_quotes') }}"
+              class="btn btn-success"
+            >
+              <i class="bi bi-list"></i> Offerten anzeigen
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card h-100 shadow-sm">
+          <div class="card-body text-center">
+            <i class="bi bi-disc fa-3x text-info mb-3"></i>
+            <h5 class="card-title">Filament-Verwaltung</h5>
+            <p class="card-text">
+              Verwalten Sie Ihre Filamente und deren Eigenschaften
+            </p>
+            <a
+              href="{{ url_for('PrintHub.printHub_filaments') }}"
+              class="btn btn-info"
+            >
+              <i class="bi bi-disc"></i> Filamente verwalten
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card h-100 shadow-sm">
+          <div class="card-body text-center">
+            <i class="bi bi-printer fa-3x text-warning mb-3"></i>
+            <h5 class="card-title">Drucker-Setup</h5>
+            <p class="card-text">
+              Konfigurieren Sie Ihre 3D-Drucker und deren Parameter
+            </p>
+            <a
+              href="{{ url_for('PrintHub.printHub_printers') }}"
+              class="btn btn-warning"
+            >
+              <i class="bi bi-printer"></i> Drucker einrichten
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card h-100 shadow-sm">
+          <div class="card-body text-center">
+            <i class="bi bi-lightning-charge fa-3x text-danger mb-3"></i>
+            <h5 class="card-title">Energie-Kosten</h5>
+            <p class="card-text">
+              Verwalten Sie Energietarife für präzise Kostenberechnungen
+            </p>
+            <a
+              href="{{ url_for('PrintHub.printHub_energy_costs') }}"
+              class="btn btn-danger"
+            >
+              <i class="bi bi-lightning-charge"></i> Energie verwalten
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card h-100 shadow-sm">
+          <div class="card-body text-center">
+            <i class="bi bi-clock fa-3x text-secondary mb-3"></i>
+            <h5 class="card-title">Arbeitszeit-Profile</h5>
+            <p class="card-text">
+              Definieren Sie Arbeitskosten für verschiedene Tätigkeiten
+            </p>
+            <a
+              href="{{ url_for('PrintHub.printHub_work_hours') }}"
+              class="btn btn-secondary"
+            >
+              <i class="bi bi-clock"></i> Arbeitszeiten verwalten
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card h-100 shadow-sm">
+          <div class="card-body text-center">
+            <i class="bi bi-gear fa-3x text-dark mb-3"></i>
+            <h5 class="card-title">Overhead-Profile</h5>
+            <p class="card-text">
+              Verwalten Sie Gemeinkosten und Betriebsausgaben
+            </p>
+            <a
+              href="{{ url_for('PrintHub.printHub_overhead_profiles') }}"
+              class="btn btn-dark"
+            >
+              <i class="bi bi-gear"></i> Overhead verwalten
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dashboard-card h-100 shadow-sm">
+          <div class="card-body text-center">
+            <i class="bi bi-percent fa-3x text-primary mb-3"></i>
+            <h5 class="card-title">Rabatt/Aufschlag-Profile</h5>
+            <p class="card-text">
+              Definieren Sie Rabatte und Aufschläge für Ihre Kalkulation
+            </p>
+            <a
+              href="{{ url_for('PrintHub.printHub_discount_profiles') }}"
+              class="btn btn-primary"
+            >
+              <i class="bi bi-percent"></i> Rabatte verwalten
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
