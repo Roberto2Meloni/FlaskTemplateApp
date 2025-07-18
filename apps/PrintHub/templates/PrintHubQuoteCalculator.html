@@ -1,0 +1,1139 @@
+{% extends "layouts/web_app_layouts/web_app_base.html" %} {% block content %}
+<div class="printhub-container">
+  <!-- Sidebar -->
+  {% include "layouts/web_app_layouts/PrintHubSidebar.html" %}
+  <div class="printhub-content">
+    <div class="content-header">
+      <h1><i class="bi bi-calculator"></i> 3D-Druck Offerten-Rechner</h1>
+      <p class="lead">
+        Erstellen Sie präzise Kostenvoranschläge für Ihre 3D-Druckaufträge
+      </p>
+    </div>
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %} {% for category, message in messages %}
+    <div
+      class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show"
+      role="alert"
+    >
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %} {% endif %} {% endwith %}
+    <!-- Offerten-Formular -->
+    <div class="filament-form-container">
+      <h3 class="text-prusa-orange mb-4">
+        <i class="bi bi-plus-circle"></i> Neue Offerte erstellen
+      </h3>
+      <form
+        id="quoteCalculatorForm"
+        method="POST"
+        action="{{ url_for('PrintHub.printHub_quote_calculator') }}"
+      >
+        <!-- Hauptauftrag -->
+        <div class="card mb-4" style="background-color: #ff6600">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-briefcase"></i> Auftragsdaten</h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group mb-3">
+                  <label for="order_name" class="form-label">
+                    <i class="bi bi-tag"></i> Auftragsname *
+                  </label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="order_name"
+                    name="order_name"
+                    placeholder="z.B. Prototyp Gehäuse"
+                    required
+                  />
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group mb-3">
+                  <label for="customer_name" class="form-label">
+                    <i class="bi bi-person"></i> Kunde (optional)
+                  </label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="customer_name"
+                    name="customer_name"
+                    placeholder="z.B. Mustermann AG"
+                  />
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group mb-3">
+                  <label class="form-label">
+                    <i class="bi bi-calendar"></i> Erstelldatum
+                  </label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="current_date"
+                    value="{{ current_date }}"
+                    readonly
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Globale Kalkulationsgrundlagen -->
+        <div class="card mb-4" style="background-color: #ff6600">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="bi bi-calculator"></i> Globale Kalkulationsgrundlagen
+              <small class="text-muted ms-2"
+                >(Gelten für alle Druckaufträge)</small
+              >
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-3">
+                <div class="form-group mb-3">
+                  <label for="global_3d_printer" class="form-label">
+                    <i class="bi bi-printer"></i> 3D-Drucker
+                  </label>
+                  <select
+                    class="form-control"
+                    id="global_3d_printer"
+                    name="global_3d_printer"
+                  >
+                    <option value="" data-cost="0">
+                      Kein 3D-Drucker verfügbar
+                    </option>
+                    {% for printer in printers %}
+                    <option
+                      value="{{ printer.id }}"
+                      data-cost="{{ printer.machine_cost_per_hour }}"
+                    >
+                      {{ printer.name }} - CHF {{
+                      "%.4f"|format(printer.machine_cost_per_hour) }}/h
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+
+              <div class="col-md-3">
+                <div class="form-group mb-3">
+                  <label for="global_energy_profile" class="form-label">
+                    <i class="bi bi-lightning-charge"></i> Energiekosten-Profil
+                  </label>
+                  <select
+                    class="form-control"
+                    id="global_energy_profile"
+                    name="global_energy_profile"
+                  >
+                    <option value="" data-cost="0">
+                      Kein Energiekosten-Profil verfügbar
+                    </option>
+                    {% for energy in energy_profiles %}
+                    <option
+                      value="{{ energy.id }}"
+                      data-cost="{{ energy.cost_per_kwh }}"
+                    >
+                      {{ energy.provider }} - CHF {{
+                      "%.4f"|format(energy.cost_per_kwh) }}/h
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+
+              <div class="col-md-3">
+                <div class="form-group mb-3">
+                  <label for="global_work_profile" class="form-label">
+                    <i class="bi bi-clock"></i> Arbeitszeit-Profil
+                  </label>
+                  <select
+                    class="form-control"
+                    id="global_work_profile"
+                    name="global_work_profile"
+                  >
+                    <option value="" data-cost="0">Keine Arbeitszeit</option>
+                    {% for work in work_profiles %}
+                    <option
+                      value="{{ work.id }}"
+                      data-cost="{{ work.cost_per_hour }}"
+                    >
+                      {{ work.name }} ({{ work.role }}) - CHF {{
+                      "%.2f"|format(work.cost_per_hour) }}/h
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+
+              <div class="col-md-3">
+                <div class="form-group mb-3">
+                  <label for="global_overhead_profile" class="form-label">
+                    <i class="bi bi-gear"></i> Overhead-Profil
+                  </label>
+                  <select
+                    class="form-control"
+                    id="global_overhead_profile"
+                    name="global_overhead_profile"
+                  >
+                    <option value="" data-cost="0">Kein Overhead</option>
+                    {% for overhead in overhead_profiles %}
+                    <option
+                      value="{{ overhead.id }}"
+                      data-cost="{{ overhead.overhead_per_hour }}"
+                    >
+                      {{ overhead.name }} - CHF {{
+                      "%.4f"|format(overhead.overhead_per_hour) }}/h
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Zweite Zeile für Rabatt/Aufschlag -->
+            <div class="row">
+              <div class="col-md-3">
+                <div class="form-group mb-3">
+                  <label for="global_discount_profile" class="form-label">
+                    <i class="bi bi-percent"></i> Rabatt/Aufschlag
+                  </label>
+                  <select
+                    class="form-control"
+                    id="global_discount_profile"
+                    name="global_discount_profile"
+                  >
+                    <option value="" data-type="" data-percentage="0">
+                      Kein Rabatt/Aufschlag
+                    </option>
+                    {% for discount in discount_profiles %}
+                    <option
+                      value="{{ discount.id }}"
+                      data-type="{{ discount.discount_type }}"
+                      data-percentage="{{ discount.percentage }}"
+                    >
+                      {{ discount.name }} ({{ discount.percentage_display }})
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Druckaufträge -->
+        <div class="card mb-4" style="background-color: #ff6600">
+          <div
+            class="card-header d-flex justify-content-between align-items-center"
+          >
+            <h5 class="mb-0"><i class="bi bi-layers"></i> Druckaufträge</h5>
+            <button
+              type="button"
+              class="btn btn-prusa btn-sm"
+              id="addSuborderBtn"
+              style="background-color: #1a1a1a"
+            >
+              <i class="bi bi-plus"></i> Druck hinzufügen
+            </button>
+          </div>
+          <div class="card-body">
+            <div id="subordersContainer">
+              <!-- Subaufträge werden hier dynamisch hinzugefügt -->
+            </div>
+            <div id="emptySubordersMessage" class="text-center py-4 text-muted">
+              <i class="bi bi-info-circle"></i>
+              Klicken Sie auf "Druck hinzufügen" um einen neuen Druckauftrag zu
+              erstellen
+            </div>
+          </div>
+        </div>
+        <!-- Aktionen -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <button type="button" class="btn btn-secondary" id="resetFormBtn">
+            <i class="bi bi-arrow-clockwise"></i> Zurücksetzen
+          </button>
+          <button type="submit" class="btn btn-prusa btn-lg">
+            <i class="bi bi-calculator"></i> Offerte berechnen
+          </button>
+        </div>
+        <input
+          type="hidden"
+          id="suborderCount"
+          name="suborder_count"
+          value="0"
+        />
+      </form>
+    </div>
+    <!-- Offerten-Ergebnis -->
+    {% if last_quote %}
+    <div class="filament-list-container">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="text-prusa-orange mb-0">
+          <i class="bi bi-file-earmark-text"></i> Offerte: {{
+          last_quote.order_name }}
+        </h3>
+        <span class="badge badge-secondary">
+          CHF {{ "%.2f"|format(last_quote.total_cost) }}
+        </span>
+      </div>
+      <!-- Kopfzeile -->
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <p>
+            <strong>Kunde:</strong> {{ last_quote.customer_name or 'Nicht
+            angegeben' }}
+          </p>
+          <p><strong>Erstellt:</strong> {{ last_quote.created_at }}</p>
+        </div>
+        <div class="col-md-6">
+          <p>
+            <strong>Gesamtzeit:</strong> {{ last_quote.total_time }} Stunden
+          </p>
+          <p>
+            <strong>Gesamtkosten:</strong>
+            <span class="text-prusa-orange h4"
+              >CHF {{ "%.2f"|format(last_quote.total_cost) }}</span
+            >
+          </p>
+        </div>
+      </div>
+      <!-- Subaufträge Details -->
+      <h6 class="mb-3">Druckaufträge im Detail:</h6>
+      {% for suborder in last_quote.suborders %}
+      <div class="filament-item">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center mb-2">
+              <h5 class="filament-name mb-0">{{ suborder.name }}</h5>
+              <span class="badge badge-secondary ms-2"
+                >{{ suborder.print_time_hours }}h</span
+              >
+            </div>
+            <div class="filament-info">
+              <p class="mb-1">
+                <strong>Drucker:</strong> {{ suborder.printer_name }}
+              </p>
+              <p class="mb-1">
+                <strong>Filament:</strong> {{ suborder.filament_name }}
+              </p>
+              <p class="mb-1">
+                <strong>Verbrauch:</strong> {{ suborder.filament_usage_grams }}g
+              </p>
+              <div class="row">
+                <div class="col-md-2">
+                  <small>Maschinenkosten:</small><br />
+                  <span>CHF {{ "%.2f"|format(suborder.machine_cost) }}</span>
+                </div>
+                <div class="col-md-2">
+                  <small>Materialkosten:</small><br />
+                  <span>CHF {{ "%.2f"|format(suborder.filament_cost) }}</span>
+                </div>
+                <div class="col-md-2">
+                  <small>Energiekosten:</small><br />
+                  <span>CHF {{ "%.2f"|format(suborder.energy_cost) }}</span>
+                </div>
+                <div class="col-md-2">
+                  <small>Arbeitszeit:</small><br />
+                  <span>CHF {{ "%.2f"|format(suborder.work_cost) }}</span>
+                </div>
+                <div class="col-md-2">
+                  <small>Overhead:</small><br />
+                  <span>CHF {{ "%.2f"|format(suborder.overhead_cost) }}</span>
+                </div>
+                <div class="col-md-2">
+                  <small><strong>Gesamtkosten:</strong></small
+                  ><br />
+                  <span class="text-prusa-orange"
+                    ><strong
+                      >CHF {{ "%.2f"|format(suborder.suborder_total) }}</strong
+                    ></span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      <!-- Kostenaufschlüsselung -->
+      <div class="row mt-4">
+        <div class="col-md-6">
+          <h6 class="text-prusa-orange">Kostenaufschlüsselung:</h6>
+          <div class="filament-info">
+            <p class="mb-1">
+              <strong>Maschinenkosten:</strong>
+              CHF {{ "%.2f"|format(last_quote.cost_breakdown.machine_cost) }}
+            </p>
+            <p class="mb-1">
+              <strong>Materialkosten:</strong>
+              CHF {{ "%.2f"|format(last_quote.cost_breakdown.filament_cost) }}
+            </p>
+            <p class="mb-1">
+              <strong>Energiekosten:</strong>
+              CHF {{ "%.2f"|format(last_quote.cost_breakdown.energy_cost) }}
+            </p>
+            <p class="mb-1">
+              <strong>Arbeitszeit:</strong>
+              CHF {{ "%.2f"|format(last_quote.cost_breakdown.work_cost) }}
+            </p>
+            <p class="mb-1">
+              <strong>Overhead:</strong>
+              CHF {{ "%.2f"|format(last_quote.cost_breakdown.overhead_cost) }}
+            </p>
+            <p class="mb-1">
+              <strong class="text-prusa-orange">Gesamtkosten:</strong>
+              <span class="text-prusa-orange h5"
+                >CHF {{ "%.2f"|format(last_quote.total_cost) }}</span
+              >
+            </p>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="alert alert-info">
+            <h6><i class="bi bi-info-circle"></i> Hinweis:</h6>
+            <p class="mb-0">
+              Diese Kalkulation basiert auf den gewählten Profilen und kann
+              individuell pro Druckauftrag angepasst werden.
+            </p>
+          </div>
+        </div>
+      </div>
+      <!-- Aktionen -->
+      <div class="mt-4">
+        <div class="action-buttons">
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-sm"
+            onclick="window.print()"
+          >
+            <i class="bi bi-printer"></i> Drucken
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-secondary btn-sm"
+            id="exportPdfBtn"
+          >
+            <i class="bi bi-file-pdf"></i> Als PDF
+          </button>
+          <button type="button" class="btn btn-prusa btn-sm" id="saveQuoteBtn">
+            <i class="bi bi-save"></i> Offerte speichern
+          </button>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Vereinfachtes Suborder Template -->
+<template id="suborderTemplate">
+  <div class="suborder-item filament-item mb-3" data-suborder-index="">
+    <div class="d-flex justify-content-between align-items-start">
+      <div class="flex-grow-1">
+        <div class="d-flex align-items-center mb-3">
+          <h5 class="text-prusa-orange mb-0">
+            <i class="bi bi-printer"></i> Druckauftrag
+            <span class="suborder-number"></span>
+          </h5>
+        </div>
+
+        <div class="row">
+          <div class="col-md-4">
+            <div class="form-group mb-3">
+              <label class="form-label">
+                <i class="bi bi-tag"></i> Name des Drucks *
+              </label>
+              <input
+                type="text"
+                class="form-control suborder-name"
+                placeholder="z.B. Gehäuse Oberteil"
+                required
+              />
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group mb-3">
+              <label class="form-label">
+                <i class="bi bi-disc"></i> Filament *
+              </label>
+              <select class="form-control suborder-filament" required>
+                <option value="">-- Filament wählen --</option>
+                {% for filament in filaments %}
+                <option
+                  value="{{ filament.id }}"
+                  data-price="{{ filament.price }}"
+                  data-weight="{{ filament.weight }}"
+                >
+                  {{ filament.filament_type }} - {{ filament.manufacturer }} -
+                  {{ filament.name }} - CHF {{
+                  "%.2f"|format(filament.price_per_kg) }}/kg
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group mb-3">
+              <label class="form-label">
+                <i class="bi bi-speedometer2"></i> Filamentverbrauch (g) *
+              </label>
+              <input
+                type="number"
+                class="form-control suborder-usage"
+                min="1"
+                placeholder="z.B. 150"
+                required
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-3">
+            <div class="form-group mb-3">
+              <label class="form-label">
+                <i class="bi bi-clock"></i> Druckzeit *
+              </label>
+              <input
+                type="text"
+                class="form-control suborder-time-input"
+                placeholder="7:45 (7h 45min)"
+                pattern="^\d{1,2}:\d{2}$"
+                title="Format: H:MM oder HH:MM (z.B. 7:45 für 7 Stunden 45 Minuten)"
+                required
+              />
+              <div class="form-text" style="color: white">
+                Format: H:MM (z.B. 7:45 für 7h 45min)
+              </div>
+              <input type="hidden" class="suborder-time" />
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-group mb-3">
+              <label class="form-label">
+                <i class="bi bi-person-gear"></i> Arbeitszeit *
+              </label>
+              <input
+                type="text"
+                class="form-control suborder-worktime-input"
+                placeholder="0:15 (15min)"
+                pattern="^\d{1,2}:\d{2}$"
+                title="Format: H:MM oder HH:MM (z.B. 0:15 für 15 Minuten)"
+                value="0:15"
+                required
+              />
+              <div class="form-text" style="color: white">
+                Format: H:MM (z.B. 0:15 für 15min)
+              </div>
+              <input type="hidden" class="suborder-worktime" />
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group mb-3">
+              <label class="form-label">
+                <i class="bi bi-info-circle"></i> Verwendete Einstellungen
+              </label>
+              <div class="alert alert-info mb-0">
+                <small>
+                  <strong>Drucker:</strong>
+                  <span class="used-printer">Aus globalen Einstellungen</span
+                  ><br />
+                  <strong>Energiekosten:</strong>
+                  <span class="used-energy">Aus globalen Einstellungen</span
+                  ><br />
+                  <strong>Arbeitszeit:</strong>
+                  <span class="used-work">Aus globalen Einstellungen</span
+                  ><br />
+                  <strong>Overhead:</strong>
+                  <span class="used-overhead">Aus globalen Einstellungen</span
+                  ><br />
+                  <strong>Rabatt/Aufschlag:</strong>
+                  <span class="used-discount">Aus globalen Einstellungen</span>
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Erweiterte Optionen (Optional) -->
+        <div class="row mb-3">
+          <div class="col-md-12">
+            <div class="form-check">
+              <input
+                class="form-check-input use-individual-calc"
+                type="checkbox"
+                id="individual_calc_"
+              />
+              <label class="form-check-label text-light" for="individual_calc_">
+                <i class="bi bi-gear"></i> Erweiterte Optionen
+                <small class="text-secondary"
+                  >(überschreibt globale Einstellungen für diesen Druck)</small
+                >
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Individuelle Kalkulationsfelder (versteckt) -->
+        <div class="individual-calc-section" style="display: none">
+          <div class="alert alert-warning">
+            <h6 class="mb-3">
+              <i class="bi bi-exclamation-triangle"></i> Erweiterte Optionen für
+              diesen Druck
+            </h6>
+            <div class="row">
+              <div class="col-md-3">
+                <div class="form-group mb-3">
+                  <label class="form-label">
+                    <i class="bi bi-printer"></i> Drucker
+                  </label>
+                  <select class="form-control individual-printer">
+                    <option value="">Global verwenden</option>
+                    {% for printer in printers %}
+                    <option
+                      value="{{ printer.id }}"
+                      data-cost="{{ printer.machine_cost_per_hour }}"
+                    >
+                      {{ printer.name }} - CHF {{
+                      "%.2f"|format(printer.machine_cost_per_hour) }}/h
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group mb-3">
+                  <label class="form-label">
+                    <i class="bi bi-lightning"></i> Energiekosten-Profil
+                  </label>
+                  <select class="form-control individual-energy-profile">
+                    <option value="">Global verwenden</option>
+                    {% for energy in energy_profiles %}
+                    <option
+                      value="{{ energy.id }}"
+                      data-cost="{{ energy.cost_per_kwh }}"
+                    >
+                      {{ energy.provider }} - CHF {{
+                      "%.4f"|format(energy.cost_per_kwh) }}/kWh
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group mb-3">
+                  <label class="form-label">
+                    <i class="bi bi-person-workspace"></i> Arbeitszeit-Profil
+                  </label>
+                  <select class="form-control individual-work-profile">
+                    <option value="">Global verwenden</option>
+                    {% for work in work_profiles %}
+                    <option
+                      value="{{ work.id }}"
+                      data-cost="{{ work.cost_per_hour }}"
+                    >
+                      {{ work.name }} - CHF {{ "%.2f"|format(work.cost_per_hour)
+                      }}/h
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group mb-3">
+                  <label class="form-label">
+                    <i class="bi bi-building"></i> Overhead-Profil
+                  </label>
+                  <select class="form-control individual-overhead-profile">
+                    <option value="">Global verwenden</option>
+                    {% for overhead in overhead_profiles %}
+                    <option
+                      value="{{ overhead.id }}"
+                      data-cost="{{ overhead.overhead_per_hour }}"
+                    >
+                      {{ overhead.name }} - CHF {{
+                      "%.4f"|format(overhead.overhead_per_hour) }}/h
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Kostenschätzung -->
+        <div class="row suborder-preview" style="display: none">
+          <div class="col-md-12">
+            <div class="alert alert-light">
+              <h6><i class="bi bi-calculator"></i> Geschätzte Kosten:</h6>
+              <div class="row">
+                <div class="col-md-2">
+                  <small>Maschinenkosten:</small><br />
+                  <span class="preview-machine-cost">CHF 0.00</span>
+                </div>
+                <div class="col-md-2">
+                  <small>Materialkosten:</small><br />
+                  <span class="preview-material-cost">CHF 0.00</span>
+                </div>
+                <div class="col-md-2">
+                  <small>Energiekosten:</small><br />
+                  <span class="preview-energy-cost">CHF 0.00</span>
+                </div>
+                <div class="col-md-2">
+                  <small>Arbeitszeit:</small><br />
+                  <span class="preview-work-cost">CHF 0.00</span>
+                </div>
+                <div class="col-md-2">
+                  <small>Overhead:</small><br />
+                  <span class="preview-overhead-cost">CHF 0.00</span>
+                </div>
+                <div class="col-md-2">
+                  <small><strong>Gesamtkosten:</strong></small
+                  ><br />
+                  <span class="preview-total-cost text-prusa-orange"
+                    ><strong>CHF 0.00</strong></span
+                  >
+                </div>
+              </div>
+              <div class="calculation-source-info mt-2">
+                <small class="text-muted">
+                  <span class="calc-source-text"
+                    >Verwendet globale Kalkulationsgrundlagen</span
+                  >
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="action-buttons">
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-danger remove-suborder"
+          title="Entfernen"
+        >
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+  let suborderCount = 0;
+
+  document.addEventListener("DOMContentLoaded", function () {
+    // Aktuelles Datum setzen falls nicht vom Server gesetzt
+    if (!document.getElementById("current_date").value) {
+      document.getElementById("current_date").value =
+        new Date().toLocaleDateString("de-CH");
+    }
+
+    // Event Listeners
+    document
+      .getElementById("addSuborderBtn")
+      .addEventListener("click", addSuborder);
+    document
+      .getElementById("resetFormBtn")
+      .addEventListener("click", resetForm);
+    document
+      .getElementById("quoteCalculatorForm")
+      .addEventListener("submit", function (e) {
+        updateFormFields();
+      });
+
+    // Global profile change listeners
+    [
+      "global_3d_printer",
+      "global_energy_profile",
+      "global_work_profile",
+      "global_overhead_profile",
+      "global_discount_profile",
+    ].forEach((id) => {
+      document
+        .getElementById(id)
+        .addEventListener("change", updateAllGlobalSettingsDisplays);
+    });
+  });
+
+  function addSuborder() {
+    const container = document.getElementById("subordersContainer");
+    const template = document.getElementById("suborderTemplate");
+    const clone = template.content.cloneNode(true);
+    const suborderDiv = clone.querySelector(".suborder-item");
+
+    suborderDiv.setAttribute("data-suborder-index", suborderCount);
+    clone.querySelector(".suborder-number").textContent = suborderCount + 1;
+
+    // Set form field names
+    clone.querySelector(
+      ".suborder-name"
+    ).name = `suborder_name_${suborderCount}`;
+    clone.querySelector(
+      ".suborder-filament"
+    ).name = `filament_id_${suborderCount}`;
+    clone.querySelector(
+      ".suborder-time"
+    ).name = `print_time_hours_${suborderCount}`;
+    clone.querySelector(
+      ".suborder-worktime"
+    ).name = `work_time_hours_${suborderCount}`;
+    clone.querySelector(
+      ".suborder-usage"
+    ).name = `filament_usage_grams_${suborderCount}`;
+
+    // Individual calculation fields
+    const checkbox = clone.querySelector(".use-individual-calc");
+    checkbox.id = `individual_calc_${suborderCount}`;
+    checkbox.name = `use_individual_calc_${suborderCount}`;
+    clone
+      .querySelector("label[for='individual_calc_']")
+      .setAttribute("for", checkbox.id);
+
+    clone.querySelector(
+      ".individual-printer"
+    ).name = `individual_printer_${suborderCount}`;
+    clone.querySelector(
+      ".individual-energy-profile"
+    ).name = `individual_energy_profile_${suborderCount}`;
+    clone.querySelector(
+      ".individual-work-profile"
+    ).name = `individual_work_profile_${suborderCount}`;
+    clone.querySelector(
+      ".individual-overhead-profile"
+    ).name = `individual_overhead_profile_${suborderCount}`;
+
+    // Remove functionality
+    clone
+      .querySelector(".remove-suborder")
+      .addEventListener("click", function () {
+        removeSuborder(suborderDiv);
+      });
+
+    // Individual calculation toggle
+    checkbox.addEventListener("change", function () {
+      toggleIndividualCalculation(suborderDiv);
+    });
+
+    // Time input handlers with HH:MM format
+    const timeInput = clone.querySelector(".suborder-time-input");
+    const timeHidden = clone.querySelector(".suborder-time");
+    const worktimeInput = clone.querySelector(".suborder-worktime-input");
+    const worktimeHidden = clone.querySelector(".suborder-worktime");
+
+    // Function to handle time conversion
+    function handleTimeInput(inputElement, hiddenElement) {
+      const timeValue = inputElement.value;
+      if (timeValue.match(/^\d{1,2}:\d{2}$/)) {
+        const [hours, minutes] = timeValue.split(":").map(Number);
+        if (minutes < 60) {
+          const totalHours = hours + minutes / 60;
+          hiddenElement.value = totalHours.toFixed(2);
+          inputElement.setCustomValidity("");
+        } else {
+          inputElement.setCustomValidity("Minuten müssen zwischen 0-59 liegen");
+        }
+      } else if (timeValue === "") {
+        hiddenElement.value = "";
+        inputElement.setCustomValidity("");
+      } else {
+        inputElement.setCustomValidity("Format: H:MM oder HH:MM (z.B. 7:45)");
+      }
+      updateSuborderPreview(suborderDiv);
+    }
+
+    timeInput.addEventListener("input", function () {
+      handleTimeInput(this, timeHidden);
+    });
+
+    worktimeInput.addEventListener("input", function () {
+      handleTimeInput(this, worktimeHidden);
+    });
+
+    // Set initial worktime value
+    handleTimeInput(worktimeInput, worktimeHidden);
+
+    // Live calculation for all inputs
+    const inputs = clone.querySelectorAll("input, select");
+    inputs.forEach((input) => {
+      input.addEventListener("input", () => updateSuborderPreview(suborderDiv));
+      input.addEventListener("change", () =>
+        updateSuborderPreview(suborderDiv)
+      );
+    });
+
+    container.appendChild(clone);
+    suborderCount++;
+    updateEmptyMessage();
+    updateGlobalSettingsDisplay(suborderDiv);
+  }
+
+  function removeSuborder(suborderDiv) {
+    suborderDiv.remove();
+    updateEmptyMessage();
+    renumberSuborders();
+  }
+
+  function toggleIndividualCalculation(suborderDiv) {
+    const checkbox = suborderDiv.querySelector(".use-individual-calc");
+    const individualSection = suborderDiv.querySelector(
+      ".individual-calc-section"
+    );
+    const sourceText = suborderDiv.querySelector(".calc-source-text");
+
+    if (checkbox.checked) {
+      individualSection.style.display = "block";
+      sourceText.textContent = "Verwendet individuelle Kalkulationsgrundlagen";
+    } else {
+      individualSection.style.display = "none";
+      sourceText.textContent = "Verwendet globale Kalkulationsgrundlagen";
+      updateGlobalSettingsDisplay(suborderDiv);
+    }
+    updateSuborderPreview(suborderDiv);
+  }
+
+  function updateGlobalSettingsDisplay(suborderDiv) {
+    // Update the display of used settings based on global selections
+    const printerSelect = document.getElementById("global_3d_printer");
+    const energySelect = document.getElementById("global_energy_profile");
+    const workSelect = document.getElementById("global_work_profile");
+    const overheadSelect = document.getElementById("global_overhead_profile");
+    const discountSelect = document.getElementById("global_discount_profile");
+
+    const usedPrinter = suborderDiv.querySelector(".used-printer");
+    const usedEnergy = suborderDiv.querySelector(".used-energy");
+    const usedWork = suborderDiv.querySelector(".used-work");
+    const usedOverhead = suborderDiv.querySelector(".used-overhead");
+    const usedDiscount = suborderDiv.querySelector(".used-discount");
+
+    usedPrinter.textContent =
+      printerSelect.selectedOptions[0]?.text || "Nicht ausgewählt";
+    usedEnergy.textContent =
+      energySelect.selectedOptions[0]?.text || "Nicht ausgewählt";
+    usedWork.textContent =
+      workSelect.selectedOptions[0]?.text || "Nicht ausgewählt";
+    usedOverhead.textContent =
+      overheadSelect.selectedOptions[0]?.text || "Nicht ausgewählt";
+    usedDiscount.textContent =
+      discountSelect.selectedOptions[0]?.text || "Nicht ausgewählt";
+  }
+
+  function updateAllGlobalSettingsDisplays() {
+    const suborders = document.querySelectorAll(".suborder-item");
+    suborders.forEach((suborder) => {
+      if (!suborder.querySelector(".use-individual-calc").checked) {
+        updateGlobalSettingsDisplay(suborder);
+      }
+      updateSuborderPreview(suborder);
+    });
+  }
+
+  function updateEmptyMessage() {
+    const container = document.getElementById("subordersContainer");
+    const emptyMessage = document.getElementById("emptySubordersMessage");
+    if (container.children.length === 0) {
+      emptyMessage.style.display = "block";
+    } else {
+      emptyMessage.style.display = "none";
+    }
+  }
+
+  function renumberSuborders() {
+    const suborders = document.querySelectorAll(".suborder-item");
+    suborders.forEach((suborder, index) => {
+      suborder.setAttribute("data-suborder-index", index);
+      suborder.querySelector(".suborder-number").textContent = index + 1;
+
+      // Update all form field names
+      suborder.querySelector(".suborder-name").name = `suborder_name_${index}`;
+      suborder.querySelector(
+        ".suborder-filament"
+      ).name = `filament_id_${index}`;
+      suborder.querySelector(
+        ".suborder-time"
+      ).name = `print_time_hours_${index}`;
+      suborder.querySelector(
+        ".suborder-worktime"
+      ).name = `work_time_hours_${index}`;
+      suborder.querySelector(
+        ".suborder-usage"
+      ).name = `filament_usage_grams_${index}`;
+
+      const checkbox = suborder.querySelector(".use-individual-calc");
+      checkbox.id = `individual_calc_${index}`;
+      checkbox.name = `use_individual_calc_${index}`;
+      suborder
+        .querySelector(`label[for^="individual_calc_"]`)
+        .setAttribute("for", checkbox.id);
+
+      suborder.querySelector(
+        ".individual-printer"
+      ).name = `individual_printer_${index}`;
+      suborder.querySelector(
+        ".individual-energy-profile"
+      ).name = `individual_energy_profile_${index}`;
+      suborder.querySelector(
+        ".individual-work-profile"
+      ).name = `individual_work_profile_${index}`;
+      suborder.querySelector(
+        ".individual-overhead-profile"
+      ).name = `individual_overhead_profile_${index}`;
+    });
+    suborderCount = suborders.length;
+  }
+
+  function getProfileValues(suborderDiv) {
+    const useIndividual = suborderDiv.querySelector(
+      ".use-individual-calc"
+    ).checked;
+
+    let printerElement,
+      energyProfile,
+      workProfile,
+      overheadProfile,
+      discountProfile;
+
+    if (useIndividual) {
+      printerElement = suborderDiv.querySelector(".individual-printer");
+      energyProfile = suborderDiv.querySelector(".individual-energy-profile");
+      workProfile = suborderDiv.querySelector(".individual-work-profile");
+      overheadProfile = suborderDiv.querySelector(
+        ".individual-overhead-profile"
+      );
+      // No individual discount profile in this simplified version
+      discountProfile = document.getElementById("global_discount_profile");
+    } else {
+      printerElement = document.getElementById("global_3d_printer");
+      energyProfile = document.getElementById("global_energy_profile");
+      workProfile = document.getElementById("global_work_profile");
+      overheadProfile = document.getElementById("global_overhead_profile");
+      discountProfile = document.getElementById("global_discount_profile");
+    }
+
+    return {
+      printerCost:
+        parseFloat(
+          printerElement.options[printerElement.selectedIndex]?.dataset.cost
+        ) || 0,
+      energyCost:
+        parseFloat(
+          energyProfile.options[energyProfile.selectedIndex]?.dataset.cost
+        ) || 0.25,
+      workCost:
+        parseFloat(
+          workProfile.options[workProfile.selectedIndex]?.dataset.cost
+        ) || 0,
+      overheadCost:
+        parseFloat(
+          overheadProfile.options[overheadProfile.selectedIndex]?.dataset.cost
+        ) || 0,
+      discountType:
+        discountProfile.options[discountProfile.selectedIndex]?.dataset.type ||
+        "",
+      discountPercentage:
+        parseFloat(
+          discountProfile.options[discountProfile.selectedIndex]?.dataset
+            .percentage
+        ) || 0,
+    };
+  }
+
+  function updateSuborderPreview(suborderDiv) {
+    const filament = suborderDiv.querySelector(".suborder-filament");
+    const timeHidden = suborderDiv.querySelector(".suborder-time");
+    const worktimeHidden = suborderDiv.querySelector(".suborder-worktime");
+    const usage = suborderDiv.querySelector(".suborder-usage");
+    const preview = suborderDiv.querySelector(".suborder-preview");
+
+    if (
+      filament.value &&
+      timeHidden.value &&
+      worktimeHidden.value &&
+      usage.value
+    ) {
+      const filamentPrice =
+        parseFloat(filament.options[filament.selectedIndex].dataset.price) || 0;
+      const filamentWeight =
+        parseFloat(filament.options[filament.selectedIndex].dataset.weight) ||
+        1;
+      const printTime = parseFloat(timeHidden.value) || 0;
+      const workTime = parseFloat(worktimeHidden.value) || 0;
+      const filamentUsage = parseFloat(usage.value) || 0;
+
+      const profiles = getProfileValues(suborderDiv);
+
+      // Cost calculations
+      const machineCost = profiles.printerCost * printTime;
+      const materialCost = (filamentPrice / filamentWeight) * filamentUsage;
+      const energyCost = printTime * profiles.energyCost;
+      const workCost = workTime * profiles.workCost; // Use individual work time
+      const overheadCost = printTime * profiles.overheadCost;
+
+      let subtotal =
+        machineCost + materialCost + energyCost + workCost + overheadCost;
+
+      // Apply discount/surcharge
+      let totalCost = subtotal;
+      if (profiles.discountType === "discount") {
+        totalCost = subtotal * (1 - profiles.discountPercentage / 100);
+      } else if (profiles.discountType === "surcharge") {
+        totalCost = subtotal * (1 + profiles.discountPercentage / 100);
+      }
+
+      // Update preview
+      preview.querySelector(
+        ".preview-machine-cost"
+      ).textContent = `CHF ${machineCost.toFixed(2)}`;
+      preview.querySelector(
+        ".preview-material-cost"
+      ).textContent = `CHF ${materialCost.toFixed(2)}`;
+      preview.querySelector(
+        ".preview-energy-cost"
+      ).textContent = `CHF ${energyCost.toFixed(2)}`;
+      preview.querySelector(
+        ".preview-work-cost"
+      ).textContent = `CHF ${workCost.toFixed(2)}`;
+      preview.querySelector(
+        ".preview-overhead-cost"
+      ).textContent = `CHF ${overheadCost.toFixed(2)}`;
+      preview.querySelector(
+        ".preview-total-cost"
+      ).textContent = `CHF ${totalCost.toFixed(2)}`;
+
+      preview.style.display = "block";
+    } else {
+      preview.style.display = "none";
+    }
+  }
+
+  function updateFormFields() {
+    document.getElementById("suborderCount").value = suborderCount;
+  }
+
+  function resetForm() {
+    document.getElementById("quoteCalculatorForm").reset();
+    document.getElementById("subordersContainer").innerHTML = "";
+    if (!document.getElementById("current_date").value) {
+      document.getElementById("current_date").value =
+        new Date().toLocaleDateString("de-CH");
+    }
+    suborderCount = 0;
+    updateEmptyMessage();
+  }
+
+  // Ersten Suborder automatisch hinzufügen
+  document.addEventListener("DOMContentLoaded", function () {
+    setTimeout(addSuborder, 100);
+  });
+</script>
+{% endblock %}

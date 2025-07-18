@@ -979,59 +979,29 @@ def api_overhead_profiles():
 def printHub_discount_profiles():
     """Rabatte-Profile-Verwaltung - Anzeigen und Hinzufügen"""
 
-    print("=" * 50)
-    print("DEBUG: Route printHub_discount_profiles aufgerufen")
-    print(f"DEBUG: Request method: {request.method}")
-    print(f"DEBUG: Current user: {current_user}")
-    print(
-        f"DEBUG: Current user username: {getattr(current_user, 'username', 'NO USERNAME')}"
-    )
-
     # Discount Types für das Template aus dem Model laden
     try:
         discount_types = PrintHubDiscountProfile.get_discount_types()
-        print(f"DEBUG: discount_types loaded: {discount_types}")
+
     except Exception as e:
-        print(f"DEBUG ERROR: get_discount_types failed: {e}")
         discount_types = [("discount", "Rabatt"), ("surcharge", "Aufschlag")]
 
     if request.method == "POST":
-        print("=" * 50)
-        print("DEBUG: POST REQUEST - Creating new discount profile")
 
         try:
-            # Form-Daten extrahieren und debuggen
-            print("DEBUG: Extracting form data...")
-
             name = request.form.get("discount_name", "").strip()
             discount_type = request.form.get("discount_type", "").strip()
             percentage = request.form.get("percentage", type=float)
             notes = request.form.get("discount_notes", "").strip()
             is_active = request.form.get("is_active") == "on"
 
-            print(f"DEBUG: name = '{name}'")
-            print(f"DEBUG: discount_type = '{discount_type}'")
-            print(f"DEBUG: percentage = {percentage}")
-            print(f"DEBUG: notes = '{notes}'")
-            print(f"DEBUG: is_active = {is_active}")
-
-            # Alle Form-Felder anzeigen
-            print("DEBUG: ALL FORM DATA:")
-            for key, value in request.form.items():
-                print(f"  {key}: '{value}'")
-
-            # Validierung mit Debug
-            print("DEBUG: Starting validation...")
-
             if not name:
-                print("DEBUG: VALIDATION ERROR - Name is empty")
+
                 flash("Bitte geben Sie einen Namen für das Profil ein!", "error")
                 return redirect(url_for("PrintHub.printHub_discount_profiles"))
 
             if discount_type not in ["discount", "surcharge"]:
-                print(
-                    f"DEBUG: VALIDATION ERROR - Invalid discount_type: '{discount_type}'"
-                )
+
                 flash(
                     "Bitte wählen Sie einen gültigen Typ (Rabatt oder Aufschlag)!",
                     "error",
@@ -1039,21 +1009,14 @@ def printHub_discount_profiles():
                 return redirect(url_for("PrintHub.printHub_discount_profiles"))
 
             if percentage is None:
-                print("DEBUG: VALIDATION ERROR - Percentage is None")
+
                 flash("Bitte geben Sie einen Prozentsatz ein!", "error")
                 return redirect(url_for("PrintHub.printHub_discount_profiles"))
 
             if percentage < 0 or percentage > 100:
-                print(
-                    f"DEBUG: VALIDATION ERROR - Percentage out of range: {percentage}"
-                )
+
                 flash("Prozentsatz muss zwischen 0% und 100% liegen!", "error")
                 return redirect(url_for("PrintHub.printHub_discount_profiles"))
-
-            print("DEBUG: Validation passed!")
-
-            # Neues Rabatt/Aufschlag-Profil erstellen
-            print("DEBUG: Creating new discount profile object...")
 
             new_discount_profile = PrintHubDiscountProfile(
                 name=name,
@@ -1066,20 +1029,9 @@ def printHub_discount_profiles():
                 updated_at=get_current_time(),
             )
 
-            print(f"DEBUG: Created object: {new_discount_profile}")
-            print(f"DEBUG: Object name: {new_discount_profile.name}")
-            print(f"DEBUG: Object type: {new_discount_profile.discount_type}")
-            print(f"DEBUG: Object percentage: {new_discount_profile.percentage}")
-            print(f"DEBUG: Object created_by: {new_discount_profile.created_by}")
-
-            # In Datenbank speichern
-            print("DEBUG: Adding to database session...")
             db.session.add(new_discount_profile)
 
-            print("DEBUG: Committing to database...")
             db.session.commit()
-
-            print("DEBUG: SUCCESS - Profile saved to database!")
 
             type_display = "Rabatt" if discount_type == "discount" else "Aufschlag"
             flash(
@@ -1092,11 +1044,7 @@ def printHub_discount_profiles():
             )
 
         except Exception as e:
-            print(f"DEBUG ERROR: Exception during POST: {e}")
-            print(f"DEBUG ERROR: Exception type: {type(e)}")
-            import traceback
 
-            print(f"DEBUG ERROR: Full traceback:")
             traceback.print_exc()
 
             # Rollback bei Fehler
@@ -1104,57 +1052,37 @@ def printHub_discount_profiles():
             flash("Ein unerwarteter Fehler ist aufgetreten.", "error")
             current_app.logger.error(f"Unexpected error adding discount profile: {e}")
 
-        print("DEBUG: Redirecting after POST...")
         return redirect(url_for("PrintHub.printHub_discount_profiles"))
-
-    # GET Request - Rabatte-Profile laden
-    print("DEBUG: GET request - loading profiles")
 
     try:
         # Suchparameter
         search_term = request.args.get("search", "").strip()
         show_inactive = request.args.get("show_inactive", "").strip() == "true"
 
-        print(f"DEBUG: search_term: '{search_term}'")
-        print(f"DEBUG: show_inactive: {show_inactive}")
-        print(f"DEBUG: current_user.username: '{current_user.username}'")
-
-        # Erstmal ALLE Profile laden (ohne Benutzer-Filter)
-        print("DEBUG: Loading ALL profiles (no user filter)")
         all_profiles = PrintHubDiscountProfile.query.all()
-        print(f"DEBUG: Total profiles in database: {len(all_profiles)}")
-
-        for profile in all_profiles:
-            print(
-                f"DEBUG: Profile {profile.id}: name='{profile.name}', created_by='{profile.created_by}', type='{profile.discount_type}'"
-            )
 
         # Jetzt mit Benutzer-Filter
-        print(f"DEBUG: Loading profiles for user: '{current_user.username}'")
+
         user_profiles = PrintHubDiscountProfile.query.filter_by(
             created_by=current_user.username
         ).all()
-        print(f"DEBUG: User profiles found: {len(user_profiles)}")
 
         # Rabatte-Profile laden
         if search_term:
-            print("DEBUG: Using search method")
+
             discount_profiles = PrintHubDiscountProfile.search(
                 username=current_user.username,
                 search_term=search_term,
                 include_inactive=show_inactive,
             )
         else:
-            print("DEBUG: Using get_by_user method")
+
             discount_profiles = PrintHubDiscountProfile.get_by_user(
                 current_user.username, include_inactive=show_inactive
             )
 
-        print(f"DEBUG: Final discount_profiles count: {len(discount_profiles)}")
-
         # Statistiken berechnen
         active_profiles = [dp for dp in discount_profiles if dp.is_active]
-        print(f"DEBUG: Active profiles: {len(active_profiles)}")
 
         stats = {
             "total_profiles": len(discount_profiles),
@@ -1177,9 +1105,6 @@ def printHub_discount_profiles():
             ),
         }
 
-        print(f"DEBUG: Stats calculated: {stats}")
-        print("DEBUG: About to render template")
-
         return render_template(
             "PrintHubDiscountProfiles.html",
             user=current_user,
@@ -1193,12 +1118,6 @@ def printHub_discount_profiles():
         )
 
     except Exception as e:
-        print(f"DEBUG ERROR: Exception in GET request: {e}")
-        print(f"DEBUG ERROR: Exception type: {type(e)}")
-        import traceback
-
-        print(f"DEBUG ERROR: Traceback: {traceback.format_exc()}")
-
         flash("Fehler beim Laden der Rabatt-Profile.", "error")
         current_app.logger.error(f"Error loading discount profiles: {e}")
 
@@ -1358,3 +1277,181 @@ def api_calculate_discount(profile_id):
     except Exception as e:
         current_app.logger.error(f"Error calculating discount: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+# Zu routes.py hinzufügen:
+
+
+@blueprint.route("/printHub_quote_calculator", methods=["GET", "POST"])
+@enabled_required
+def printHub_quote_calculator():
+    """3D-Druck Offerten-Rechner"""
+
+    if request.method == "POST":
+        try:
+            # Hauptauftrag-Daten
+            order_name = request.form.get("order_name", "").strip()
+            customer_name = request.form.get("customer_name", "").strip()
+
+            # Subaufträge (können mehrere sein)
+            suborders = []
+            suborder_count = int(request.form.get("suborder_count", 0))
+
+            for i in range(suborder_count):
+                suborder_name = request.form.get(f"suborder_name_{i}", "").strip()
+                printer_id = request.form.get(f"printer_id_{i}", type=int)
+                filament_id = request.form.get(f"filament_id_{i}", type=int)
+                print_time_hours = request.form.get(f"print_time_hours_{i}", type=float)
+                filament_usage_grams = request.form.get(
+                    f"filament_usage_grams_{i}", type=int
+                )
+
+                if (
+                    suborder_name
+                    and printer_id
+                    and filament_id
+                    and print_time_hours
+                    and filament_usage_grams
+                ):
+                    suborders.append(
+                        {
+                            "name": suborder_name,
+                            "printer_id": printer_id,
+                            "filament_id": filament_id,
+                            "print_time_hours": print_time_hours,
+                            "filament_usage_grams": filament_usage_grams,
+                        }
+                    )
+
+            # Berechnung durchführen
+            quote_result = calculate_quote(
+                current_user.username, order_name, customer_name, suborders
+            )
+
+            # Ergebnis in Session speichern für Anzeige
+            session["last_quote"] = quote_result
+
+            flash("Offerte erfolgreich berechnet!", "success")
+            return redirect(url_for("PrintHub.printHub_quote_calculator"))
+
+        except Exception as e:
+            flash(f"Fehler bei der Berechnung: {str(e)}", "error")
+            current_app.logger.error(f"Quote calculation error: {e}")
+
+    # GET Request - Formular anzeigen
+    try:
+        # Alle verfügbaren Drucker laden
+        printers = PrintHubPrinter.get_by_user(current_user.username)
+
+        # Alle verfügbaren Filamente laden
+        filaments = PrintHubFilament.get_by_user(current_user.username)
+
+        # Alle verfügbaren Rabatt-Profile laden
+        discount_profiles = PrintHubDiscountProfile.get_by_user(current_user.username)
+
+        # Alle verfügbaren Overhead-Profile laden
+        overhead_profiles = PrintHubOverheadProfile.get_by_user(current_user.username)
+
+        # Alle verfügbaren Energie-Profile laden
+        energy_profiles = PrintHubEnergyCost.get_by_user(current_user.username)
+
+        # Alle verfügbaren Work-Profile laden
+        work_profiles = PrintHubWorkHours.get_by_user(current_user.username)
+
+        # Letzte Offerte aus Session laden (falls vorhanden)
+        # last_quote = session.get("last_quote", None)
+        return render_template(
+            "PrintHubQuoteCalculator.html",
+            user=current_user,
+            config=config,
+            active_page="quote_calculator",
+            printers=printers,
+            filaments=filaments,
+            discount_profiles=discount_profiles,
+            overhead_profiles=overhead_profiles,
+            energy_profiles=energy_profiles,
+            work_profiles=work_profiles,
+        )
+
+    except Exception as e:
+        flash(f"Fehler beim Laden der Kalkulationsseite. {e}", "error")
+        current_app.logger.error(f"Error loading quote calculator: {e}")
+        return redirect(url_for("PrintHub.PrintHub_index"))
+
+
+def calculate_quote(username, order_name, customer_name, suborders):
+    """Berechnet die Offerte für einen Auftrag"""
+
+    total_cost = 0
+    total_time = 0
+    suborder_details = []
+
+    for suborder in suborders:
+        # Drucker laden
+        printer = PrintHubPrinter.query.filter_by(
+            id=suborder["printer_id"], created_by=username
+        ).first()
+
+        # Filament laden
+        filament = PrintHubFilament.query.filter_by(
+            id=suborder["filament_id"], created_by=username
+        ).first()
+
+        if not printer or not filament:
+            continue
+
+        # Kosten berechnen
+        print_time_hours = suborder["print_time_hours"]
+        filament_usage_grams = suborder["filament_usage_grams"]
+
+        # Maschinenkosten
+        machine_cost = float(printer.machine_cost_per_hour) * print_time_hours
+
+        # Filamentkosten
+        filament_cost_per_gram = float(filament.price) / filament.weight
+        filament_cost = filament_cost_per_gram * filament_usage_grams
+
+        # Energiekosten (falls verfügbar)
+        energy_cost = 0
+        if printer.energy_consumption:
+            energy_kwh = (printer.energy_consumption / 1000) * print_time_hours
+            energy_cost = energy_kwh * 0.25  # 0.25 CHF pro kWh
+
+        # Subauftrag-Gesamtkosten
+        suborder_total = machine_cost + filament_cost + energy_cost
+
+        suborder_details.append(
+            {
+                "name": suborder["name"],
+                "printer_name": printer.name,
+                "filament_name": f"{filament.manufacturer} {filament.name}",
+                "print_time_hours": print_time_hours,
+                "filament_usage_grams": filament_usage_grams,
+                "machine_cost": round(machine_cost, 2),
+                "filament_cost": round(filament_cost, 2),
+                "energy_cost": round(energy_cost, 2),
+                "suborder_total": round(suborder_total, 2),
+            }
+        )
+
+        total_cost += suborder_total
+        total_time += print_time_hours
+
+    # Ergebnis zusammenstellen
+    quote_result = {
+        "order_name": order_name,
+        "customer_name": customer_name,
+        "created_at": datetime.now().strftime("%d.%m.%Y %H:%M"),
+        "suborders": suborder_details,
+        "total_cost": round(total_cost, 2),
+        "total_time": round(total_time, 2),
+        "cost_breakdown": {
+            "machine_cost": round(sum(s["machine_cost"] for s in suborder_details), 2),
+            "filament_cost": round(
+                sum(s["filament_cost"] for s in suborder_details), 2
+            ),
+            "energy_cost": round(sum(s["energy_cost"] for s in suborder_details), 2),
+        },
+    }
+
+    return quote_result
