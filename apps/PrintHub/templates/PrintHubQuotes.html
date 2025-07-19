@@ -75,9 +75,12 @@
       </h3>
       <div>
         <div class="form-check form-switch d-inline-block me-3">
-          <input class="form-check-input" type="checkbox" id="includeArchived"
-          {{ 'checked' if include_archived }}>
-          <label class="form-check-label" for="includeArchived">
+          <input class="form-check-input text-prusa-white" type="checkbox"
+          id="includeArchived" {{ 'checked' if include_archived }}>
+          <label
+            class="form-check-label text-prusa-white"
+            for="includeArchived"
+          >
             Archivierte anzeigen
           </label>
         </div>
@@ -147,6 +150,17 @@
             >
               <i class="bi bi-eye"></i>
             </a>
+
+            {% if quote.status == 'draft' %}
+            <a
+              href="{{ url_for('PrintHub.printHub_quote_calculator', quote_id=quote.id) }}"
+              class="btn btn-sm btn-outline-warning"
+              title="Bearbeiten"
+            >
+              <i class="bi bi-pencil"></i>
+            </a>
+            {% endif %}
+
             <button
               type="button"
               class="btn btn-sm btn-outline-secondary"
@@ -155,14 +169,7 @@
             >
               <i class="bi bi-file-pdf"></i>
             </button>
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-warning"
-              title="Duplizieren"
-              onclick="duplicateQuote({{ quote.id }})"
-            >
-              <i class="bi bi-copy"></i>
-            </button>
+
             {% if quote.status == 'draft' %}
             <button
               type="button"
@@ -210,30 +217,6 @@
   // PDF generieren
   function generatePdf(quoteId) {
     window.open(`/PrintHub/quote/${quoteId}/pdf`, "_blank");
-  }
-
-  // Offerte duplizieren
-  function duplicateQuote(quoteId) {
-    if (confirm("Möchten Sie diese Offerte duplizieren?")) {
-      fetch(`/PrintHub/api/quote/${quoteId}/duplicate`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.success) {
-            window.location.href = `/PrintHub/quote/${data.new_quote_id}`;
-          } else {
-            alert("Fehler beim Duplizieren: " + data.error);
-          }
-        })
-        .catch((error) => {
-          alert("Fehler beim Duplizieren der Offerte");
-          console.error("Error:", error);
-        });
-    }
   }
 
   // Offerte löschen

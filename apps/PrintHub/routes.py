@@ -1341,9 +1341,29 @@ def api_calculate_discount(profile_id):
 
 
 @blueprint.route("/printHub_quote_calculator", methods=["GET", "POST"])
+@blueprint.route(
+    "/printHub_quote_calculator/<int:quote_id>/edit", methods=["GET", "POST"]
+)
 @enabled_required
-def printHub_quote_calculator():
-    """3D-Druck Offerten-Rechner - Erweiterte Version"""
+def printHub_quote_calculator(quote_id=None):
+    """3D-Druck Offerten-Rechner - Neu erstellen oder bearbeiten"""
+
+    if quote_id is None and request.method == "GET":
+        quote_id = request.args.get("quote_id", type=int)
+
+    # Edit-Modus: Bestehende Quote laden
+    edit_quote = None
+    if quote_id:
+        edit_quote = PrintHubQuote.query.filter_by(
+            id=quote_id, created_by=current_user.username
+        ).first_or_404()
+
+        # Nur Entwürfe können bearbeitet werden
+        if edit_quote.status != "draft":
+            flash("Nur Entwürfe können bearbeitet werden.", "error")
+            return redirect(
+                url_for("PrintHub.printHub_quote_detail", quote_id=quote_id)
+            )
 
     if request.method == "POST":
         try:
@@ -1367,7 +1387,7 @@ def printHub_quote_calculator():
             # Validierung
             if not order_name:
                 flash("Bitte geben Sie einen Auftragsnamen ein!", "error")
-                return redirect(url_for("PrintHub.printHub_quote_calculator"))
+                return redirect(request.url)
 
             # Subaufträge verarbeiten
             suborders = []
@@ -1377,9 +1397,7 @@ def printHub_quote_calculator():
                 suborder_name = request.form.get(f"suborder_name_{i}", "").strip()
                 filament_id = request.form.get(f"filament_id_{i}", type=int)
                 print_time_hours = request.form.get(f"print_time_hours_{i}", type=float)
-                work_time_hours = request.form.get(
-                    f"work_time_hours_{i}", type=float
-                )  # Neue Arbeitszeit
+                work_time_hours = request.form.get(f"work_time_hours_{i}", type=float)
                 filament_usage_grams = request.form.get(
                     f"filament_usage_grams_{i}", type=int
                 )
@@ -1432,23 +1450,39 @@ def printHub_quote_calculator():
 
             if not suborders:
                 flash("Bitte fügen Sie mindestens einen Druckauftrag hinzu!", "error")
-                return redirect(url_for("PrintHub.printHub_quote_calculator"))
+                return redirect(request.url)
 
-            # Quote berechnen und speichern
-            quote = calculate_and_save_quote(
-                username=current_user.username,
-                order_name=order_name,
-                customer_name=customer_name,
-                global_printer_id=global_printer_id,
-                global_energy_profile_id=global_energy_profile_id,
-                global_work_profile_id=global_work_profile_id,
-                global_overhead_profile_id=global_overhead_profile_id,
-                global_discount_profile_id=global_discount_profile_id,
-                suborders=suborders,
-            )
+            # Quote berechnen und speichern/aktualisieren
+            if edit_quote:
+                # Bestehende Quote aktualisieren
+                quote = update_existing_quote(
+                    quote=edit_quote,
+                    order_name=order_name,
+                    customer_name=customer_name,
+                    global_printer_id=global_printer_id,
+                    global_energy_profile_id=global_energy_profile_id,
+                    global_work_profile_id=global_work_profile_id,
+                    global_overhead_profile_id=global_overhead_profile_id,
+                    global_discount_profile_id=global_discount_profile_id,
+                    suborders=suborders,
+                )
+                flash("Offerte erfolgreich aktualisiert!", "success")
+            else:
+                # Neue Quote erstellen
+                quote = calculate_and_save_quote(
+                    username=current_user.username,
+                    order_name=order_name,
+                    customer_name=customer_name,
+                    global_printer_id=global_printer_id,
+                    global_energy_profile_id=global_energy_profile_id,
+                    global_work_profile_id=global_work_profile_id,
+                    global_overhead_profile_id=global_overhead_profile_id,
+                    global_discount_profile_id=global_discount_profile_id,
+                    suborders=suborders,
+                )
+                flash("Offerte erfolgreich erstellt!", "success")
 
             if quote:
-                flash("Offerte erfolgreich berechnet und gespeichert!", "success")
                 return redirect(
                     url_for("PrintHub.printHub_quote_detail", quote_id=quote.id)
                 )
@@ -1459,7 +1493,7 @@ def printHub_quote_calculator():
             flash(f"Fehler bei der Berechnung: {str(e)}", "error")
             current_app.logger.error(f"Quote calculation error: {e}")
 
-        return redirect(url_for("PrintHub.printHub_quote_calculator"))
+        return redirect(request.url)
 
     # GET Request - Formular anzeigen
     try:
@@ -1470,6 +1504,11 @@ def printHub_quote_calculator():
         work_profiles = PrintHubWorkHours.get_by_user(current_user.username)
         overhead_profiles = PrintHubOverheadProfile.get_by_user(current_user.username)
         discount_profiles = PrintHubDiscountProfile.get_by_user(current_user.username)
+
+        # Edit-Mode: Daten für Vorausfüllung vorbereiten
+        edit_data = None
+        if edit_quote:
+            edit_data = prepare_edit_data(edit_quote)
 
         return render_template(
             "PrintHubQuoteCalculator.html",
@@ -1483,6 +1522,9 @@ def printHub_quote_calculator():
             overhead_profiles=overhead_profiles,
             discount_profiles=discount_profiles,
             current_date=datetime.now().strftime("%d.%m.%Y"),
+            edit_quote=edit_quote,
+            edit_data=edit_data,
+            is_edit_mode=bool(edit_quote),
         )
 
     except Exception as e:
@@ -2068,4 +2110,295 @@ def api_quotes():
 
     except Exception as e:
         current_app.logger.error(f"Error in API quotes: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+def update_existing_quote(
+    quote,
+    order_name,
+    customer_name,
+    global_printer_id,
+    global_energy_profile_id,
+    global_work_profile_id,
+    global_overhead_profile_id,
+    global_discount_profile_id,
+    suborders,
+):
+    """Aktualisiert eine bestehende Quote"""
+
+    try:
+        # Globale Profile laden
+        global_printer = (
+            PrintHubPrinter.query.get(global_printer_id) if global_printer_id else None
+        )
+        global_energy = (
+            PrintHubEnergyCost.query.get(global_energy_profile_id)
+            if global_energy_profile_id
+            else None
+        )
+        global_work = (
+            PrintHubWorkHours.query.get(global_work_profile_id)
+            if global_work_profile_id
+            else None
+        )
+        global_overhead = (
+            PrintHubOverheadProfile.query.get(global_overhead_profile_id)
+            if global_overhead_profile_id
+            else None
+        )
+        global_discount = (
+            PrintHubDiscountProfile.query.get(global_discount_profile_id)
+            if global_discount_profile_id
+            else None
+        )
+
+        # Quote-Daten aktualisieren
+        quote.order_name = order_name
+        quote.customer_name = customer_name
+        quote.global_printer_id = global_printer_id
+        quote.global_energy_profile_id = global_energy_profile_id
+        quote.global_work_profile_id = global_work_profile_id
+        quote.global_overhead_profile_id = global_overhead_profile_id
+        quote.global_discount_profile_id = global_discount_profile_id
+        quote.updated_at = get_current_time()
+
+        # Alte SubOrders löschen
+        for old_suborder in quote.suborders:
+            db.session.delete(old_suborder)
+
+        # Neue Berechnungen
+        total_cost = 0
+        total_time = 0
+        total_work_time = 0
+        total_machine_cost = 0
+        total_material_cost = 0
+        total_energy_cost = 0
+        total_work_cost = 0
+        total_overhead_cost = 0
+
+        # Neue SubOrders erstellen
+        for suborder_data in suborders:
+            # Filament laden
+            filament = PrintHubFilament.query.get(suborder_data["filament_id"])
+            if not filament:
+                continue
+
+            # Profile bestimmen (individuell oder global)
+            if suborder_data["use_individual"]:
+                printer = (
+                    PrintHubPrinter.query.get(suborder_data["individual_printer_id"])
+                    if suborder_data["individual_printer_id"]
+                    else global_printer
+                )
+                energy = (
+                    PrintHubEnergyCost.query.get(suborder_data["individual_energy_id"])
+                    if suborder_data["individual_energy_id"]
+                    else global_energy
+                )
+                work = (
+                    PrintHubWorkHours.query.get(suborder_data["individual_work_id"])
+                    if suborder_data["individual_work_id"]
+                    else global_work
+                )
+                overhead = (
+                    PrintHubOverheadProfile.query.get(
+                        suborder_data["individual_overhead_id"]
+                    )
+                    if suborder_data["individual_overhead_id"]
+                    else global_overhead
+                )
+            else:
+                printer = global_printer
+                energy = global_energy
+                work = global_work
+                overhead = global_overhead
+
+            # Kosten berechnen
+            print_time = suborder_data["print_time_hours"]
+            work_time = suborder_data["work_time_hours"]
+            usage_grams = suborder_data["filament_usage_grams"]
+
+            # Maschinenkosten
+            machine_cost = (
+                float(printer.machine_cost_per_hour if printer else 0) * print_time
+            )
+
+            # Materialkosten
+            material_cost = (float(filament.price) / filament.weight) * usage_grams
+
+            # Energiekosten
+            energy_cost = print_time * float(energy.cost_per_kwh if energy else 0.25)
+
+            # Arbeitskosten (verwende individuelle Arbeitszeit!)
+            work_cost = work_time * float(work.cost_per_hour if work else 0)
+
+            # Overhead-Kosten
+            overhead_cost = print_time * float(
+                overhead.overhead_per_hour if overhead else 0
+            )
+
+            # Suborder-Total vor Rabatt/Aufschlag
+            suborder_subtotal = (
+                machine_cost + material_cost + energy_cost + work_cost + overhead_cost
+            )
+
+            # SubOrder-Objekt erstellen
+            suborder_obj = PrintHubSubOrder(
+                quote_id=quote.id,
+                name=suborder_data["name"],
+                filament_id=suborder_data["filament_id"],
+                filament_usage_grams=usage_grams,
+                print_time_hours=print_time,
+                work_time_hours=work_time,
+                printer_id=printer.id if printer else None,
+                energy_profile_id=energy.id if energy else None,
+                work_profile_id=work.id if work else None,
+                overhead_profile_id=overhead.id if overhead else None,
+                machine_cost=machine_cost,
+                material_cost=material_cost,
+                energy_cost=energy_cost,
+                work_cost=work_cost,
+                overhead_cost=overhead_cost,
+                suborder_total=suborder_subtotal,
+                # Snapshot-Daten für Historisierung
+                printer_name=printer.name if printer else "Nicht definiert",
+                filament_name=f"{filament.manufacturer} {filament.name}",
+                printer_cost_per_hour=printer.machine_cost_per_hour if printer else 0,
+                energy_cost_per_kwh=energy.cost_per_kwh if energy else 0.25,
+                work_cost_per_hour=work.cost_per_hour if work else 0,
+                overhead_cost_per_hour=overhead.overhead_per_hour if overhead else 0,
+            )
+
+            db.session.add(suborder_obj)
+
+            # Totals aktualisieren
+            total_cost += suborder_subtotal
+            total_time += print_time
+            total_work_time += work_time
+            total_machine_cost += machine_cost
+            total_material_cost += material_cost
+            total_energy_cost += energy_cost
+            total_work_cost += work_cost
+            total_overhead_cost += overhead_cost
+
+        # Globaler Rabatt/Aufschlag anwenden
+        if global_discount:
+            total_cost = global_discount.calculate_final_price(total_cost)
+
+        # Quote-Totals aktualisieren
+        quote.total_cost = total_cost
+        quote.total_time = total_time
+        quote.total_work_time = total_work_time
+        quote.total_machine_cost = total_machine_cost
+        quote.total_material_cost = total_material_cost
+        quote.total_energy_cost = total_energy_cost
+        quote.total_work_cost = total_work_cost
+        quote.total_overhead_cost = total_overhead_cost
+
+        # In Datenbank speichern
+        db.session.commit()
+
+        # Ergebnis in Session für Anzeige speichern
+        session["last_quote_result"] = create_quote_display_data(quote)
+
+        return quote
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error updating quote: {e}")
+        return None
+
+
+def create_quote_display_data(quote):
+    """Erstellt Anzeige-Daten für das Frontend (falls noch nicht vorhanden)"""
+    return {
+        "id": quote.id,
+        "order_name": quote.order_name,
+        "customer_name": quote.customer_name,
+        "created_at": quote.created_at.strftime("%d.%m.%Y %H:%M"),
+        "total_cost": float(quote.total_cost),
+        "total_time": float(quote.total_time),
+        "total_work_time": float(quote.total_work_time),
+        "suborders": [suborder.to_dict() for suborder in quote.suborders],
+        "cost_breakdown": {
+            "machine_cost": float(quote.total_machine_cost),
+            "filament_cost": float(quote.total_material_cost),
+            "energy_cost": float(quote.total_energy_cost),
+            "work_cost": float(quote.total_work_cost),
+            "overhead_cost": float(quote.total_overhead_cost),
+        },
+    }
+
+
+def prepare_edit_data(quote):
+    """Bereitet Quote-Daten für die Bearbeitung vor"""
+
+    edit_data = {
+        "order_name": quote.order_name,
+        "customer_name": quote.customer_name,
+        "global_printer_id": quote.global_printer_id,
+        "global_energy_profile_id": quote.global_energy_profile_id,
+        "global_work_profile_id": quote.global_work_profile_id,
+        "global_overhead_profile_id": quote.global_overhead_profile_id,
+        "global_discount_profile_id": quote.global_discount_profile_id,
+        "suborders": [],
+    }
+
+    # SubOrders für Vorausfüllung vorbereiten
+    for suborder in quote.suborders:
+        suborder_data = {
+            "name": suborder.name,
+            "filament_id": suborder.filament_id,
+            "print_time_hours": float(suborder.print_time_hours),
+            "work_time_hours": float(suborder.work_time_hours),
+            "filament_usage_grams": suborder.filament_usage_grams,
+            "printer_id": suborder.printer_id,
+            "energy_profile_id": suborder.energy_profile_id,
+            "work_profile_id": suborder.work_profile_id,
+            "overhead_profile_id": suborder.overhead_profile_id,
+            # Bestimme ob individuelle Einstellungen verwendet werden
+            "use_individual": (
+                suborder.printer_id != quote.global_printer_id
+                or suborder.energy_profile_id != quote.global_energy_profile_id
+                or suborder.work_profile_id != quote.global_work_profile_id
+                or suborder.overhead_profile_id != quote.global_overhead_profile_id
+            ),
+        }
+        edit_data["suborders"].append(suborder_data)
+
+    return edit_data
+
+
+# Zusätzliche Route für einfache Bearbeitung von der Detail-Seite
+@blueprint.route("/api/quote/<int:quote_id>/edit_redirect", methods=["GET"])
+@enabled_required
+def api_quote_edit_redirect(quote_id):
+    """Redirect zur Bearbeitung mit besserer URL"""
+    try:
+        quote = PrintHubQuote.query.filter_by(
+            id=quote_id, created_by=current_user.username
+        ).first()
+
+        if not quote:
+            return jsonify({"success": False, "error": "Offerte nicht gefunden"}), 404
+
+        if quote.status != "draft":
+            return (
+                jsonify(
+                    {"success": False, "error": "Nur Entwürfe können bearbeitet werden"}
+                ),
+                400,
+            )
+
+        return jsonify(
+            {
+                "success": True,
+                "redirect_url": url_for(
+                    "PrintHub.printHub_quote_calculator", quote_id=quote_id
+                ),
+            }
+        )
+
+    except Exception as e:
+        current_app.logger.error(f"Error in edit redirect: {e}")
         return jsonify({"success": False, "error": str(e)}), 500

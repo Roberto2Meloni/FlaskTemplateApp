@@ -241,25 +241,50 @@
         <div class="action-buttons">
           <button
             type="button"
-            class="btn btn-outline-primary"
-            onclick="window.print()"
-          >
-            <i class="bi bi-printer"></i> Drucken
-          </button>
-          <button
-            type="button"
             class="btn btn-outline-secondary"
             onclick="generatePdf({{ quote.id }})"
           >
             <i class="bi bi-file-pdf"></i> Als PDF
           </button>
-          <button
-            type="button"
-            class="btn btn-outline-warning"
-            onclick="duplicateQuote({{ quote.id }})"
-          >
-            <i class="bi bi-copy"></i> Duplizieren
-          </button>
+          <div class="action-buttons">
+            <a
+              href="{{ url_for('PrintHub.printHub_quote_detail', quote_id=quote.id) }}"
+              class="btn btn-sm btn-outline-primary"
+              title="Anzeigen"
+            >
+              <i class="bi bi-eye"></i>
+            </a>
+
+            {% if quote.status == 'draft' %}
+            <a
+              href="{{ url_for('PrintHub.printHub_quote_calculator') }}/{{ quote.id }}/edit"
+              class="btn btn-sm btn-outline-warning"
+              title="Bearbeiten"
+            >
+              <i class="bi bi-pencil"></i>
+            </a>
+            {% endif %}
+
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary"
+              title="PDF generieren"
+              onclick="generatePdf({{ quote.id }})"
+            >
+              <i class="bi bi-file-pdf"></i>
+            </button>
+
+            {% if quote.status == 'draft' %}
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-danger"
+              title="Löschen"
+              onclick="deleteQuote({{ quote.id }})"
+            >
+              <i class="bi bi-trash"></i>
+            </button>
+            {% endif %}
+          </div>
 
           {% if quote.status == 'draft' %}
           <button

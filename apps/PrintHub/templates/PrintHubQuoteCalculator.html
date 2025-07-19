@@ -1,35 +1,47 @@
-{% extends "layouts/web_app_layouts/web_app_base.html" %} {% block content %}
+{% extends "layouts/web_app_layouts/web_app_base.html" %} 
+{% block content %}
 <div class="printhub-container">
   <!-- Sidebar -->
   {% include "layouts/web_app_layouts/PrintHubSidebar.html" %}
   <div class="printhub-content">
     <div class="content-header">
-      <h1><i class="bi bi-calculator"></i> 3D-Druck Offerten-Rechner</h1>
+      <h1>
+        <i class="bi bi-calculator"></i>
+        {% if is_edit_mode %} 
+          Offerte bearbeiten: {{ edit_quote.order_name }} 
+        {% else %} 
+          3D-Druck Offerten-Rechner 
+        {% endif %}
+      </h1>
       <p class="lead">
         Erstellen Sie präzise Kostenvoranschläge für Ihre 3D-Druckaufträge
       </p>
     </div>
+
     <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %} {% if
-    messages %} {% for category, message in messages %}
-    <div
-      class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show"
-      role="alert"
-    >
-      {{ message }}
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    {% endfor %} {% endif %} {% endwith %}
+    {% with messages = get_flashed_messages(with_categories=true) %} 
+    {% if messages %} 
+      {% for category, message in messages %}
+      <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+      {% endfor %} 
+    {% endif %} 
+    {% endwith %}
+
     <!-- Offerten-Formular -->
     <div class="filament-form-container">
       <h3 class="text-prusa-orange mb-4">
-        <i class="bi bi-plus-circle"></i> Neue Offerte erstellen
+        <i class="bi bi-plus-circle"></i>
+        {% if edit_data %}
+          Offerte Bearbeiten
+        {% else %}
+          Neue Offerte erstellen
+        {% endif %}
       </h3>
-      <form
-        id="quoteCalculatorForm"
-        method="POST"
-        action="{{ url_for('PrintHub.printHub_quote_calculator') }}"
-      >
+
+      <form id="quoteCalculatorForm" method="POST" action="{{ url_for('PrintHub.printHub_quote_calculator') }}">
         <!-- Hauptauftrag -->
         <div class="card mb-4" style="background-color: #ff6600">
           <div class="card-header">
@@ -48,6 +60,7 @@
                     id="order_name"
                     name="order_name"
                     placeholder="z.B. Prototyp Gehäuse"
+                    value="{% if edit_data %}{{ edit_data.order_name }}{% endif %}"
                     required
                   />
                 </div>
@@ -63,6 +76,7 @@
                     id="customer_name"
                     name="customer_name"
                     placeholder="z.B. Mustermann AG"
+                    value="{% if edit_data %}{{ edit_data.customer_name or '' }}{% endif %}"
                   />
                 </div>
               </div>
@@ -91,9 +105,7 @@
           <div class="card-header">
             <h5 class="mb-0">
               <i class="bi bi-calculator"></i> Globale Kalkulationsgrundlagen
-              <small class="text-muted ms-2"
-                >(Gelten für alle Druckaufträge)</small
-              >
+              <small class="text-muted ms-2">(Gelten für alle Druckaufträge)</small>
             </h5>
           </div>
           <div class="card-body">
@@ -103,21 +115,15 @@
                   <label for="global_3d_printer" class="form-label">
                     <i class="bi bi-printer"></i> 3D-Drucker
                   </label>
-                  <select
-                    class="form-control"
-                    id="global_3d_printer"
-                    name="global_3d_printer"
-                  >
-                    <option value="" data-cost="0">
-                      Kein 3D-Drucker verfügbar
-                    </option>
+                  <select class="form-control" id="global_3d_printer" name="global_3d_printer">
+                    <option value="" data-cost="0">Kein 3D-Drucker verfügbar</option>
                     {% for printer in printers %}
                     <option
                       value="{{ printer.id }}"
                       data-cost="{{ printer.machine_cost_per_hour }}"
+                      {% if edit_data and edit_data.global_printer_id == printer.id %}selected{% endif %}
                     >
-                      {{ printer.name }} - CHF {{
-                      "%.4f"|format(printer.machine_cost_per_hour) }}/h
+                      {{ printer.name }} - CHF {{ "%.4f"|format(printer.machine_cost_per_hour) }}/h
                     </option>
                     {% endfor %}
                   </select>
@@ -129,21 +135,15 @@
                   <label for="global_energy_profile" class="form-label">
                     <i class="bi bi-lightning-charge"></i> Energiekosten-Profil
                   </label>
-                  <select
-                    class="form-control"
-                    id="global_energy_profile"
-                    name="global_energy_profile"
-                  >
-                    <option value="" data-cost="0">
-                      Kein Energiekosten-Profil verfügbar
-                    </option>
+                  <select class="form-control" id="global_energy_profile" name="global_energy_profile">
+                    <option value="" data-cost="0">Kein Energiekosten-Profil verfügbar</option>
                     {% for energy in energy_profiles %}
                     <option
                       value="{{ energy.id }}"
                       data-cost="{{ energy.cost_per_kwh }}"
+                      {% if edit_data and edit_data.global_energy_profile_id == energy.id %}selected{% endif %}
                     >
-                      {{ energy.provider }} - CHF {{
-                      "%.4f"|format(energy.cost_per_kwh) }}/h
+                      {{ energy.provider }} - CHF {{ "%.4f"|format(energy.cost_per_kwh) }}/kWh
                     </option>
                     {% endfor %}
                   </select>
@@ -155,19 +155,15 @@
                   <label for="global_work_profile" class="form-label">
                     <i class="bi bi-clock"></i> Arbeitszeit-Profil
                   </label>
-                  <select
-                    class="form-control"
-                    id="global_work_profile"
-                    name="global_work_profile"
-                  >
+                  <select class="form-control" id="global_work_profile" name="global_work_profile">
                     <option value="" data-cost="0">Keine Arbeitszeit</option>
                     {% for work in work_profiles %}
                     <option
                       value="{{ work.id }}"
                       data-cost="{{ work.cost_per_hour }}"
+                      {% if edit_data and edit_data.global_work_profile_id == work.id %}selected{% endif %}
                     >
-                      {{ work.name }} ({{ work.role }}) - CHF {{
-                      "%.2f"|format(work.cost_per_hour) }}/h
+                      {{ work.name }} ({{ work.role }}) - CHF {{ "%.2f"|format(work.cost_per_hour) }}/h
                     </option>
                     {% endfor %}
                   </select>
@@ -179,19 +175,15 @@
                   <label for="global_overhead_profile" class="form-label">
                     <i class="bi bi-gear"></i> Overhead-Profil
                   </label>
-                  <select
-                    class="form-control"
-                    id="global_overhead_profile"
-                    name="global_overhead_profile"
-                  >
+                  <select class="form-control" id="global_overhead_profile" name="global_overhead_profile">
                     <option value="" data-cost="0">Kein Overhead</option>
                     {% for overhead in overhead_profiles %}
                     <option
                       value="{{ overhead.id }}"
                       data-cost="{{ overhead.overhead_per_hour }}"
+                      {% if edit_data and edit_data.global_overhead_profile_id == overhead.id %}selected{% endif %}
                     >
-                      {{ overhead.name }} - CHF {{
-                      "%.4f"|format(overhead.overhead_per_hour) }}/h
+                      {{ overhead.name }} - CHF {{ "%.4f"|format(overhead.overhead_per_hour) }}/h
                     </option>
                     {% endfor %}
                   </select>
@@ -206,19 +198,14 @@
                   <label for="global_discount_profile" class="form-label">
                     <i class="bi bi-percent"></i> Rabatt/Aufschlag
                   </label>
-                  <select
-                    class="form-control"
-                    id="global_discount_profile"
-                    name="global_discount_profile"
-                  >
-                    <option value="" data-type="" data-percentage="0">
-                      Kein Rabatt/Aufschlag
-                    </option>
+                  <select class="form-control" id="global_discount_profile" name="global_discount_profile">
+                    <option value="" data-type="" data-percentage="0">Kein Rabatt/Aufschlag</option>
                     {% for discount in discount_profiles %}
                     <option
                       value="{{ discount.id }}"
                       data-type="{{ discount.discount_type }}"
                       data-percentage="{{ discount.percentage }}"
+                      {% if edit_data and edit_data.global_discount_profile_id == discount.id %}selected{% endif %}
                     >
                       {{ discount.name }} ({{ discount.percentage_display }})
                     </option>
@@ -232,16 +219,9 @@
 
         <!-- Druckaufträge -->
         <div class="card mb-4" style="background-color: #ff6600">
-          <div
-            class="card-header d-flex justify-content-between align-items-center"
-          >
+          <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0"><i class="bi bi-layers"></i> Druckaufträge</h5>
-            <button
-              type="button"
-              class="btn btn-prusa btn-sm"
-              id="addSuborderBtn"
-              style="background-color: #1a1a1a"
-            >
+            <button type="button" class="btn btn-prusa btn-sm" id="addSuborderBtn" style="background-color: #1a1a1a">
               <i class="bi bi-plus"></i> Druck hinzufügen
             </button>
           </div>
@@ -251,11 +231,11 @@
             </div>
             <div id="emptySubordersMessage" class="text-center py-4 text-muted">
               <i class="bi bi-info-circle"></i>
-              Klicken Sie auf "Druck hinzufügen" um einen neuen Druckauftrag zu
-              erstellen
+              Klicken Sie auf "Druck hinzufügen" um einen neuen Druckauftrag zu erstellen
             </div>
           </div>
         </div>
+
         <!-- Aktionen -->
         <div class="d-flex justify-content-between align-items-center mb-4">
           <button type="button" class="btn btn-secondary" id="resetFormBtn">
@@ -265,47 +245,37 @@
             <i class="bi bi-calculator"></i> Offerte berechnen
           </button>
         </div>
-        <input
-          type="hidden"
-          id="suborderCount"
-          name="suborder_count"
-          value="0"
-        />
+        <input type="hidden" id="suborderCount" name="suborder_count" value="0" />
       </form>
     </div>
+
     <!-- Offerten-Ergebnis -->
     {% if last_quote %}
     <div class="filament-list-container">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h3 class="text-prusa-orange mb-0">
-          <i class="bi bi-file-earmark-text"></i> Offerte: {{
-          last_quote.order_name }}
+          <i class="bi bi-file-earmark-text"></i> Offerte: {{ last_quote.order_name }}
         </h3>
         <span class="badge badge-secondary">
           CHF {{ "%.2f"|format(last_quote.total_cost) }}
         </span>
       </div>
+
       <!-- Kopfzeile -->
       <div class="row mb-4">
         <div class="col-md-6">
-          <p>
-            <strong>Kunde:</strong> {{ last_quote.customer_name or 'Nicht
-            angegeben' }}
-          </p>
+          <p><strong>Kunde:</strong> {{ last_quote.customer_name or 'Nicht angegeben' }}</p>
           <p><strong>Erstellt:</strong> {{ last_quote.created_at }}</p>
         </div>
         <div class="col-md-6">
-          <p>
-            <strong>Gesamtzeit:</strong> {{ last_quote.total_time }} Stunden
-          </p>
+          <p><strong>Gesamtzeit:</strong> {{ last_quote.total_time }} Stunden</p>
           <p>
             <strong>Gesamtkosten:</strong>
-            <span class="text-prusa-orange h4"
-              >CHF {{ "%.2f"|format(last_quote.total_cost) }}</span
-            >
+            <span class="text-prusa-orange h4">CHF {{ "%.2f"|format(last_quote.total_cost) }}</span>
           </p>
         </div>
       </div>
+
       <!-- Subaufträge Details -->
       <h6 class="mb-3">Druckaufträge im Detail:</h6>
       {% for suborder in last_quote.suborders %}
@@ -314,20 +284,12 @@
           <div class="flex-grow-1">
             <div class="d-flex align-items-center mb-2">
               <h5 class="filament-name mb-0">{{ suborder.name }}</h5>
-              <span class="badge badge-secondary ms-2"
-                >{{ suborder.print_time_hours }}h</span
-              >
+              <span class="badge badge-secondary ms-2">{{ suborder.print_time_hours }}h</span>
             </div>
             <div class="filament-info">
-              <p class="mb-1">
-                <strong>Drucker:</strong> {{ suborder.printer_name }}
-              </p>
-              <p class="mb-1">
-                <strong>Filament:</strong> {{ suborder.filament_name }}
-              </p>
-              <p class="mb-1">
-                <strong>Verbrauch:</strong> {{ suborder.filament_usage_grams }}g
-              </p>
+              <p class="mb-1"><strong>Drucker:</strong> {{ suborder.printer_name }}</p>
+              <p class="mb-1"><strong>Filament:</strong> {{ suborder.filament_name }}</p>
+              <p class="mb-1"><strong>Verbrauch:</strong> {{ suborder.filament_usage_grams }}g</p>
               <div class="row">
                 <div class="col-md-2">
                   <small>Maschinenkosten:</small><br />
@@ -335,7 +297,7 @@
                 </div>
                 <div class="col-md-2">
                   <small>Materialkosten:</small><br />
-                  <span>CHF {{ "%.2f"|format(suborder.filament_cost) }}</span>
+                  <span>CHF {{ "%.2f"|format(suborder.material_cost) }}</span>
                 </div>
                 <div class="col-md-2">
                   <small>Energiekosten:</small><br />
@@ -350,13 +312,10 @@
                   <span>CHF {{ "%.2f"|format(suborder.overhead_cost) }}</span>
                 </div>
                 <div class="col-md-2">
-                  <small><strong>Gesamtkosten:</strong></small
-                  ><br />
-                  <span class="text-prusa-orange"
-                    ><strong
-                      >CHF {{ "%.2f"|format(suborder.suborder_total) }}</strong
-                    ></span
-                  >
+                  <small><strong>Gesamtkosten:</strong></small><br />
+                  <span class="text-prusa-orange">
+                    <strong>CHF {{ "%.2f"|format(suborder.suborder_total) }}</strong>
+                  </span>
                 </div>
               </div>
             </div>
@@ -364,6 +323,7 @@
         </div>
       </div>
       {% endfor %}
+
       <!-- Kostenaufschlüsselung -->
       <div class="row mt-4">
         <div class="col-md-6">
@@ -371,29 +331,27 @@
           <div class="filament-info">
             <p class="mb-1">
               <strong>Maschinenkosten:</strong>
-              CHF {{ "%.2f"|format(last_quote.cost_breakdown.machine_cost) }}
+              CHF {{ "%.2f"|format(last_quote.total_machine_cost) }}
             </p>
             <p class="mb-1">
               <strong>Materialkosten:</strong>
-              CHF {{ "%.2f"|format(last_quote.cost_breakdown.filament_cost) }}
+              CHF {{ "%.2f"|format(last_quote.total_material_cost) }}
             </p>
             <p class="mb-1">
               <strong>Energiekosten:</strong>
-              CHF {{ "%.2f"|format(last_quote.cost_breakdown.energy_cost) }}
+              CHF {{ "%.2f"|format(last_quote.total_energy_cost) }}
             </p>
             <p class="mb-1">
               <strong>Arbeitszeit:</strong>
-              CHF {{ "%.2f"|format(last_quote.cost_breakdown.work_cost) }}
+              CHF {{ "%.2f"|format(last_quote.total_work_cost) }}
             </p>
             <p class="mb-1">
               <strong>Overhead:</strong>
-              CHF {{ "%.2f"|format(last_quote.cost_breakdown.overhead_cost) }}
+              CHF {{ "%.2f"|format(last_quote.total_overhead_cost) }}
             </p>
             <p class="mb-1">
               <strong class="text-prusa-orange">Gesamtkosten:</strong>
-              <span class="text-prusa-orange h5"
-                >CHF {{ "%.2f"|format(last_quote.total_cost) }}</span
-              >
+              <span class="text-prusa-orange h5">CHF {{ "%.2f"|format(last_quote.total_cost) }}</span>
             </p>
           </div>
         </div>
@@ -407,21 +365,14 @@
           </div>
         </div>
       </div>
+
       <!-- Aktionen -->
       <div class="mt-4">
         <div class="action-buttons">
-          <button
-            type="button"
-            class="btn btn-outline-primary btn-sm"
-            onclick="window.print()"
-          >
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick="window.print()">
             <i class="bi bi-printer"></i> Drucken
           </button>
-          <button
-            type="button"
-            class="btn btn-outline-secondary btn-sm"
-            id="exportPdfBtn"
-          >
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="exportPdfBtn">
             <i class="bi bi-file-pdf"></i> Als PDF
           </button>
           <button type="button" class="btn btn-prusa btn-sm" id="saveQuoteBtn">
@@ -434,7 +385,7 @@
   </div>
 </div>
 
-<!-- Vereinfachtes Suborder Template -->
+<!-- Korrigiertes Suborder Template -->
 <template id="suborderTemplate">
   <div class="suborder-item filament-item mb-3" data-suborder-index="">
     <div class="d-flex justify-content-between align-items-start">
@@ -465,17 +416,16 @@
               <label class="form-label">
                 <i class="bi bi-disc"></i> Filament *
               </label>
+              <!-- KORRIGIERT: Richtiges Filament-Select mit korrekten Daten -->
               <select class="form-control suborder-filament" required>
-                <option value="">-- Filament wählen --</option>
+                <option value="">Filament auswählen</option>
                 {% for filament in filaments %}
                 <option
                   value="{{ filament.id }}"
                   data-price="{{ filament.price }}"
                   data-weight="{{ filament.weight }}"
                 >
-                  {{ filament.filament_type }} - {{ filament.manufacturer }} -
-                  {{ filament.name }} - CHF {{
-                  "%.2f"|format(filament.price_per_kg) }}/kg
+                  {{ filament.name }} ({{ filament.manufacturer }}) - CHF {{ "%.2f"|format(filament.price) }}
                 </option>
                 {% endfor %}
               </select>
@@ -511,7 +461,7 @@
                 title="Format: H:MM oder HH:MM (z.B. 7:45 für 7 Stunden 45 Minuten)"
                 required
               />
-              <div class="form-text">Format: H:MM (z.B. 7:45 für 7h 45min)</div>
+              <div class="form-text text-prusa-white">Format: H:MM (z.B. 7:45 für 7h 45min)</div>
               <input type="hidden" class="suborder-time" />
             </div>
           </div>
@@ -529,7 +479,7 @@
                 value="0:15"
                 required
               />
-              <div class="form-text">Format: H:MM (z.B. 0:15 für 15min)</div>
+              <div class="form-text text-prusa-white">Format: H:MM (z.B. 0:15 für 15min)</div>
               <input type="hidden" class="suborder-worktime" />
             </div>
           </div>
@@ -541,17 +491,13 @@
               <div class="alert alert-info mb-0">
                 <small>
                   <strong>Drucker:</strong>
-                  <span class="used-printer">Aus globalen Einstellungen</span
-                  ><br />
+                  <span class="used-printer">Aus globalen Einstellungen</span><br />
                   <strong>Energiekosten:</strong>
-                  <span class="used-energy">Aus globalen Einstellungen</span
-                  ><br />
+                  <span class="used-energy">Aus globalen Einstellungen</span><br />
                   <strong>Arbeitszeit:</strong>
-                  <span class="used-work">Aus globalen Einstellungen</span
-                  ><br />
+                  <span class="used-work">Aus globalen Einstellungen</span><br />
                   <strong>Overhead:</strong>
-                  <span class="used-overhead">Aus globalen Einstellungen</span
-                  ><br />
+                  <span class="used-overhead">Aus globalen Einstellungen</span><br />
                   <strong>Rabatt/Aufschlag:</strong>
                   <span class="used-discount">Aus globalen Einstellungen</span>
                 </small>
@@ -564,16 +510,10 @@
         <div class="row mb-3">
           <div class="col-md-12">
             <div class="form-check">
-              <input
-                class="form-check-input use-individual-calc"
-                type="checkbox"
-                id="individual_calc_"
-              />
+              <input class="form-check-input use-individual-calc" type="checkbox" id="individual_calc_" />
               <label class="form-check-label text-light" for="individual_calc_">
                 <i class="bi bi-gear"></i> Erweiterte Optionen
-                <small class="text-secondary"
-                  >(überschreibt globale Einstellungen für diesen Druck)</small
-                >
+                <small class="text-secondary text-prusa-white">(überschreibt globale Einstellungen für diesen Druck)</small>
               </label>
             </div>
           </div>
@@ -583,8 +523,7 @@
         <div class="individual-calc-section" style="display: none">
           <div class="alert alert-warning">
             <h6 class="mb-3">
-              <i class="bi bi-exclamation-triangle"></i> Erweiterte Optionen für
-              diesen Druck
+              <i class="bi bi-exclamation-triangle"></i> Erweiterte Optionen für diesen Druck
             </h6>
             <div class="row">
               <div class="col-md-3">
@@ -599,8 +538,7 @@
                       value="{{ printer.id }}"
                       data-cost="{{ printer.machine_cost_per_hour }}"
                     >
-                      {{ printer.name }} - CHF {{
-                      "%.2f"|format(printer.machine_cost_per_hour) }}/h
+                      {{ printer.name }} - CHF {{ "%.2f"|format(printer.machine_cost_per_hour) }}/h
                     </option>
                     {% endfor %}
                   </select>
@@ -618,8 +556,7 @@
                       value="{{ energy.id }}"
                       data-cost="{{ energy.cost_per_kwh }}"
                     >
-                      {{ energy.provider }} - CHF {{
-                      "%.4f"|format(energy.cost_per_kwh) }}/kWh
+                      {{ energy.provider }} - CHF {{ "%.4f"|format(energy.cost_per_kwh) }}/kWh
                     </option>
                     {% endfor %}
                   </select>
@@ -637,8 +574,7 @@
                       value="{{ work.id }}"
                       data-cost="{{ work.cost_per_hour }}"
                     >
-                      {{ work.name }} - CHF {{ "%.2f"|format(work.cost_per_hour)
-                      }}/h
+                      {{ work.name }} - CHF {{ "%.2f"|format(work.cost_per_hour) }}/h
                     </option>
                     {% endfor %}
                   </select>
@@ -656,8 +592,7 @@
                       value="{{ overhead.id }}"
                       data-cost="{{ overhead.overhead_per_hour }}"
                     >
-                      {{ overhead.name }} - CHF {{
-                      "%.4f"|format(overhead.overhead_per_hour) }}/h
+                      {{ overhead.name }} - CHF {{ "%.4f"|format(overhead.overhead_per_hour) }}/h
                     </option>
                     {% endfor %}
                   </select>
@@ -694,18 +629,13 @@
                   <span class="preview-overhead-cost">CHF 0.00</span>
                 </div>
                 <div class="col-md-2">
-                  <small><strong>Gesamtkosten:</strong></small
-                  ><br />
-                  <span class="preview-total-cost text-prusa-orange"
-                    ><strong>CHF 0.00</strong></span
-                  >
+                  <small><strong>Gesamtkosten:</strong></small><br />
+                  <span class="preview-total-cost text-prusa-orange"><strong>CHF 0.00</strong></span>
                 </div>
               </div>
               <div class="calculation-source-info mt-2">
                 <small class="text-muted">
-                  <span class="calc-source-text"
-                    >Verwendet globale Kalkulationsgrundlagen</span
-                  >
+                  <span class="calc-source-text">Verwendet globale Kalkulationsgrundlagen</span>
                 </small>
               </div>
             </div>
@@ -713,15 +643,706 @@
         </div>
       </div>
       <div class="action-buttons">
-        <button
-          type="button"
-          class="btn btn-sm btn-outline-danger remove-suborder"
-          title="Entfernen"
-        >
+        <button type="button" class="btn btn-sm btn-outline-danger remove-suborder" title="Entfernen">
           <i class="bi bi-trash"></i>
         </button>
       </div>
     </div>
   </div>
 </template>
+
+<script>
+// VOLLSTÄNDIGES JAVASCRIPT FÜR QUOTE CALCULATOR
+console.log("Loading complete PrintHub Quote Calculator JS");
+
+// Global variables
+let suborderCount = 0;
+
+document.addEventListener("DOMContentLoaded", function () {
+  console.log("DOM Content Loaded");
+
+  // Set current date if not set from server
+  const currentDateField = document.getElementById("current_date");
+  if (currentDateField && !currentDateField.value) {
+    currentDateField.value = new Date().toLocaleDateString("de-CH");
+  }
+
+  // Event Listeners
+  const addBtn = document.getElementById("addSuborderBtn");
+  const resetBtn = document.getElementById("resetFormBtn");
+  const form = document.getElementById("quoteCalculatorForm");
+
+  if (addBtn) {
+    addBtn.addEventListener("click", addSuborder);
+  }
+
+  if (resetBtn) {
+    resetBtn.addEventListener("click", resetForm);
+  }
+
+  if (form) {
+    form.addEventListener("submit", function (e) {
+      updateFormFields();
+    });
+  }
+
+  // Global profile change listeners - WICHTIG!
+  const globalProfiles = [
+    "global_3d_printer",
+    "global_energy_profile", 
+    "global_work_profile",
+    "global_overhead_profile",
+    "global_discount_profile"
+  ];
+
+  globalProfiles.forEach((profileId) => {
+    const element = document.getElementById(profileId);
+    if (element) {
+      element.addEventListener("change", updateAllGlobalSettingsDisplays);
+      console.log(`Added listener for ${profileId}`);
+    }
+  });
+});
+
+// Korrigierte addSuborder Funktion
+function addSuborder() {
+  console.log("Adding suborder, current count:", suborderCount);
+  
+  const container = document.getElementById("subordersContainer");
+  const template = document.getElementById("suborderTemplate");
+  
+  if (!container || !template) {
+    console.error("Container or template not found");
+    return;
+  }
+  
+  const clone = template.content.cloneNode(true);
+  const suborderDiv = clone.querySelector(".suborder-item");
+
+  suborderDiv.setAttribute("data-suborder-index", suborderCount);
+  clone.querySelector(".suborder-number").textContent = suborderCount + 1;
+
+  // Set form field names
+  const nameField = clone.querySelector(".suborder-name");
+  const filamentField = clone.querySelector(".suborder-filament");
+  const timeField = clone.querySelector(".suborder-time");
+  const worktimeField = clone.querySelector(".suborder-worktime");
+  const usageField = clone.querySelector(".suborder-usage");
+
+  if (nameField) nameField.name = `suborder_name_${suborderCount}`;
+  if (filamentField) filamentField.name = `filament_id_${suborderCount}`;
+  if (timeField) timeField.name = `print_time_hours_${suborderCount}`;
+  if (worktimeField) worktimeField.name = `work_time_hours_${suborderCount}`;
+  if (usageField) usageField.name = `filament_usage_grams_${suborderCount}`;
+
+  // Set initial worktime value to 0:15 (15 minutes)
+  const worktimeInput = clone.querySelector(".suborder-worktime-input");
+  if (worktimeInput) {
+    worktimeInput.value = "0:15";
+  }
+
+  // Individual calculation fields
+  const checkbox = clone.querySelector(".use-individual-calc");
+  if (checkbox) {
+    checkbox.id = `individual_calc_${suborderCount}`;
+    checkbox.name = `use_individual_calc_${suborderCount}`;
+    
+    const label = clone.querySelector("label[for='individual_calc_']");
+    if (label) {
+      label.setAttribute("for", checkbox.id);
+    }
+  }
+
+  // Set individual profile names
+  const individualFields = [
+    '.individual-printer',
+    '.individual-energy-profile', 
+    '.individual-work-profile',
+    '.individual-overhead-profile'
+  ];
+  
+  const fieldNames = [
+    'individual_printer',
+    'individual_energy_profile',
+    'individual_work_profile', 
+    'individual_overhead_profile'
+  ];
+
+  individualFields.forEach((selector, index) => {
+    const field = clone.querySelector(selector);
+    if (field) {
+      field.name = `${fieldNames[index]}_${suborderCount}`;
+    }
+  });
+
+  // Remove functionality
+  const removeBtn = clone.querySelector(".remove-suborder");
+  if (removeBtn) {
+    removeBtn.addEventListener("click", function () {
+      removeSuborder(suborderDiv);
+    });
+  }
+
+  // Individual calculation toggle
+  if (checkbox) {
+    checkbox.addEventListener("change", function () {
+      toggleIndividualCalculation(suborderDiv);
+    });
+  }
+
+  // Time input handlers
+  const timeInput = clone.querySelector(".suborder-time-input");
+  const timeHidden = clone.querySelector(".suborder-time");
+  const worktimeInputField = clone.querySelector(".suborder-worktime-input");
+  const worktimeHidden = clone.querySelector(".suborder-worktime");
+
+  // Function to handle time conversion
+  function handleTimeInput(inputElement, hiddenElement) {
+    if (!inputElement || !hiddenElement) return;
+    
+    const timeValue = inputElement.value;
+    if (timeValue.match(/^\d{1,2}:\d{2}$/)) {
+      const [hours, minutes] = timeValue.split(":").map(Number);
+      if (minutes < 60) {
+        const totalHours = hours + minutes / 60;
+        hiddenElement.value = totalHours.toFixed(2);
+        inputElement.setCustomValidity("");
+        console.log(`Time converted: ${timeValue} -> ${totalHours} hours`);
+      } else {
+        inputElement.setCustomValidity("Minuten müssen zwischen 0-59 liegen");
+      }
+    } else if (timeValue === "") {
+      hiddenElement.value = "";
+      inputElement.setCustomValidity("");
+    } else {
+      inputElement.setCustomValidity("Format: H:MM oder HH:MM (z.B. 7:45)");
+    }
+    updateSuborderPreview(suborderDiv);
+  }
+
+  if (timeInput && timeHidden) {
+    timeInput.addEventListener("input", function () {
+      handleTimeInput(this, timeHidden);
+    });
+  }
+
+  if (worktimeInputField && worktimeHidden) {
+    worktimeInputField.addEventListener("input", function () {
+      handleTimeInput(this, worktimeHidden);
+    });
+    
+    // Set initial worktime value
+    handleTimeInput(worktimeInputField, worktimeHidden);
+  }
+
+  // Live calculation for all inputs
+  const inputs = clone.querySelectorAll("input, select");
+  inputs.forEach((input) => {
+    input.addEventListener("input", () => updateSuborderPreview(suborderDiv));
+    input.addEventListener("change", () => updateSuborderPreview(suborderDiv));
+  });
+
+  container.appendChild(clone);
+  suborderCount++;
+  updateEmptyMessage();
+  
+  // WICHTIG: Globale Einstellungen anzeigen
+  updateGlobalSettingsDisplay(suborderDiv);
+  
+  console.log("Suborder added successfully, new count:", suborderCount);
+}
+
+function removeSuborder(suborderDiv) {
+  suborderDiv.remove();
+  updateEmptyMessage();
+  renumberSuborders();
+}
+
+function toggleIndividualCalculation(suborderDiv) {
+  const checkbox = suborderDiv.querySelector(".use-individual-calc");
+  const individualSection = suborderDiv.querySelector(".individual-calc-section");
+  const sourceText = suborderDiv.querySelector(".calc-source-text");
+
+  if (checkbox.checked) {
+    individualSection.style.display = "block";
+    sourceText.textContent = "Verwendet individuelle Kalkulationsgrundlagen";
+  } else {
+    individualSection.style.display = "none";
+    sourceText.textContent = "Verwendet globale Kalkulationsgrundlagen";
+    updateGlobalSettingsDisplay(suborderDiv);
+  }
+  updateSuborderPreview(suborderDiv);
+}
+
+// KORRIGIERTE FUNKTION: Globale Einstellungen anzeigen
+function updateGlobalSettingsDisplay(suborderDiv) {
+  if (!suborderDiv) {
+    console.error("SuborderDiv is null in updateGlobalSettingsDisplay");
+    return;
+  }
+
+  // Get all global select elements
+  const printerSelect = document.getElementById("global_3d_printer");
+  const energySelect = document.getElementById("global_energy_profile");
+  const workSelect = document.getElementById("global_work_profile");
+  const overheadSelect = document.getElementById("global_overhead_profile");
+  const discountSelect = document.getElementById("global_discount_profile");
+
+  // Get display elements in suborder
+  const usedPrinter = suborderDiv.querySelector(".used-printer");
+  const usedEnergy = suborderDiv.querySelector(".used-energy");
+  const usedWork = suborderDiv.querySelector(".used-work");
+  const usedOverhead = suborderDiv.querySelector(".used-overhead");
+  const usedDiscount = suborderDiv.querySelector(".used-discount");
+
+  if (!usedPrinter || !usedEnergy || !usedWork || !usedOverhead || !usedDiscount) {
+    console.error("Display elements not found in suborder");
+    return;
+  }
+
+  // Function to get selected option text safely
+  function getSelectedText(selectElement, defaultText = "Nicht ausgewählt") {
+    if (!selectElement || selectElement.selectedIndex < 0) {
+      return defaultText;
+    }
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    return selectedOption ? selectedOption.text : defaultText;
+  }
+
+  // Update display texts
+  usedPrinter.textContent = getSelectedText(printerSelect, "Kein Drucker ausgewählt");
+  usedEnergy.textContent = getSelectedText(energySelect, "Keine Energiekosten ausgewählt");
+  usedWork.textContent = getSelectedText(workSelect, "Keine Arbeitszeit ausgewählt");
+  usedOverhead.textContent = getSelectedText(overheadSelect, "Kein Overhead ausgewählt");
+  usedDiscount.textContent = getSelectedText(discountSelect, "Kein Rabatt/Aufschlag");
+
+  console.log("Global settings display updated for suborder");
+}
+
+// KORRIGIERTE FUNKTION: Alle globalen Einstellungen aktualisieren
+function updateAllGlobalSettingsDisplays() {
+  console.log("Updating all global settings displays");
+  
+  const suborders = document.querySelectorAll(".suborder-item");
+  suborders.forEach((suborder, index) => {
+    const useIndividual = suborder.querySelector(".use-individual-calc");
+    if (!useIndividual || !useIndividual.checked) {
+      updateGlobalSettingsDisplay(suborder);
+    }
+    updateSuborderPreview(suborder);
+  });
+}
+
+function updateEmptyMessage() {
+  const container = document.getElementById("subordersContainer");
+  const emptyMessage = document.getElementById("emptySubordersMessage");
+  
+  if (!container || !emptyMessage) return;
+  
+  if (container.children.length === 0) {
+    emptyMessage.style.display = "block";
+  } else {
+    emptyMessage.style.display = "none";
+  }
+}
+
+function renumberSuborders() {
+  const suborders = document.querySelectorAll(".suborder-item");
+  suborders.forEach((suborder, index) => {
+    suborder.setAttribute("data-suborder-index", index);
+    const numberSpan = suborder.querySelector(".suborder-number");
+    if (numberSpan) {
+      numberSpan.textContent = index + 1;
+    }
+
+    // Update all form field names
+    const nameField = suborder.querySelector(".suborder-name");
+    const filamentField = suborder.querySelector(".suborder-filament");
+    const timeField = suborder.querySelector(".suborder-time");
+    const worktimeField = suborder.querySelector(".suborder-worktime");
+    const usageField = suborder.querySelector(".suborder-usage");
+
+    if (nameField) nameField.name = `suborder_name_${index}`;
+    if (filamentField) filamentField.name = `filament_id_${index}`;
+    if (timeField) timeField.name = `print_time_hours_${index}`;
+    if (worktimeField) worktimeField.name = `work_time_hours_${index}`;
+    if (usageField) usageField.name = `filament_usage_grams_${index}`;
+
+    const checkbox = suborder.querySelector(".use-individual-calc");
+    if (checkbox) {
+      checkbox.id = `individual_calc_${index}`;
+      checkbox.name = `use_individual_calc_${index}`;
+      
+      const label = suborder.querySelector(`label[for^="individual_calc_"]`);
+      if (label) {
+        label.setAttribute("for", checkbox.id);
+      }
+    }
+
+    const individualFields = [
+      '.individual-printer',
+      '.individual-energy-profile',
+      '.individual-work-profile',
+      '.individual-overhead-profile'
+    ];
+    
+    const fieldNames = [
+      'individual_printer',
+      'individual_energy_profile',
+      'individual_work_profile',
+      'individual_overhead_profile'
+    ];
+
+    individualFields.forEach((selector, fieldIndex) => {
+      const field = suborder.querySelector(selector);
+      if (field) {
+        field.name = `${fieldNames[fieldIndex]}_${index}`;
+      }
+    });
+  });
+  suborderCount = suborders.length;
+}
+
+function getProfileValues(suborderDiv) {
+  const useIndividual = suborderDiv.querySelector(".use-individual-calc")?.checked || false;
+
+  let printerElement, energyProfile, workProfile, overheadProfile, discountProfile;
+
+  if (useIndividual) {
+    printerElement = suborderDiv.querySelector(".individual-printer");
+    energyProfile = suborderDiv.querySelector(".individual-energy-profile");
+    workProfile = suborderDiv.querySelector(".individual-work-profile");
+    overheadProfile = suborderDiv.querySelector(".individual-overhead-profile");
+    discountProfile = document.getElementById("global_discount_profile");
+  } else {
+    printerElement = document.getElementById("global_3d_printer");
+    energyProfile = document.getElementById("global_energy_profile");
+    workProfile = document.getElementById("global_work_profile");
+    overheadProfile = document.getElementById("global_overhead_profile");
+    discountProfile = document.getElementById("global_discount_profile");
+  }
+
+  // Safe value extraction
+  const getDataValue = (element, attribute, defaultValue = 0) => {
+    if (!element || element.selectedIndex < 0) return defaultValue;
+    const selectedOption = element.options[element.selectedIndex];
+    const value = selectedOption?.dataset[attribute];
+    return value ? parseFloat(value) : defaultValue;
+  };
+
+  return {
+    printerCost: getDataValue(printerElement, 'cost', 0),
+    energyCost: getDataValue(energyProfile, 'cost', 0.25),
+    workCost: getDataValue(workProfile, 'cost', 0),
+    overheadCost: getDataValue(overheadProfile, 'cost', 0),
+    discountType: getDataValue(discountProfile, 'type', '') || '',
+    discountPercentage: getDataValue(discountProfile, 'percentage', 0),
+  };
+}
+
+// KORRIGIERTE updateSuborderPreview Funktion
+function updateSuborderPreview(suborderDiv) {
+  if (!suborderDiv) {
+    console.error("SuborderDiv is null");
+    return;
+  }
+
+  const filament = suborderDiv.querySelector(".suborder-filament");
+  const timeHidden = suborderDiv.querySelector(".suborder-time");
+  const worktimeHidden = suborderDiv.querySelector(".suborder-worktime");
+  const usage = suborderDiv.querySelector(".suborder-usage");
+  const preview = suborderDiv.querySelector(".suborder-preview");
+
+  if (!filament || !timeHidden || !worktimeHidden || !usage || !preview) {
+    console.error("Required fields not found in suborder");
+    return;
+  }
+
+  console.log("Updating preview for suborder, values:", {
+    filament: filament.value,
+    time: timeHidden.value,
+    worktime: worktimeHidden.value,
+    usage: usage.value
+  });
+
+  if (filament.value && timeHidden.value && worktimeHidden.value && usage.value) {
+    // Get filament data from data attributes
+    const selectedOption = filament.options[filament.selectedIndex];
+    const filamentPrice = parseFloat(selectedOption?.dataset.price) || 0;
+    const filamentWeight = parseFloat(selectedOption?.dataset.weight) || 1;
+    
+    console.log("Filament data:", { price: filamentPrice, weight: filamentWeight });
+
+    const printTime = parseFloat(timeHidden.value) || 0;
+    const workTime = parseFloat(worktimeHidden.value) || 0;
+    const filamentUsage = parseFloat(usage.value) || 0;
+
+    const profiles = getProfileValues(suborderDiv);
+
+    // Cost calculations
+    const machineCost = profiles.printerCost * printTime;
+    const materialCost = (filamentPrice / filamentWeight) * filamentUsage;
+    const energyCost = printTime * profiles.energyCost;
+    const workCost = workTime * profiles.workCost;
+    const overheadCost = printTime * profiles.overheadCost;
+
+    let subtotal = machineCost + materialCost + energyCost + workCost + overheadCost;
+
+    // Apply discount/surcharge
+    let totalCost = subtotal;
+    if (profiles.discountType === "discount") {
+      totalCost = subtotal * (1 - profiles.discountPercentage / 100);
+    } else if (profiles.discountType === "surcharge") {
+      totalCost = subtotal * (1 + profiles.discountPercentage / 100);
+    }
+
+    console.log("Calculated costs:", {
+      machine: machineCost,
+      material: materialCost,
+      energy: energyCost,
+      work: workCost,
+      overhead: overheadCost,
+      total: totalCost
+    });
+
+    // Update preview display
+    const updateElement = (selector, value) => {
+      const element = preview.querySelector(selector);
+      if (element) {
+        element.textContent = `CHF ${value.toFixed(2)}`;
+      }
+    };
+
+    updateElement(".preview-machine-cost", machineCost);
+    updateElement(".preview-material-cost", materialCost);
+    updateElement(".preview-energy-cost", energyCost);
+    updateElement(".preview-work-cost", workCost);
+    updateElement(".preview-overhead-cost", overheadCost);
+    updateElement(".preview-total-cost", totalCost);
+
+    preview.style.display = "block";
+  } else {
+    console.log("Not all required fields filled, hiding preview");
+    preview.style.display = "none";
+  }
+}
+
+function updateFormFields() {
+  console.log("Updating form fields, suborder count:", suborderCount);
+  
+  const suborderCountField = document.getElementById("suborderCount");
+  if (suborderCountField) {
+    suborderCountField.value = suborderCount;
+  }
+  
+  // Debug: Log all form data being submitted
+  const form = document.getElementById("quoteCalculatorForm");
+  if (form) {
+    const formData = new FormData(form);
+    console.log("Form data being submitted:");
+    for (let [key, value] of formData.entries()) {
+      console.log(`${key}: ${value}`);
+    }
+  }
+}
+
+function resetForm() {
+  console.log("Resetting form");
+  
+  const form = document.getElementById("quoteCalculatorForm");
+  if (form) {
+    form.reset();
+  }
+  
+  const container = document.getElementById("subordersContainer");
+  if (container) {
+    container.innerHTML = "";
+  }
+  
+  // Reset date if not set
+  const dateField = document.getElementById("current_date");
+  if (dateField && !dateField.value) {
+    dateField.value = new Date().toLocaleDateString("de-CH");
+  }
+  
+  suborderCount = 0;
+  updateEmptyMessage();
+  
+  // Add first suborder after reset
+  setTimeout(addSuborder, 100);
+}
+
+// Edit-Daten laden (falls im Edit-Modus)
+{% if is_edit_mode and edit_data %}
+function loadEditData() {
+  const editData = {{ edit_data|tojson }};
+  console.log("Loading edit data:", editData);
+  
+  // Globale Felder setzen
+  if (editData.order_name) {
+    const orderNameField = document.getElementById('order_name');
+    if (orderNameField) orderNameField.value = editData.order_name;
+  }
+  
+  if (editData.customer_name) {
+    const customerNameField = document.getElementById('customer_name');
+    if (customerNameField) customerNameField.value = editData.customer_name;
+  }
+  
+  // Globale Profile setzen
+  const globalSelects = [
+    { id: 'global_3d_printer', field: 'global_printer_id' },
+    { id: 'global_energy_profile', field: 'global_energy_profile_id' },
+    { id: 'global_work_profile', field: 'global_work_profile_id' },
+    { id: 'global_overhead_profile', field: 'global_overhead_profile_id' },
+    { id: 'global_discount_profile', field: 'global_discount_profile_id' }
+  ];
+  
+  globalSelects.forEach(select => {
+    const element = document.getElementById(select.id);
+    if (element && editData[select.field]) {
+      element.value = editData[select.field];
+      console.log(`Set ${select.id} to ${editData[select.field]}`);
+    }
+  });
+  
+  // Bestehende Suborders laden
+  if (editData.suborders && editData.suborders.length > 0) {
+    editData.suborders.forEach((suborderData, index) => {
+      console.log(`Adding suborder ${index}:`, suborderData);
+      addSuborder(); // Neuen Suborder hinzufügen
+      
+      const suborderDiv = document.querySelector(`[data-suborder-index="${index}"]`);
+      if (suborderDiv) {
+        console.log("Setting suborder data for index:", index);
+        
+        // Suborder-Daten setzen
+        const nameField = suborderDiv.querySelector('.suborder-name');
+        if (nameField && suborderData.name) {
+          nameField.value = suborderData.name;
+        }
+        
+        const filamentField = suborderDiv.querySelector('.suborder-filament');
+        if (filamentField && suborderData.filament_id) {
+          filamentField.value = suborderData.filament_id;
+        }
+        
+        const usageField = suborderDiv.querySelector('.suborder-usage');
+        if (usageField && suborderData.filament_usage_grams) {
+          usageField.value = suborderData.filament_usage_grams;
+        }
+        
+        // Druckzeit konvertieren und setzen
+        if (suborderData.print_time_hours !== undefined) {
+          const printHours = Math.floor(suborderData.print_time_hours);
+          const printMinutes = Math.round((suborderData.print_time_hours % 1) * 60);
+          const timeInput = suborderDiv.querySelector('.suborder-time-input');
+          const timeHidden = suborderDiv.querySelector('.suborder-time');
+          
+          if (timeInput) {
+            timeInput.value = `${printHours}:${printMinutes.toString().padStart(2, '0')}`;
+          }
+          if (timeHidden) {
+            timeHidden.value = suborderData.print_time_hours;
+          }
+        }
+        
+        // Arbeitszeit konvertieren und setzen
+        if (suborderData.work_time_hours !== undefined) {
+          const workHours = Math.floor(suborderData.work_time_hours);
+          const workMinutes = Math.round((suborderData.work_time_hours % 1) * 60);
+          const worktimeInput = suborderDiv.querySelector('.suborder-worktime-input');
+          const worktimeHidden = suborderDiv.querySelector('.suborder-worktime');
+          
+          if (worktimeInput) {
+            worktimeInput.value = `${workHours}:${workMinutes.toString().padStart(2, '0')}`;
+          }
+          if (worktimeHidden) {
+            worktimeHidden.value = suborderData.work_time_hours;
+          }
+        }
+        
+        // Individuelle Kalkulationen laden falls vorhanden
+        if (suborderData.use_individual) {
+          const checkbox = suborderDiv.querySelector('.use-individual-calc');
+          if (checkbox) {
+            checkbox.checked = true;
+            toggleIndividualCalculation(suborderDiv);
+            
+            // Individuelle Profile setzen
+            if (suborderData.individual_printer_id) {
+              const printerSelect = suborderDiv.querySelector('.individual-printer');
+              if (printerSelect) printerSelect.value = suborderData.individual_printer_id;
+            }
+            
+            if (suborderData.individual_energy_id) {
+              const energySelect = suborderDiv.querySelector('.individual-energy-profile');
+              if (energySelect) energySelect.value = suborderData.individual_energy_id;
+            }
+            
+            if (suborderData.individual_work_id) {
+              const workSelect = suborderDiv.querySelector('.individual-work-profile');
+              if (workSelect) workSelect.value = suborderData.individual_work_id;
+            }
+            
+            if (suborderData.individual_overhead_id) {
+              const overheadSelect = suborderDiv.querySelector('.individual-overhead-profile');
+              if (overheadSelect) overheadSelect.value = suborderData.individual_overhead_id;
+            }
+          }
+        }
+        
+        // Live-Berechnung aktualisieren
+        setTimeout(() => {
+          updateSuborderPreview(suborderDiv);
+        }, 100);
+      } else {
+        console.error(`Suborder div not found for index ${index}`);
+      }
+    });
+  }
+}
+
+// Edit-Daten laden wenn Seite fertig geladen
+document.addEventListener("DOMContentLoaded", function () {
+  console.log("DOM loaded, is_edit_mode:", {{ is_edit_mode|tojson }});
+  {% if is_edit_mode %}
+    setTimeout(loadEditData, 300);
+  {% else %}
+    setTimeout(addSuborder, 100);
+  {% endif %}
+});
+{% else %}
+// Normaler Modus: Ersten Suborder hinzufügen
+document.addEventListener("DOMContentLoaded", function () {
+  setTimeout(addSuborder, 100);
+});
+{% endif %}
+
+// Debug functions
+function debugSuborder(index) {
+  const suborder = document.querySelector(`[data-suborder-index="${index}"]`);
+  if (suborder) {
+    console.log(`Suborder ${index} debug:`, {
+      name: suborder.querySelector('.suborder-name')?.value,
+      filament: suborder.querySelector('.suborder-filament')?.value,
+      usage: suborder.querySelector('.suborder-usage')?.value,
+      printTime: suborder.querySelector('.suborder-time')?.value,
+      workTime: suborder.querySelector('.suborder-worktime')?.value,
+      useIndividual: suborder.querySelector('.use-individual-calc')?.checked
+    });
+  }
+}
+
+function debugAllSuborders() {
+  const suborders = document.querySelectorAll('.suborder-item');
+  console.log(`Total suborders: ${suborders.length}`);
+  suborders.forEach((suborder, index) => {
+    const idx = suborder.getAttribute('data-suborder-index');
+    debugSuborder(idx);
+  });
+}
+
+console.log("Complete PrintHub Quote Calculator JS loaded successfully");
+</script>
 {% endblock %}

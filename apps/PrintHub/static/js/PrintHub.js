@@ -879,74 +879,102 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
+// Korrigierte addSuborder Funktion
 function addSuborder() {
+  console.log("Adding suborder, current count:", suborderCount);
+
   const container = document.getElementById("subordersContainer");
   const template = document.getElementById("suborderTemplate");
+
+  if (!container || !template) {
+    console.error("Container or template not found");
+    return;
+  }
+
   const clone = template.content.cloneNode(true);
   const suborderDiv = clone.querySelector(".suborder-item");
 
   suborderDiv.setAttribute("data-suborder-index", suborderCount);
   clone.querySelector(".suborder-number").textContent = suborderCount + 1;
 
-  // Set form field names
-  clone.querySelector(".suborder-name").name = `suborder_name_${suborderCount}`;
-  clone.querySelector(
-    ".suborder-filament"
-  ).name = `filament_id_${suborderCount}`;
-  clone.querySelector(
-    ".suborder-time"
-  ).name = `print_time_hours_${suborderCount}`;
-  clone.querySelector(
-    ".suborder-worktime"
-  ).name = `work_time_hours_${suborderCount}`;
-  clone.querySelector(
-    ".suborder-usage"
-  ).name = `filament_usage_grams_${suborderCount}`;
+  // Set form field names - KORRIGIERT
+  const nameField = clone.querySelector(".suborder-name");
+  const filamentField = clone.querySelector(".suborder-filament");
+  const timeField = clone.querySelector(".suborder-time");
+  const worktimeField = clone.querySelector(".suborder-worktime");
+  const usageField = clone.querySelector(".suborder-usage");
+
+  if (nameField) nameField.name = `suborder_name_${suborderCount}`;
+  if (filamentField) filamentField.name = `filament_id_${suborderCount}`;
+  if (timeField) timeField.name = `print_time_hours_${suborderCount}`;
+  if (worktimeField) worktimeField.name = `work_time_hours_${suborderCount}`;
+  if (usageField) usageField.name = `filament_usage_grams_${suborderCount}`;
 
   // Set initial worktime value to 0:15 (15 minutes)
-  clone.querySelector(".suborder-worktime-input").value = "0:15";
+  const worktimeInput = clone.querySelector(".suborder-worktime-input");
+  if (worktimeInput) {
+    worktimeInput.value = "0:15";
+  }
 
   // Individual calculation fields
   const checkbox = clone.querySelector(".use-individual-calc");
-  checkbox.id = `individual_calc_${suborderCount}`;
-  checkbox.name = `use_individual_calc_${suborderCount}`;
-  clone
-    .querySelector("label[for='individual_calc_']")
-    .setAttribute("for", checkbox.id);
+  if (checkbox) {
+    checkbox.id = `individual_calc_${suborderCount}`;
+    checkbox.name = `use_individual_calc_${suborderCount}`;
 
-  clone.querySelector(
-    ".individual-printer"
-  ).name = `individual_printer_${suborderCount}`;
-  clone.querySelector(
-    ".individual-energy-profile"
-  ).name = `individual_energy_profile_${suborderCount}`;
-  clone.querySelector(
-    ".individual-work-profile"
-  ).name = `individual_work_profile_${suborderCount}`;
-  clone.querySelector(
-    ".individual-overhead-profile"
-  ).name = `individual_overhead_profile_${suborderCount}`;
+    const label = clone.querySelector("label[for='individual_calc_']");
+    if (label) {
+      label.setAttribute("for", checkbox.id);
+    }
+  }
 
-  // Remove functionality
-  clone
-    .querySelector(".remove-suborder")
-    .addEventListener("click", function () {
-      removeSuborder(suborderDiv);
-    });
+  // Set individual profile names
+  const individualFields = [
+    ".individual-printer",
+    ".individual-energy-profile",
+    ".individual-work-profile",
+    ".individual-overhead-profile",
+  ];
 
-  // Individual calculation toggle
-  checkbox.addEventListener("change", function () {
-    toggleIndividualCalculation(suborderDiv);
+  const fieldNames = [
+    "individual_printer",
+    "individual_energy_profile",
+    "individual_work_profile",
+    "individual_overhead_profile",
+  ];
+
+  individualFields.forEach((selector, index) => {
+    const field = clone.querySelector(selector);
+    if (field) {
+      field.name = `${fieldNames[index]}_${suborderCount}`;
+    }
   });
 
-  // Time input handlers with HH:MM format
+  // Remove functionality
+  const removeBtn = clone.querySelector(".remove-suborder");
+  if (removeBtn) {
+    removeBtn.addEventListener("click", function () {
+      removeSuborder(suborderDiv);
+    });
+  }
+
+  // Individual calculation toggle
+  if (checkbox) {
+    checkbox.addEventListener("change", function () {
+      toggleIndividualCalculation(suborderDiv);
+    });
+  }
+
+  // Time input handlers with HH:MM format - KORRIGIERT
   const timeInput = clone.querySelector(".suborder-time-input");
   const timeHidden = clone.querySelector(".suborder-time");
-  const worktimeInput = clone.querySelector(".suborder-worktime-input");
+  const worktimeInputField = clone.querySelector(".suborder-worktime-input");
   const worktimeHidden = clone.querySelector(".suborder-worktime");
 
   // Function to handle time conversion
   function handleTimeInput(inputElement, hiddenElement) {
+    if (!inputElement || !hiddenElement) return;
+
     const timeValue = inputElement.value;
     if (timeValue.match(/^\d{1,2}:\d{2}$/)) {
       const [hours, minutes] = timeValue.split(":").map(Number);
@@ -954,6 +982,7 @@ function addSuborder() {
         const totalHours = hours + minutes / 60;
         hiddenElement.value = totalHours.toFixed(2);
         inputElement.setCustomValidity("");
+        console.log(`Time converted: ${timeValue} -> ${totalHours} hours`);
       } else {
         inputElement.setCustomValidity("Minuten müssen zwischen 0-59 liegen");
       }
@@ -966,18 +995,22 @@ function addSuborder() {
     updateSuborderPreview(suborderDiv);
   }
 
-  timeInput.addEventListener("input", function () {
-    handleTimeInput(this, timeHidden);
-  });
+  if (timeInput && timeHidden) {
+    timeInput.addEventListener("input", function () {
+      handleTimeInput(this, timeHidden);
+    });
+  }
 
-  worktimeInput.addEventListener("input", function () {
-    handleTimeInput(this, worktimeHidden);
-  });
+  if (worktimeInputField && worktimeHidden) {
+    worktimeInputField.addEventListener("input", function () {
+      handleTimeInput(this, worktimeHidden);
+    });
 
-  // Set initial worktime value
-  handleTimeInput(worktimeInput, worktimeHidden);
+    // Set initial worktime value
+    handleTimeInput(worktimeInputField, worktimeHidden);
+  }
 
-  // Live calculation for all inputs
+  // Live calculation for all inputs - KORRIGIERT
   const inputs = clone.querySelectorAll("input, select");
   inputs.forEach((input) => {
     input.addEventListener("input", () => updateSuborderPreview(suborderDiv));
@@ -988,6 +1021,8 @@ function addSuborder() {
   suborderCount++;
   updateEmptyMessage();
   updateGlobalSettingsDisplay(suborderDiv);
+
+  console.log("Suborder added successfully, new count:", suborderCount);
 }
 
 function removeSuborder(suborderDiv) {
@@ -1101,9 +1136,8 @@ function renumberSuborders() {
 }
 
 function getProfileValues(suborderDiv) {
-  const useIndividual = suborderDiv.querySelector(
-    ".use-individual-calc"
-  ).checked;
+  const useIndividual =
+    suborderDiv.querySelector(".use-individual-calc")?.checked || false;
 
   let printerElement,
     energyProfile,
@@ -1116,7 +1150,6 @@ function getProfileValues(suborderDiv) {
     energyProfile = suborderDiv.querySelector(".individual-energy-profile");
     workProfile = suborderDiv.querySelector(".individual-work-profile");
     overheadProfile = suborderDiv.querySelector(".individual-overhead-profile");
-    // No individual discount profile in this simplified version
     discountProfile = document.getElementById("global_discount_profile");
   } else {
     printerElement = document.getElementById("global_3d_printer");
@@ -1126,40 +1159,66 @@ function getProfileValues(suborderDiv) {
     discountProfile = document.getElementById("global_discount_profile");
   }
 
+  // Sichere Werte-Extraktion - KORRIGIERT
+  const getDataValue = (element, attribute, defaultValue = 0) => {
+    if (!element || element.selectedIndex < 0) return defaultValue;
+    const selectedOption = element.options[element.selectedIndex];
+    return parseFloat(selectedOption?.dataset[attribute]) || defaultValue;
+  };
+
   return {
-    printerCost:
-      parseFloat(
-        printerElement.options[printerElement.selectedIndex]?.dataset.cost
-      ) || 0,
-    energyCost:
-      parseFloat(
-        energyProfile.options[energyProfile.selectedIndex]?.dataset.cost
-      ) || 0.25,
-    workCost:
-      parseFloat(
-        workProfile.options[workProfile.selectedIndex]?.dataset.cost
-      ) || 0,
-    overheadCost:
-      parseFloat(
-        overheadProfile.options[overheadProfile.selectedIndex]?.dataset.cost
-      ) || 0,
-    discountType:
-      discountProfile.options[discountProfile.selectedIndex]?.dataset.type ||
-      "",
-    discountPercentage:
-      parseFloat(
-        discountProfile.options[discountProfile.selectedIndex]?.dataset
-          .percentage
-      ) || 0,
+    printerCost: getDataValue(printerElement, "cost", 0),
+    energyCost: getDataValue(energyProfile, "cost", 0.25),
+    workCost: getDataValue(workProfile, "cost", 0),
+    overheadCost: getDataValue(overheadProfile, "cost", 0),
+    discountType: getDataValue(discountProfile, "type", ""),
+    discountPercentage: getDataValue(discountProfile, "percentage", 0),
   };
 }
 
+// Korrigierte updateFormFields Funktion
+function updateFormFields() {
+  console.log("Updating form fields, suborder count:", suborderCount);
+
+  const suborderCountField = document.getElementById("suborderCount");
+  if (suborderCountField) {
+    suborderCountField.value = suborderCount;
+  }
+
+  // Debug: Log all form data being submitted
+  const form = document.getElementById("quoteCalculatorForm");
+  if (form) {
+    const formData = new FormData(form);
+    console.log("Form data being submitted:");
+    for (let [key, value] of formData.entries()) {
+      console.log(`${key}: ${value}`);
+    }
+  }
+}
+
 function updateSuborderPreview(suborderDiv) {
+  if (!suborderDiv) {
+    console.error("SuborderDiv is null");
+    return;
+  }
+
   const filament = suborderDiv.querySelector(".suborder-filament");
   const timeHidden = suborderDiv.querySelector(".suborder-time");
   const worktimeHidden = suborderDiv.querySelector(".suborder-worktime");
   const usage = suborderDiv.querySelector(".suborder-usage");
   const preview = suborderDiv.querySelector(".suborder-preview");
+
+  if (!filament || !timeHidden || !worktimeHidden || !usage || !preview) {
+    console.error("Required fields not found in suborder");
+    return;
+  }
+
+  console.log("Updating preview for suborder, values:", {
+    filament: filament.value,
+    time: timeHidden.value,
+    worktime: worktimeHidden.value,
+    usage: usage.value,
+  });
 
   if (
     filament.value &&
@@ -1167,10 +1226,16 @@ function updateSuborderPreview(suborderDiv) {
     worktimeHidden.value &&
     usage.value
   ) {
-    const filamentPrice =
-      parseFloat(filament.options[filament.selectedIndex].dataset.price) || 0;
-    const filamentWeight =
-      parseFloat(filament.options[filament.selectedIndex].dataset.weight) || 1;
+    // Filament-Daten aus den data-Attributen holen - KORRIGIERT
+    const selectedOption = filament.options[filament.selectedIndex];
+    const filamentPrice = parseFloat(selectedOption?.dataset.price) || 0;
+    const filamentWeight = parseFloat(selectedOption?.dataset.weight) || 1;
+
+    console.log("Filament data:", {
+      price: filamentPrice,
+      weight: filamentWeight,
+    });
+
     const printTime = parseFloat(timeHidden.value) || 0;
     const workTime = parseFloat(worktimeHidden.value) || 0;
     const filamentUsage = parseFloat(usage.value) || 0;
@@ -1181,7 +1246,7 @@ function updateSuborderPreview(suborderDiv) {
     const machineCost = profiles.printerCost * printTime;
     const materialCost = (filamentPrice / filamentWeight) * filamentUsage;
     const energyCost = printTime * profiles.energyCost;
-    const workCost = workTime * profiles.workCost; // Use individual work time
+    const workCost = workTime * profiles.workCost;
     const overheadCost = printTime * profiles.overheadCost;
 
     let subtotal =
@@ -1195,28 +1260,33 @@ function updateSuborderPreview(suborderDiv) {
       totalCost = subtotal * (1 + profiles.discountPercentage / 100);
     }
 
-    // Update preview
-    preview.querySelector(
-      ".preview-machine-cost"
-    ).textContent = `CHF ${machineCost.toFixed(2)}`;
-    preview.querySelector(
-      ".preview-material-cost"
-    ).textContent = `CHF ${materialCost.toFixed(2)}`;
-    preview.querySelector(
-      ".preview-energy-cost"
-    ).textContent = `CHF ${energyCost.toFixed(2)}`;
-    preview.querySelector(
-      ".preview-work-cost"
-    ).textContent = `CHF ${workCost.toFixed(2)}`;
-    preview.querySelector(
-      ".preview-overhead-cost"
-    ).textContent = `CHF ${overheadCost.toFixed(2)}`;
-    preview.querySelector(
-      ".preview-total-cost"
-    ).textContent = `CHF ${totalCost.toFixed(2)}`;
+    console.log("Calculated costs:", {
+      machine: machineCost,
+      material: materialCost,
+      energy: energyCost,
+      work: workCost,
+      overhead: overheadCost,
+      total: totalCost,
+    });
+
+    // Update preview - KORRIGIERT
+    const updateElement = (selector, value) => {
+      const element = preview.querySelector(selector);
+      if (element) {
+        element.textContent = `CHF ${value.toFixed(2)}`;
+      }
+    };
+
+    updateElement(".preview-machine-cost", machineCost);
+    updateElement(".preview-material-cost", materialCost);
+    updateElement(".preview-energy-cost", energyCost);
+    updateElement(".preview-work-cost", workCost);
+    updateElement(".preview-overhead-cost", overheadCost);
+    updateElement(".preview-total-cost", totalCost);
 
     preview.style.display = "block";
   } else {
+    console.log("Not all required fields filled, hiding preview");
     preview.style.display = "none";
   }
 }
@@ -1226,17 +1296,72 @@ function updateFormFields() {
 }
 
 function resetForm() {
-  document.getElementById("quoteCalculatorForm").reset();
-  document.getElementById("subordersContainer").innerHTML = "";
-  if (!document.getElementById("current_date").value) {
-    document.getElementById("current_date").value =
-      new Date().toLocaleDateString("de-CH");
+  console.log("Resetting form");
+
+  const form = document.getElementById("quoteCalculatorForm");
+  if (form) {
+    form.reset();
   }
+
+  const container = document.getElementById("subordersContainer");
+  if (container) {
+    container.innerHTML = "";
+  }
+
+  // Reset date if not set
+  const dateField = document.getElementById("current_date");
+  if (dateField && !dateField.value) {
+    dateField.value = new Date().toLocaleDateString("de-CH");
+  }
+
   suborderCount = 0;
   updateEmptyMessage();
+
+  // Add first suborder after reset
+  setTimeout(addSuborder, 100);
 }
 
-// Ersten Suborder automatisch hinzufügen
+function debugSuborder(index) {
+  const suborder = document.querySelector(`[data-suborder-index="${index}"]`);
+  if (suborder) {
+    console.log(`Suborder ${index} debug:`, {
+      name: suborder.querySelector(".suborder-name")?.value,
+      filament: suborder.querySelector(".suborder-filament")?.value,
+      usage: suborder.querySelector(".suborder-usage")?.value,
+      printTime: suborder.querySelector(".suborder-time")?.value,
+      workTime: suborder.querySelector(".suborder-worktime")?.value,
+      useIndividual: suborder.querySelector(".use-individual-calc")?.checked,
+    });
+  }
+}
+
+function debugAllSuborders() {
+  const suborders = document.querySelectorAll(".suborder-item");
+  console.log(`Total suborders: ${suborders.length}`);
+  suborders.forEach((suborder, index) => {
+    const idx = suborder.getAttribute("data-suborder-index");
+    debugSuborder(idx);
+  });
+}
+
+// Debugging-Events hinzufügen
 document.addEventListener("DOMContentLoaded", function () {
-  setTimeout(addSuborder, 100);
+  // Debug-Button hinzufügen (nur für Development)
+  if (
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1"
+  ) {
+    const debugBtn = document.createElement("button");
+    debugBtn.type = "button";
+    debugBtn.className = "btn btn-info btn-sm";
+    debugBtn.textContent = "Debug";
+    debugBtn.onclick = debugAllSuborders;
+
+    const addBtn = document.getElementById("addSuborderBtn");
+    if (addBtn && addBtn.parentNode) {
+      addBtn.parentNode.insertBefore(debugBtn, addBtn.nextSibling);
+    }
+  }
 });
+
+console.log("Corrected PrintHub functions loaded");

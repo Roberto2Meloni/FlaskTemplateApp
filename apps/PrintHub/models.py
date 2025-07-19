@@ -771,3 +771,174 @@ class PrintHubDiscountProfile(db.Model):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+
+
+# Zu models.py hinzufügen:
+
+
+class PrintHubQuote(db.Model):
+    __tablename__ = "printhub_quotes"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Auftragsdaten
+    order_name = db.Column(db.String(200), nullable=False)
+    customer_name = db.Column(db.String(200), nullable=True)
+
+    # Globale Kalkulationsgrundlagen
+    global_printer_id = db.Column(db.Integer, nullable=True)
+    global_energy_profile_id = db.Column(db.Integer, nullable=True)
+    global_work_profile_id = db.Column(db.Integer, nullable=True)
+    global_overhead_profile_id = db.Column(db.Integer, nullable=True)
+    global_discount_profile_id = db.Column(db.Integer, nullable=True)
+
+    # Berechnete Totals
+    total_cost = db.Column(db.Numeric(10, 2), nullable=False)
+    total_time = db.Column(db.Numeric(8, 2), nullable=False)  # Druckzeit
+    total_work_time = db.Column(db.Numeric(8, 2), nullable=False)  # Arbeitszeit
+
+    # Kostenaufschlüsselung
+    total_machine_cost = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+    total_material_cost = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+    total_energy_cost = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+    total_work_cost = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+    total_overhead_cost = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+
+    # Status
+    status = db.Column(
+        db.String(20), nullable=False, default="draft"
+    )  # draft, sent, accepted, rejected
+    is_archived = db.Column(db.Boolean, default=False, nullable=False)
+
+    # Metadata
+    created_by = db.Column(db.String(100), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=get_current_time)
+    updated_at = db.Column(
+        db.DateTime, nullable=False, default=get_current_time, onupdate=get_current_time
+    )
+
+    # Relationships
+    suborders = db.relationship(
+        "PrintHubSubOrder", backref="quote", lazy=True, cascade="all, delete-orphan"
+    )
+
+    def __repr__(self):
+        return f"<PrintHubQuote {self.order_name} - CHF {self.total_cost}>"
+
+    @property
+    def status_color(self):
+        """Bootstrap-Farbe für Status"""
+        colors = {
+            "draft": "secondary",
+            "sent": "primary",
+            "accepted": "success",
+            "rejected": "danger",
+        }
+        return colors.get(self.status, "secondary")
+
+    @property
+    def status_display(self):
+        """Deutsche Anzeige für Status"""
+        displays = {
+            "draft": "Entwurf",
+            "sent": "Gesendet",
+            "accepted": "Angenommen",
+            "rejected": "Abgelehnt",
+        }
+        return displays.get(self.status, "Unbekannt")
+
+    @staticmethod
+    def get_by_user(username, include_archived=False):
+        """Alle Quotes eines Benutzers"""
+        query = PrintHubQuote.query.filter_by(created_by=username)
+        if not include_archived:
+            query = query.filter_by(is_archived=False)
+        return query.order_by(PrintHubQuote.created_at.desc()).all()
+
+    def to_dict(self):
+        """Konvertiert zu Dictionary"""
+        return {
+            "id": self.id,
+            "order_name": self.order_name,
+            "customer_name": self.customer_name,
+            "total_cost": float(self.total_cost),
+            "total_time": float(self.total_time),
+            "total_work_time": float(self.total_work_time),
+            "status": self.status,
+            "status_display": self.status_display,
+            "status_color": self.status_color,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "suborders_count": len(self.suborders),
+            "cost_breakdown": {
+                "machine_cost": float(self.total_machine_cost),
+                "material_cost": float(self.total_material_cost),
+                "energy_cost": float(self.total_energy_cost),
+                "work_cost": float(self.total_work_cost),
+                "overhead_cost": float(self.total_overhead_cost),
+            },
+        }
+
+
+class PrintHubSubOrder(db.Model):
+    __tablename__ = "printhub_suborders"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Foreign Key zur Quote
+    quote_id = db.Column(
+        db.Integer, db.ForeignKey("printhub_quotes.id"), nullable=False
+    )
+
+    # Suborder-Daten
+    name = db.Column(db.String(200), nullable=False)
+    filament_id = db.Column(db.Integer, nullable=False)  # ID des verwendeten Filaments
+    filament_usage_grams = db.Column(db.Integer, nullable=False)
+
+    # Zeiten
+    print_time_hours = db.Column(db.Numeric(8, 2), nullable=False)
+    work_time_hours = db.Column(db.Numeric(8, 2), nullable=False)  # Neue Arbeitszeit
+
+    # Verwendete Profile (können global oder individuell sein)
+    printer_id = db.Column(db.Integer, nullable=True)  # NULL = global verwenden
+    energy_profile_id = db.Column(db.Integer, nullable=True)  # NULL = global verwenden
+    work_profile_id = db.Column(db.Integer, nullable=True)  # NULL = global verwenden
+    overhead_profile_id = db.Column(
+        db.Integer, nullable=True
+    )  # NULL = global verwenden
+
+    # Berechnete Kosten
+    machine_cost = db.Column(db.Numeric(10, 2), nullable=False)
+    material_cost = db.Column(db.Numeric(10, 2), nullable=False)
+    energy_cost = db.Column(db.Numeric(10, 2), nullable=False)
+    work_cost = db.Column(db.Numeric(10, 2), nullable=False)
+    overhead_cost = db.Column(db.Numeric(10, 2), nullable=False)
+    suborder_total = db.Column(db.Numeric(10, 2), nullable=False)
+
+    # Snapshot-Daten für Historisierung (falls Profile später geändert werden)
+    printer_name = db.Column(db.String(100), nullable=True)
+    filament_name = db.Column(db.String(200), nullable=True)
+    printer_cost_per_hour = db.Column(db.Numeric(8, 4), nullable=True)
+    energy_cost_per_kwh = db.Column(db.Numeric(8, 4), nullable=True)
+    work_cost_per_hour = db.Column(db.Numeric(8, 2), nullable=True)
+    overhead_cost_per_hour = db.Column(db.Numeric(8, 4), nullable=True)
+
+    def __repr__(self):
+        return f"<PrintHubSubOrder {self.name} - CHF {self.suborder_total}>"
+
+    def to_dict(self):
+        """Konvertiert zu Dictionary"""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "filament_usage_grams": self.filament_usage_grams,
+            "print_time_hours": float(self.print_time_hours),
+            "work_time_hours": float(self.work_time_hours),
+            "machine_cost": float(self.machine_cost),
+            "material_cost": float(self.material_cost),
+            "energy_cost": float(self.energy_cost),
+            "work_cost": float(self.work_cost),
+            "overhead_cost": float(self.overhead_cost),
+            "suborder_total": float(self.suborder_total),
+            "printer_name": self.printer_name,
+            "filament_name": self.filament_name,
+        }

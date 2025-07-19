@@ -530,6 +530,10 @@ PrintHub - Prusa Galaxy Black & Orange Theme
     color: var(--prusa-black) !important;
 }
 
+.text-prusa-white {
+    color: var(--prusa-white) !important;
+}
+
 .bg-prusa-black {
     background-color: var(--prusa-black) !important;
 }
@@ -1345,5 +1349,264 @@ Maschinenkosten-Rechner CSS - Zu PrintHub.css hinzufügen
     .printhub-sidebar {
         width: 100%;
         min-height: auto;
+    }
+}
+
+
+/* Edit-Modus CSS - Zu PrintHub.css hinzufügen */
+
+/* Edit-Modus Header */
+.edit-mode-header {
+    background: linear-gradient(135deg, #dc3545 0%, var(--prusa-orange) 100%);
+    border: 2px solid #dc3545;
+    position: relative;
+    overflow: hidden;
+}
+
+.edit-mode-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: repeating-linear-gradient(45deg,
+            transparent,
+            transparent 10px,
+            rgba(255, 255, 255, 0.1) 10px,
+            rgba(255, 255, 255, 0.1) 20px);
+    animation: editPattern 20s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes editPattern {
+    0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+
+    100% {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+/* Edit-Modus Badge */
+.edit-mode-badge {
+    background: linear-gradient(135deg, #dc3545, #bd2130);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+    animation: editPulse 2s ease-in-out infinite;
+}
+
+@keyframes editPulse {
+    0%, 100% {
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 8px 25px rgba(220, 53, 69, 0.5);
+    }
+}
+
+/* Edit Warning */
+.edit-warning {
+    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+    border: 1px solid #ffc107;
+    border-left: 5px solid #ffc107;
+    color: #856404;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.edit-warning i {
+    color: #ffc107;
+    font-size: 1.2rem;
+}
+
+/* Geänderte Felder hervorheben */
+.form-control.changed {
+    border-color: var(--prusa-orange);
+    background: rgba(255, 102, 0, 0.1);
+    box-shadow: 0 0 0 0.2rem rgba(255, 102, 0, 0.25);
+}
+
+/* Cancel Button */
+.btn-cancel {
+    background: linear-gradient(135deg, #6c757d, #5a6268);
+    border: 2px solid #6c757d;
+    color: white;
+    padding: 0.8rem 2rem;
+    border-radius: 25px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+.btn-cancel:hover {
+    background: linear-gradient(135deg, #5a6268, #495057);
+    transform: translateY(-2px);
+    color: white;
+}
+
+/* Update Button */
+.btn-update {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    border: 2px solid #28a745;
+    color: white;
+    padding: 0.8rem 2rem;
+    border-radius: 25px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.btn-update:hover {
+    background: linear-gradient(135deg, #20c997, #17a2b8);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(40, 167, 69, 0.5);
+    color: white;
+}
+
+/* Edit Mode Form Container */
+.edit-mode .filament-form-container {
+    border-left: 5px solid #dc3545;
+    position: relative;
+}
+
+.edit-mode .filament-form-container::before {
+    content: 'BEARBEITUNG';
+    position: absolute;
+    top: -10px;
+    right: 20px;
+    background: #dc3545;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+/* Edit Status Indicator */
+.edit-status-indicator {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.edit-status-indicator i {
+    animation: editBlink 1.5s ease-in-out infinite;
+}
+
+@keyframes editBlink {
+    0%, 100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Breadcrumb für Edit-Modus */
+.edit-breadcrumb {
+    background: rgba(220, 53, 69, 0.1);
+    border: 1px solid rgba(220, 53, 69, 0.2);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+}
+
+.edit-breadcrumb .breadcrumb {
+    margin: 0;
+    background: transparent;
+}
+
+.edit-breadcrumb .breadcrumb-item.active {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+/* Responsive Edit Mode */
+@media (max-width: 768px) {
+    .edit-mode-badge {
+        font-size: 0.75rem;
+        padding: 0.375rem 0.75rem;
+    }
+
+    .edit-status-indicator {
+        position: relative;
+        top: auto;
+        right: auto;
+        width: 100%;
+        margin-bottom: 1rem;
+        justify-content: center;
+    }
+
+    .btn-cancel,
+    .btn-update {
+        padding: 0.6rem 1.5rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* Unsaved Changes Warning */
+.unsaved-changes-warning {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #ffc107, #fd7e14);
+    color: #212529;
+    padding: 1rem 2rem;
+    border-radius: 25px;
+    font-weight: 600;
+    z-index: 1050;
+    display: none;
+    align-items: center;
+    gap: 0.75rem;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.unsaved-changes-warning.show {
+    display: flex;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateX(-50%) translateY(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
     }
 }
