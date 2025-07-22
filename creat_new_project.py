@@ -4,7 +4,10 @@ import shutil
 
 def replace_template_content(app_path, app_name):
     """Ersetzt Template-Einträge in Dateinamen und Dateiinhalten"""
-    template_string = "Template_app_v000_index"
+    template_strings = [
+        "Template_app_v000_index",  # Längerer String zuerst
+        "Template_app_v000",  # Kürzerer String danach
+    ]
 
     # Liste für umzubenennende Dateien/Ordner
     items_to_rename = []
@@ -21,29 +24,44 @@ def replace_template_content(app_path, app_name):
                 with open(file_path, "r", encoding="utf-8") as f:
                     content = f.read()
 
-                # Prüfen ob Template-String vorhanden ist
-                if template_string in content:
-                    # Inhalt ersetzen
-                    new_content = content.replace(template_string, app_name)
+                content_changed = False
+                # Beide Template-Strings ersetzen (längeren zuerst!)
+                for template_string in template_strings:
+                    if template_string in content:
+                        content = content.replace(template_string, app_name)
+                        content_changed = True
+
+                # Datei nur schreiben wenn sich etwas geändert hat
+                if content_changed:
                     with open(file_path, "w", encoding="utf-8") as f:
-                        f.write(new_content)
+                        f.write(content)
                     print(f"📝 Inhalt aktualisiert: {file}")
 
             except (UnicodeDecodeError, PermissionError):
                 # Binärdatei oder Datei ohne Leserechte - überspringen
                 pass
 
-            # Dateiname prüfen für Umbenennung
-            if template_string in file:
-                new_filename = file.replace(template_string, app_name)
+            # Dateiname prüfen für Umbenennung (beide Template-Strings)
+            new_filename = file
+            for template_string in template_strings:
+                if template_string in new_filename:
+                    new_filename = new_filename.replace(template_string, app_name)
+
+            # Wenn sich der Dateiname geändert hat, zur Umbenennung hinzufügen
+            if new_filename != file:
                 old_path = file_path
                 new_path = os.path.join(root, new_filename)
                 items_to_rename.append((old_path, new_path, "file"))
 
-        # Ordnernamen prüfen für Umbenennung
+        # Ordnernamen prüfen für Umbenennung (beide Template-Strings)
         for dir_name in dirs:
-            if template_string in dir_name:
-                new_dirname = dir_name.replace(template_string, app_name)
+            new_dirname = dir_name
+            for template_string in template_strings:
+                if template_string in new_dirname:
+                    new_dirname = new_dirname.replace(template_string, app_name)
+
+            # Wenn sich der Ordnername geändert hat, zur Umbenennung hinzufügen
+            if new_dirname != dir_name:
                 old_path = os.path.join(root, dir_name)
                 new_path = os.path.join(root, new_dirname)
                 items_to_rename.append((old_path, new_path, "dir"))
