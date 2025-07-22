@@ -2,7 +2,7 @@
 
 ## App Information
 
-Name: template_app_v000
+Name: Template_app_v000
 
 Author: Karatekti_123
 
