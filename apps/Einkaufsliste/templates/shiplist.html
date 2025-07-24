@@ -9,7 +9,9 @@
       <form action="/access/shiplist/{{ list_id }}/update" method="post">
         <div class="d-flex justify-content-between align-items-start mb-3">
           <div>
-            <a href="{{ url_for('einkauf.home') }}" class="btn btn-primary"
+            <a
+              href="{{ url_for('Einkaufsliste.Einkaufsliste_index') }}"
+              class="btn btn-primary"
               >Zurück</a
             >
           </div>
@@ -33,8 +35,8 @@
               <td><input type="text" name="test0" /></td>
             </tr>-->
 
-          {% for array in alle_items %} {% include 'einkauf/include/_item.html'
-          %} {% endfor %}
+          {% for array in alle_items %} {% include 'include/_item.html' %} {%
+          endfor %}
         </table>
         <table class="table table-dark table-striped" style="margin-top: 10px">
           <tr>

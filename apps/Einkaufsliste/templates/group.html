@@ -13,13 +13,19 @@
       <br />
       <div class="button_home">
         <div>
-          <a href="{{ url_for('einkauf.newgroup') }}" class="btn btn-success">
+          <a
+            href="{{ url_for('Einkaufsliste.newgroup') }}"
+            class="btn btn-success"
+          >
             <i class="bi bi-plus"></i> Hinzufügen
           </a>
-          <a href="{{ url_for('einkauf.group') }}" class="btn btn-light">
+          <a href="{{ url_for('Einkaufsliste.group') }}" class="btn btn-light">
             <i class="bi bi-arrow-clockwise"></i> Aktualisieren
           </a>
-          <a href="{{ url_for('einkauf.home') }}" class="btn btn-danger">
+          <a
+            href="{{ url_for('Einkaufsliste.Einkaufsliste_index') }}"
+            class="btn btn-danger"
+          >
             <i class="bi bi-arrow-left"></i> Zurück
           </a>
         </div>
@@ -44,7 +50,7 @@
           <tbody>
             {% for group in all_groups %}
             <tr
-              onclick="window.location='{{ url_for('einkauf.edit_group', group_id=group.group_id) }}'"
+              onclick="window.location='{{ url_for('Einkaufsliste.edit_group', group_id=group.group_id) }}'"
               style="cursor: pointer"
             >
               <td style="text-align: center">{{ group.group_name }}</td>
@@ -74,7 +80,7 @@
               <td>
                 {% if current_user.id == group.group_owner %}
                 <a
-                  href="{{ url_for('einkauf.delete_group', group_id=group.group_id) }}"
+                  href="{{ url_for('Einkaufsliste.delete_group', group_id=group.group_id) }}"
                   onclick="return confirm('Möchten Sie diese Einkaufsliste wirklich löschen?');"
                 >
                   <i class="bi bi-trash-fill text-danger"></i>

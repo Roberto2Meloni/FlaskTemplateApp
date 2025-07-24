@@ -11,7 +11,13 @@ from sqlalchemy import delete
 from flask import render_template, current_app as app, request, redirect, flash, url_for
 from flask_login import current_user
 from . import blueprint
-from .models import import EinkaufslisteList, EinkaufslisteItem, EinkaufslisteOther, EinkaufslisteGroup, group_membership
+from .models import (
+    EinkaufslisteList,
+    EinkaufslisteItem,
+    EinkaufslisteOther,
+    EinkaufslisteGroup,
+    group_membership,
+)
 from app.config import Config
 from app.decorators import admin_required, enabled_required
 from app.routes.admin.models import User
@@ -22,14 +28,16 @@ import re
 
 from math import ceil
 
+from app.helper_functions.helper_db_file import check_if_user_has_admin_rights
+
 config = Config()
 
 print("Einkaufsliste Version 0.0.0")
 
 
-@blueprint.route("/Einkaufsliste", methods=["GET"])
+@blueprint.route("/Einkaufsliste_index", methods=["GET"])
 @admin_required
-def Einkaufsliste():
+def Einkaufsliste_index():
     new_registration = User.query.filter(User.user_enable.is_(None)).count()
     page = request.args.get(
         "page", 1, type=int
@@ -49,9 +57,14 @@ def Einkaufsliste():
     # Abfrage zur Ermittlung der Listen basierend auf Gruppenmitgliedschaft oder -besitz
     query = (
         db.session.query(EinkaufslisteList, EinkaufslisteGroup, User)
-        .join(EinkaufslisteGroup, EinkaufslisteList.group_id == EinkaufslisteGroup.group_id)
+        .join(
+            EinkaufslisteGroup,
+            EinkaufslisteList.group_id == EinkaufslisteGroup.group_id,
+        )
         .join(User, EinkaufslisteGroup.group_owner == User.id)
-        .outerjoin(group_membership, EinkaufslisteGroup.group_id == group_membership.c.group_id)
+        .outerjoin(
+            group_membership, EinkaufslisteGroup.group_id == group_membership.c.group_id
+        )
         .outerjoin(Member, group_membership.c.user_id == Member.id)
         .filter(
             or_(
@@ -88,7 +101,7 @@ def Einkaufsliste():
         pagination=pagination,
         today=today,
         datetime=datetime,
-        config=Config,
+        config=config,
     )
 
 
@@ -113,7 +126,7 @@ def newlist():
             "warning",
         )
 
-        return redirect(url_for("Einkaufsliste.home"))
+        return redirect(url_for("Einkaufsliste.Einkaufsliste_index"))
     form.group_name.choices = [(group.group_id, group.group_name) for group in groups]
 
     if form.validate_on_submit():
@@ -212,7 +225,7 @@ def newlist():
         user=current_user,
         form=form,
         new_registration=new_registration,
-        config=Config,
+        config=config,
     )
 
 
@@ -232,7 +245,9 @@ def newgroup():
             "validate_on_submit der erstellung neuer Benutzer via Admin Settings"
         )
         # prüfe, ob der Gruppenname bereits existiert
-        group = EinkaufslisteGroup.query.filter_by(group_name=form.group_name.data).first()
+        group = EinkaufslisteGroup.query.filter_by(
+            group_name=form.group_name.data
+        ).first()
         if group is not None:
             flash("Dieser Gruppenname existiert bereits!", "warning")
             return redirect(url_for("Einkaufsliste.newgroup"))
@@ -248,14 +263,14 @@ def newgroup():
         db.session.add(new_group)
         db.session.commit()
         flash("Die neue Gruppe wurde erfolgreich erstellt!", "success")
-        return redirect(url_for("Einkaufsliste.home"))
+        return redirect(url_for("Einkaufsliste.Einkaufsliste_index"))
 
     return render_template(
         "newgroup.html",
         user=current_user,
         form=form,
         new_registration=new_registration,
-        config=Config,
+        config=config,
     )
 
 
@@ -274,10 +289,12 @@ def ship_list(list_id):
     new_registration = User.query.filter(User.user_enable.is_(None)).count()
 
     # Alle Items mit list_id=list_id abrufen
-    items = EinkaufslisteItem.query.filter_by(list_id=list_id).order_by(Item.to_eat_day)
+    items = EinkaufslisteItem.query.filter_by(list_id=list_id).order_by(
+        EinkaufslisteItem.to_eat_day
+    )
 
     # einige Variabeln für die Seitenansicht
-    list = List.query.filter_by(list_id=list_id).first()
+    list = EinkaufslisteList.query.filter_by(list_id=list_id).first()
     first_day = list.first_day.strftime("%d.%m.%Y")
     last_day = list.last_day.strftime("%d.%m.%Y")
 
@@ -383,7 +400,7 @@ def ship_list(list_id):
         first_day=first_day,
         last_day=last_day,
         new_registration=new_registration,
-        config=Config,
+        config=config,
     )
 
 
@@ -440,7 +457,7 @@ def delete_list(list_id):
         "success",
     )
 
-    return redirect(url_for("Einkaufsliste.home"))
+    return redirect(url_for("Einkaufsliste.Einkaufsliste_index"))
 
 
 @blueprint.route("/group", methods=["GET", "POST"])
@@ -450,21 +467,28 @@ def group():
     new_registration = User.query.filter(User.user_enable.is_(None)).count()
 
     # Erstelle eine Abfrage, die alle relevanten Gruppen basierend auf Sichtbarkeit und Mitgliedschaft zurückgibt
-    if current_user.is_admin == True:
+    if check_if_user_has_admin_rights(app, current_user.id):
         all_groups = (
             db.session.query(EinkaufslisteGroup)
             .join(User, EinkaufslisteGroup.group_owner == User.id)
-            .outerjoin(group_membership, EinkaufslisteGroup.group_id == group_membership.c.group_id)
+            .outerjoin(
+                group_membership,
+                EinkaufslisteGroup.group_id == group_membership.c.group_id,
+            )
             .distinct()
         )
     else:
         all_groups = (
             db.session.query(EinkaufslisteGroup)
             .join(User, EinkaufslisteGroup.group_owner == User.id)
-            .outerjoin(group_membership, EinkaufslisteGroup.group_id == group_membership.c.group_id)
+            .outerjoin(
+                group_membership,
+                EinkaufslisteGroup.group_id == group_membership.c.group_id,
+            )
             .filter(
                 or_(
-                    EinkaufslisteGroup.group_visible == True,  # Gruppen, die sichtbar sind
+                    EinkaufslisteGroup.group_visible
+                    == True,  # Gruppen, die sichtbar sind
                     EinkaufslisteGroup.group_owner
                     == current_user.id,  # Gruppen, deren Besitzer der aktuelle Benutzer ist
                     group_membership.c.user_id
@@ -479,7 +503,7 @@ def group():
         "group.html",
         user=current_user,
         new_registration=new_registration,
-        config=Config,
+        config=config,
         all_groups=all_groups,
     )
 
@@ -522,7 +546,7 @@ def request_join_group(group_id):
         "request_join_group.html",
         user=current_user,
         new_registration=new_registration,
-        config=Config,
+        config=config,
         group=group,
     )
 
@@ -590,7 +614,7 @@ def join_or_leave_group(group_id):
         "join_or_leave_group.html",
         user=current_user,
         new_registration=new_registration,
-        config=Config,
+        config=config,
         group=group,
         user_in_group=user_in_group,
     )
@@ -618,7 +642,9 @@ def edit_group(group_id):
     # Setzen der Auswahlmöglichkeiten und der Standardwerte für die Gruppenmitglieder
     form.group_members.data = [user.id for user in group.group_members]
 
-    if current_user.id != group.group_owner and not current_user.is_admin:
+    if current_user.id != group.group_owner and not check_if_user_has_admin_rights(
+        app, current_user.id
+    ):
         # Erstellen Sie eine Subquery, die prüft, ob eine Mitgliedschaft existiert
         # Prüfe ob der Benutzer Mitglied ist
         member_entry = (
@@ -665,7 +691,8 @@ def edit_group(group_id):
 
     if form.validate_on_submit():
         if EinkaufslisteGroup.query.filter(
-            EinkaufslisteGroup.group_name == form.group_name.data, EinkaufslisteGroup.group_id != group_id
+            EinkaufslisteGroup.group_name == form.group_name.data,
+            EinkaufslisteGroup.group_id != group_id,
         ).first():
             flash("Dieser Gruppenname existiert bereits!", "warning")
             return redirect(url_for("edit_group", group_id=group_id))
@@ -707,7 +734,7 @@ def edit_group(group_id):
         "modify_group.html",
         user=current_user,
         new_registration=new_registration,
-        config=Config,
+        config=config,
         form=form,
         group=group,
     )
