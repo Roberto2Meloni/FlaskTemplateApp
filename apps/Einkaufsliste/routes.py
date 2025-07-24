@@ -33,6 +33,7 @@ from app.helper_functions.helper_db_file import check_if_user_has_admin_rights
 config = Config()
 
 print("Einkaufsliste Version 0.0.0")
+print(f"Einkaufsliste Static Path: {blueprint.static_url_path}")
 
 
 @blueprint.route("/Einkaufsliste_index", methods=["GET"])
@@ -272,13 +273,6 @@ def newgroup():
         new_registration=new_registration,
         config=config,
     )
-
-
-@enabled_required
-def ship_list(list_id):
-    app.logger.debug(f"/access/shiplist/{list_id} wurde angesurft")
-    # Anzeige für neue Account-Logins
-    new_registration = User.query.filter(User.user_enable.is_(None)).count()
 
 
 @blueprint.route("/shiplist/<list_id>", methods=["GET"])
