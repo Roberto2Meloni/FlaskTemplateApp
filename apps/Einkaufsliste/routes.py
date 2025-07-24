@@ -62,7 +62,7 @@ def Einkaufsliste():
         .distinct()
     )
 
-    query = query.order_by(List.first_day.desc())
+    query = query.order_by(EinkaufslisteList.first_day.desc())
 
     # Paginieren der Ergebnisse mit korrekter Argumentübergabe
     pagination = query.paginate(page=page, per_page=10, error_out=False)
@@ -81,7 +81,7 @@ def Einkaufsliste():
     )
 
     return render_template(
-        "einkauf/home.html",
+        "Einkaufsliste.html",
         user=current_user,
         new_registration=new_registration,
         lists=sorted_lists,
@@ -113,7 +113,7 @@ def newlist():
             "warning",
         )
 
-        return redirect(url_for("einkauf.home"))
+        return redirect(url_for("Einkaufsliste.home"))
     form.group_name.choices = [(group.group_id, group.group_name) for group in groups]
 
     if form.validate_on_submit():
@@ -121,7 +121,7 @@ def newlist():
             # Abfangen des Problem, dass Start und Enddatum nicht richtig sind
             if form.first_day.data > form.last_day.data:
                 flash("Das Startdatum kann nicht nach dem Enddatum liegen.", "error")
-                return redirect(url_for("einkauf.newlist"))
+                return redirect(url_for("Einkaufsliste.newlist"))
 
             # Abfangen des Problem, eine EinkaufsEinkaufslisteListe zu erstellen, welche bereits in
             # diesem datum Range erstellt wurde!
@@ -152,7 +152,7 @@ def newlist():
                     "Eine Einkaufsliste für diesen Zeitraum existiert bereits.",
                     "warning",
                 )
-                return redirect(url_for("einkauf.newlist"))
+                return redirect(url_for("Einkaufsliste.newlist"))
 
             # Datensatz kann erfasst werden
             new_list = EinkaufslisteList(
@@ -208,7 +208,7 @@ def newlist():
 
             return redirect(f"/einkauf/shiplist/{list_id}")
     return render_template(
-        "einkauf/newlist.html",
+        "newlist.html",
         user=current_user,
         form=form,
         new_registration=new_registration,
@@ -235,7 +235,7 @@ def newgroup():
         group = EinkaufslisteGroup.query.filter_by(group_name=form.group_name.data).first()
         if group is not None:
             flash("Dieser Gruppenname existiert bereits!", "warning")
-            return redirect(url_for("einkauf.newgroup"))
+            return redirect(url_for("Einkaufsliste.newgroup"))
         new_group = EinkaufslisteGroup(
             group_name=form.group_name.data,
             group_owner=current_user.id,
@@ -248,10 +248,10 @@ def newgroup():
         db.session.add(new_group)
         db.session.commit()
         flash("Die neue Gruppe wurde erfolgreich erstellt!", "success")
-        return redirect(url_for("einkauf.home"))
+        return redirect(url_for("Einkaufsliste.home"))
 
     return render_template(
-        "einkauf/newgroup.html",
+        "newgroup.html",
         user=current_user,
         form=form,
         new_registration=new_registration,
@@ -375,7 +375,7 @@ def ship_list(list_id):
             )
 
     return render_template(
-        "einkauf/shiplist.html",
+        "shiplist.html",
         user=current_user,
         list_id=list_id,
         alle_items=alle_items,
@@ -395,11 +395,11 @@ def delete_group(group_id):
 
     if group is None:
         flash("Gruppe existiert nicht!", "warning")
-        return redirect(url_for("einkauf.group"))
+        return redirect(url_for("Einkaufsliste.group"))
 
     if current_user.id != group.group_owner:
         flash("Du bist nicht der Gruppen-Besitzer!", "warning")
-        return redirect(url_for("einkauf.group"))
+        return redirect(url_for("Einkaufsliste.group"))
 
     all_list_of_group = EinkaufslisteList.query.filter_by(group_id=group.group_id).all()
     for list in all_list_of_group:
@@ -408,7 +408,7 @@ def delete_group(group_id):
     db.session.delete(group)
     db.session.commit()
     flash("Die Gruppe wurde erfolgreich gelöscht!", "success")
-    return redirect(url_for("einkauf.group"))
+    return redirect(url_for("Einkaufsliste.group"))
 
 
 @blueprint.route("/delete_list/<list_id>", methods=["GET", "POST"])
@@ -440,7 +440,7 @@ def delete_list(list_id):
         "success",
     )
 
-    return redirect(url_for("einkauf.home"))
+    return redirect(url_for("Einkaufsliste.home"))
 
 
 @blueprint.route("/group", methods=["GET", "POST"])
@@ -476,7 +476,7 @@ def group():
         )
 
     return render_template(
-        "einkauf/group.html",
+        "group.html",
         user=current_user,
         new_registration=new_registration,
         config=Config,
@@ -519,7 +519,7 @@ def request_join_group(group_id):
         return redirect(url_for("einkauf.group"))
 
     return render_template(
-        "einkauf/request_join_group.html",
+        "request_join_group.html",
         user=current_user,
         new_registration=new_registration,
         config=Config,
@@ -587,7 +587,7 @@ def join_or_leave_group(group_id):
         return redirect(url_for("einkauf.group"))
 
     return render_template(
-        "einkauf/join_or_leave_group.html",
+        "join_or_leave_group.html",
         user=current_user,
         new_registration=new_registration,
         config=Config,
@@ -702,9 +702,9 @@ def edit_group(group_id):
                 "error",
             )
 
-        return redirect(url_for("einkauf.group"))
+        return redirect(url_for("Einkaufsliste.group"))
     return render_template(
-        "einkauf/modify_group.html",
+        "modify_group.html",
         user=current_user,
         new_registration=new_registration,
         config=Config,
