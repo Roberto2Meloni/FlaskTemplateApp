@@ -1,0 +1,8 @@
+{% extends "layouts/websites/base.html" %} {% block app_styles %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('Einkaufsliste.static', filename='css/Einkaufsliste.css') }}"
+/>
+{% endblock %}{%block content %} {% endblock %} {% block javascripts %}
+<script src="{{ url_for('Einkaufsliste.static', filename='js/Einkaufsliste.js') }}"></script>
+{% endblock %}
