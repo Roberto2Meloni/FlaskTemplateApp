@@ -1,0 +1,94 @@
+{% extends "layouts/websites/base.html" %} {%block content %}
+<div class="container-fluid" style="margin-top: 50px">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      {% include "layouts/websites/flash_message.html" %}
+      <h4>Gruppen</h4>
+      {% if current_user.is_admin == True %}
+      <p>
+        Hinweiss: Du bist als Admin eingeloggt. Du kannst alle Gruppen ansehen
+        und bearbeiten.
+      </p>
+      {% endif %}
+      <br />
+      <div class="button_home">
+        <div>
+          <a href="{{ url_for('einkauf.newgroup') }}" class="btn btn-success">
+            <i class="bi bi-plus"></i> Hinzufügen
+          </a>
+          <a href="{{ url_for('einkauf.group') }}" class="btn btn-light">
+            <i class="bi bi-arrow-clockwise"></i> Aktualisieren
+          </a>
+          <a href="{{ url_for('einkauf.home') }}" class="btn btn-danger">
+            <i class="bi bi-arrow-left"></i> Zurück
+          </a>
+        </div>
+      </div>
+      <div>
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="text-align: center" scope="col">Gruppenname</th>
+              <th class="tabel_members" style="text-align: center" scope="col">
+                Mitglieder
+              </th>
+              <th style="text-align: center" scope="col">Eigentümer</th>
+              <th scope="col">Typ</th>
+              {% if current_user.is_admin == True %}
+              <th scope="col">Visibale</th>
+              {% endif %}
+
+              <th class="no-sort" style="width: 5%"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for group in all_groups %}
+            <tr
+              onclick="window.location='{{ url_for('einkauf.edit_group', group_id=group.group_id) }}'"
+              style="cursor: pointer"
+            >
+              <td style="text-align: center">{{ group.group_name }}</td>
+              <td style="text-align: center" class="tabel_members">
+                {{ group.group_members.count() }}
+              </td>
+              <td style="text-align: center">{{ group.owner.username }}</td>
+              <td style="text-align: center">
+                {% if group.group_public %}
+                <i class="bi bi-unlock-fill" title="Öffentlich"></i>
+                {% else %}
+                <i class="bi bi-lock-fill" title="Privat"></i>
+                {% endif %}
+              </td>
+              {% if current_user.is_admin %}
+              <td scope="col" style="text-align: center">
+                {% if group.group_visible %}
+                <i class="bi bi-eye-fill" title="Sichtbar"></i>
+                <!-- Auge-Icon für 'True' -->
+                {% else %}
+                <i class="bi bi-eye-slash-fill" title="Nicht sichtbar"></i>
+                <!-- Durchgestrichenes Auge-Icon für 'False' -->
+                {% endif %}
+              </td>
+              {% endif %}
+
+              <td>
+                {% if current_user.id == group.group_owner %}
+                <a
+                  href="{{ url_for('einkauf.delete_group', group_id=group.group_id) }}"
+                  onclick="return confirm('Möchten Sie diese Einkaufsliste wirklich löschen?');"
+                >
+                  <i class="bi bi-trash-fill text-danger"></i>
+                </a>
+                {% endif %}
+              </td>
+
+              <td style="text-align: center"></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

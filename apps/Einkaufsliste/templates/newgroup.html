@@ -1,0 +1,68 @@
+{% extends "layouts/websites/base.html" %} {%block content %}
+<div class="container-fluid" style="margin-top: 50px">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      {% include "layouts/websites/flash_message.html" %}
+    </div>
+    <form action="" method="post">
+      {{ form.hidden_tag() }}
+      <div class="mb-3">
+        {{ form.group_name.label(class_='form-label') }} {{
+        form.group_name(class_='form-control') }}
+      </div>
+      <div class="mb-3">
+        {{ form.group_members.label(class='form-label') }} {{
+        form.group_members(class='form-control select2', multiple=True) }}
+      </div>
+      <div class="ownSettingsFormSetcion2">
+        <div class="form-check form-switch">
+          {{ form.group_public(class="form-check-input") }}
+          {{form.group_public.label(class="form-check-label") }}
+          <span
+            title="Wählen Sie diese Option, wenn jeder Benutzer der Gruppe zugreifen darf."
+          >
+            <i
+              class="bi bi-question-circle-fill"
+              data-bs-toggle="tooltip"
+              data-bs-placement="right"
+            ></i>
+          </span>
+        </div>
+      </div>
+      <div class="ownSettingsFormSection2">
+        <div class="form-check form-switch">
+          {{ form.group_visible(class="form-check-input") }}
+          {{form.group_visible.label(class="form-check-label") }}
+          <span
+            title="Wählen Sie diese Option, wenn die Gruppe in Suchergebnissen sichtbar sein soll."
+          >
+            <i
+              class="bi bi-question-circle-fill"
+              data-bs-toggle="tooltip"
+              data-bs-placement="right"
+            ></i>
+          </span>
+        </div>
+      </div>
+      <br />
+      <div class="d-grid gap-2 mb-3">
+        {{ form.submit(class_='btn btn-success btn-lg') }}
+        <a href="{{ url_for('einkauf.home') }}" class="btn btn-danger btn-lg"
+          >Abbrechen</a
+        >
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %} {% block scripts %} {{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
+<script>
+  $(document).ready(function () {
+    $(".select2").select2({
+      placeholder: "Wählen Sie Mitglieder",
+      allowClear: true,
+    });
+  });
+</script>
+{% endblock %}

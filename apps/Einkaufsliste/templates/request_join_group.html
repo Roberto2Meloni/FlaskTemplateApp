@@ -1,0 +1,30 @@
+{% extends "layouts/websites/base.html" %} {% block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-lg">
+        {% include "layouts/websites/flash_message.html" %}
+        <div class="card-body">
+          <h1 class="h3 mb-4 text-center">Gruppe: {{ group.group_name }}</h1>
+          <p>
+            Hinweis: Diese Gruppe ist privat. Der Besitzer erhält deine Anfrage
+            und kann diese an/ablehnen.
+          </p>
+          <form action="" method="post" class="d-grid gap-2">
+            <button type="submit" class="btn btn-success btn-lg">
+              Gruppe beitritt anfordern
+            </button>
+          </form>
+          <div class="d-grid gap-2 mt-3">
+            <a
+              href="{{ url_for('einkauf.group') }}"
+              class="btn btn-secondary btn-lg"
+              >Zurück</a
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

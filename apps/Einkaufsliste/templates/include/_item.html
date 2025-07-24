@@ -1,0 +1,33 @@
+<tr>
+  {% set foo = array[5] %}
+  <td>
+    {{ array[1] }}<br />
+    <small>{{ array[2] }}</small>
+    <input type="hidden" value="{{ array[1] }}" /><br />
+    {{ array[3] }}
+  </td>
+  <!--<td>{{ array[3] }}</td>-->
+  <td>
+    <textarea class="form-control" name="ID Gericht: {{ array[0] }}" rows="2">
+{{ array[4] }}</textarea
+    >
+  </td>
+  <!--<td>
+    <b>{{ foo[0] }}</b><br />
+    <small>{{ foo[1] }}</small>
+  </td>-->
+  <td>
+    <input
+      type="checkbox"
+      name="ID Gericht gekauft: {{ array[0] }}"
+      value="true"
+      {%
+      if
+      array[6]
+      %}checked{%
+      endif
+      %}
+    />
+    <input type="hidden" name="ID Gekauft: {{ array[0] }}" value="false" />
+  </td>
+</tr>

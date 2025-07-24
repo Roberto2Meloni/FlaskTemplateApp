@@ -4,30 +4,71 @@
   href="{{ url_for('cli.static', filename='css/cli.css') }}"
 />
 {% endblock %} {% block content %}
-<div class="cli-container">
-  <div class="cli-wrapper">
-    <div class="cli-header">
-      <div class="cli-title"><h4>CLI Console</h4></div>
-      <div class="cli-tools">
-        <button id="clear-btn" onclick="clearConsole()">🗑️</button>
+<div class="container-fluid mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      {% include "layouts/websites/flash_message.html" %}
+      <h4>Einkaufsliste</h4>
+      <br />
+      <div class="button_home">
+        <div>
+          <a href="{{ url_for('einkauf.newlist') }}" class="btn btn-success">
+            <i class="bi bi-plus"></i> Hinzufügen
+          </a>
+          <a href="{{ url_for('einkauf.home') }}" class="btn btn-light">
+            <i class="bi bi-arrow-clockwise"></i> Aktuallisieren
+          </a>
+          <a href="{{ url_for('einkauf.group') }}" class="btn btn-light">
+            <i class="bi bi-people"></i> Gruppe
+          </a>
+        </div>
       </div>
-    </div>
-    <div class="cli-console-container">
-      <div class="cli-connected">
-        <p>Verbunden mit {{ config.app_name }}</p>
-      </div>
-      <p>Befehls Historie:</p>
-      <div id="cli-history" class="cli-history"></div>
-      <div class="cli-input">
-        <span id="prompt">{{ config.app_name }} # </span>
-        <input
-          type="text"
-          id="cli-input-field"
-          placeholder=""
-          autofocus
-          onkeydown="handleKeyDown(event, '{{ url_for('cli.receive_command') }}', '{{ url_for('cli.check_output', command_id='0') }}')"
-        />
-      </div>
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="text-align: center; width: 5%" scope="col">Heute</th>
+            <th style="text-align: center" scope="col">Start Tag</th>
+            <th class="tabel_end_day" style="text-align: center" scope="col">
+              End Tag
+            </th>
+            <th scope="col">Gruppe</th>
+            <th scope="col">Ersteller</th>
+            <th class="no-sort" style="width: 5%"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for list, group, user in lists %} {% set today_datetime =
+          datetime.combine(today, datetime.min.time()) %}
+          <tr
+            onclick="window.location='{{ url_for('einkauf.ship_list', list_id=list.list_id) }}';"
+            style="cursor: pointer"
+          >
+            <td style="text-align: center">
+              {% if today_datetime >= list.first_day and today_datetime <=
+              list.last_day %}
+              <span style="color: gold; font-size: 20px">&#9733;</span>
+              {% endif %}
+            </td>
+            <td style="text-align: center">
+              {{ list.first_day.strftime('%d. %b. %y') }}
+            </td>
+            <td class="tabel_end_day" style="text-align: center">
+              {{ list.last_day.strftime('%d. %b. %y') }}
+            </td>
+            <td>{{ group.group_name }}</td>
+            <td>{{ user.username }}</td>
+            <td>
+              <a
+                href="{{ url_for('einkauf.delete_list', list_id=list.list_id) }}"
+                onclick="return confirm('Möchten Sie diese Einkaufsliste wirklich löschen?');"
+              >
+                <i class="bi bi-trash-fill text-danger"></i>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
 </div>

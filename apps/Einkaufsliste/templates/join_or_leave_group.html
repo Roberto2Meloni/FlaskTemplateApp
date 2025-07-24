@@ -1,0 +1,32 @@
+{% extends "layouts/websites/base.html" %} {% block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-lg">
+        <div class="card-body">
+          <h1 class="h3 mb-4 text-center">Gruppe: {{ group.group_name }}</h1>
+          {% include "layouts/websites/flash_message.html" %}
+          <form action="" method="post" class="d-grid gap-2">
+            {% if user_in_group %}
+            <button type="submit" class="btn btn-danger btn-lg">
+              Gruppe verlassen
+            </button>
+            {% else %}
+            <button type="submit" class="btn btn-success btn-lg">
+              Gruppe beitreten
+            </button>
+            {% endif %}
+          </form>
+          <div class="d-grid gap-2 mt-3">
+            <a
+              href="{{ url_for('einkauf.group') }}"
+              class="btn btn-secondary btn-lg"
+              >Zurück</a
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
