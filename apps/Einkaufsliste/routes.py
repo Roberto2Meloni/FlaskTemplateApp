@@ -33,7 +33,6 @@ from app.helper_functions.helper_db_file import check_if_user_has_admin_rights
 config = Config()
 
 print("Einkaufsliste Version 0.0.0")
-print(f"Einkaufsliste Static Path: {blueprint.static_url_path}")
 
 
 @blueprint.route("/Einkaufsliste_index", methods=["GET"])

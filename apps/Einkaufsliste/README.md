@@ -12,6 +12,8 @@ Last Update: 24.07.2025
 
 Last Version: 0.0.0
 
+System Requirements: 1.3
+
 Description: Erstelle und teile mit deinen Freunden eine Einkaufsliste.
 
 Category: App

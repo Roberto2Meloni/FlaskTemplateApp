@@ -12,6 +12,8 @@ Last Update: 16.07.2025
 
 Last Version: 0.0.0
 
+System Requirements: 1.3
+
 Description: Mitels dieser App kannst du deine 3D Druck Aufträge und Kostenberechnungen durchführen
 
 Category: App

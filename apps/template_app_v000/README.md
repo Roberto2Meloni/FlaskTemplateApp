@@ -12,6 +12,8 @@ Last Update: 11.07.2025
 
 Last Version: 0.0.5
 
+System Requirements: 1.3
+
 Description: Dies ist die Vorlage App.
 
 Category: System
