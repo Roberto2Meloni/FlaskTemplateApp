@@ -1,94 +1,116 @@
-<div class="card-body">
-  <div class="container-fluid" style="margin-top: 50px">
-    <div class="row justify-content-center">
-      <div class="col-md-8">
-        <h2 class="text-center" style="margin-bottom: 10px">
-          {{ first_day }} - {{ last_day }}
-        </h2>
-        {% include "layouts/websites/flash_message.html" %}
-        <form action="/access/shiplist/{{ list_id }}/update" method="post">
-          <div class="d-flex justify-content-between align-items-start mb-3">
-            <div>
-              <a
-                href="{{ url_for('Einkaufsliste.Einkaufsliste_index') }}"
-                class="btn btn-primary"
-                >Zurück</a
-              >
-            </div>
-            <div>
-              <p>
-                <input
-                  class="btn btn-success"
-                  type="submit"
-                  value="Speichern"
-                />
-              </p>
-              <!--<button type="submit" class="btn btn-primary">Speichern</button>-->
-            </div>
+{% extends "layouts/web_app_layouts/Einkaufsliste_web_app_base.html" %} {% block
+content %}
+<div class="container-fluid shiplist-page">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-10 col-lg-8">
+      <h2 class="text-center shiplist-title">
+        {{ first_day }} - {{ last_day }}
+      </h2>
+      {% include "layouts/websites/flash_message.html" %}
+
+      <form
+        action="{{ url_for('Einkaufsliste.ship_list_update', list_id=list_id) }}"
+        method="post"
+      >
+        <div
+          class="d-flex justify-content-between align-items-start mb-3 button-row"
+        >
+          <div class="back-button-wrapper">
+            <a
+              href="{{ url_for('Einkaufsliste.Einkaufsliste_index') }}"
+              class="btn btn-danger"
+            >
+              <i class="bi bi-arrow-left d-md-none"></i>
+              <span>Zurück</span>
+            </a>
           </div>
+          <div class="save-button-wrapper">
+            <input
+              class="btn btn-success save-btn"
+              type="submit"
+              value="Speichern"
+            />
+          </div>
+        </div>
 
-          <table
-            class="table table-dark table-striped"
-            style="margin-top: 10px"
-          >
-            <tr>
-              <th>Tag</th>
-              <!--<th>Mahlzeit</th>-->
-              <th>Gericht</th>
-              <!--<th style="width: 10%">Ersteller</th>-->
-              <th style="width: 10%">OK</th>
-            </tr>
-            <!--<tr>
-              <td><input type="text" name="test0" /></td>
-            </tr>-->
-
-            {% for array in alle_items %} {% include 'include/_item.html' %} {%
-            endfor %}
+        <!-- Desktop Table View -->
+        <div class="table-responsive desktop-table">
+          <table class="table table-dark table-striped modern-table">
+            <thead>
+              <tr>
+                <th scope="col">Tag</th>
+                <th scope="col">Gericht</th>
+                <th scope="col" style="width: 10%">OK</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for array in alle_items %} {% include 'include/_item.html' %}
+              {% endfor %}
+            </tbody>
           </table>
-          <table
-            class="table table-dark table-striped"
-            style="margin-top: 10px"
-          >
-            <tr>
-              <th>Sonstiges</th>
+        </div>
 
-              <th style="width: 10%">OK</th>
-            </tr>
-
-            <tr>
-              <td>
-                <textarea
-                  class="form-control"
-                  name="ID Andere: {{ andere_items[0] }}"
-                  rows="6"
-                >
+        <!-- Sonstiges Section -->
+        <div class="table-responsive">
+          <table class="table table-dark table-striped modern-table">
+            <thead>
+              <tr>
+                <th scope="col">Sonstiges</th>
+                <th scope="col" style="width: 10%">OK</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="notes-cell">
+                  <textarea
+                    class="form-control notes-textarea"
+                    name="ID Andere: {{ andere_items[0] }}"
+                    rows="6"
+                    placeholder="Zusätzliche Artikel oder Notizen..."
+                  >
 {{ andere_items[1] }}</textarea
-                >
-              </td>
-
-              <td>
-                <input
-                  type="checkbox"
-                  name="ID Andere gekauft: {{ andere_items[0] }}"
-                  value="true"
-                  {%
-                  if
-                  andere_items[4]
-                  %}checked{%
-                  endif
-                  %}
-                />
-                <input
-                  type="hidden"
-                  name="ID Andere: {{ andere_items[0] }}"
-                  value="false"
-                />
-              </td>
-            </tr>
+                  >
+                </td>
+                <td class="checkbox-cell">
+                  <div class="checkbox-wrapper-notes">
+                    <input
+                      type="checkbox"
+                      id="notes-checkbox"
+                      name="ID Andere gekauft: {{ andere_items[0] }}"
+                      value="true"
+                      {%
+                      if
+                      andere_items[4]
+                      %}checked{%
+                      endif
+                      %}
+                    />
+                    <label
+                      for="notes-checkbox"
+                      class="notes-checkbox-label"
+                    ></label>
+                    <input
+                      type="hidden"
+                      name="ID Andere: {{ andere_items[0] }}"
+                      value="false"
+                    />
+                  </div>
+                </td>
+              </tr>
+            </tbody>
           </table>
-        </form>
-      </div>
+        </div>
+
+        <!-- Mobile Save Button -->
+        <div class="mobile-save-button d-md-none">
+          <input
+            class="btn btn-success w-100"
+            type="submit"
+            value="Änderungen speichern"
+          />
+        </div>
+      </form>
     </div>
   </div>
-  {% endblock %}
 </div>
+{% endblock %}

@@ -219,7 +219,7 @@ def newlist():
             )
             flash("Die Einkaufsliste wurde erfolgreich erstellt!", "success")
 
-            return redirect(f"/einkauf/shiplist/{list_id}")
+            return redirect(url_for("Einkaufsliste.Einkaufsliste_index"))
     return render_template(
         "newlist.html",
         user=current_user,
@@ -263,7 +263,7 @@ def newgroup():
         db.session.add(new_group)
         db.session.commit()
         flash("Die neue Gruppe wurde erfolgreich erstellt!", "success")
-        return redirect(url_for("Einkaufsliste.Einkaufsliste_index"))
+        return redirect(url_for("Einkaufsliste.group"))
 
     return render_template(
         "newgroup.html",
@@ -395,6 +395,110 @@ def ship_list(list_id):
         new_registration=new_registration,
         config=config,
     )
+
+
+@blueprint.route("/shiplist/<list_id>/update", methods=["POST"])
+@enabled_required
+def ship_list_update(list_id):
+    app.logger.debug(f"/access/shiplist/{list_id}/update wurde angesurft")
+
+    try:
+        # Alle Formulardaten abrufen
+        form_data = request.form
+
+        # 1. Normale Items verarbeiten
+        for key, value in form_data.items():
+            # Items gekauft-Status verarbeiten
+            if key.startswith("ID Gericht gekauft: "):
+                # Item ID aus dem Key extrahieren
+                item_id = key.replace("ID Gericht gekauft: ", "")
+
+                # Item in der Datenbank finden und gekauft-Status aktualisieren
+                item = EinkaufslisteItem.query.filter_by(item_id=int(item_id)).first()
+                if item:
+                    item.buy = True  # Checkbox ist gecheckt
+                    app.logger.debug(f"Item {item_id} als gekauft markiert")
+
+            # Items Namen verarbeiten
+            elif key.startswith("ID Gericht: "):
+                # Item ID aus dem Key extrahieren
+                item_id = key.replace("ID Gericht: ", "")
+
+                # Item in der Datenbank finden und Namen aktualisieren
+                item = EinkaufslisteItem.query.filter_by(item_id=int(item_id)).first()
+                if item:
+                    item.item_name = value.strip() if value else ""
+                    app.logger.debug(f"Item {item_id} Name aktualisiert: {value}")
+
+        # 2. Items als nicht gekauft markieren (für nicht gecheckte Checkboxen)
+        # Alle Items dieser Liste abrufen
+        all_items = EinkaufslisteItem.query.filter_by(list_id=list_id).all()
+        for item in all_items:
+            # Prüfen ob das Item in den Formulardaten als gekauft markiert ist
+            gekauft_key = f"ID Gericht gekauft: {item.item_id}"
+            if gekauft_key not in form_data:
+                # Wenn nicht gecheckt, dann als nicht gekauft markieren
+                item.buy = False
+                app.logger.debug(f"Item {item.item_id} als nicht gekauft markiert")
+
+        # 3. "Sonstiges" (andere_items) verarbeiten
+        for key, value in form_data.items():
+            # Sonstiges gekauft-Status verarbeiten
+            if key.startswith("ID Andere gekauft: "):
+                # Other ID aus dem Key extrahieren
+                other_id = key.replace("ID Andere gekauft: ", "")
+
+                # Other Item in der Datenbank finden und gekauft-Status aktualisieren
+                other_item = EinkaufslisteOther.query.filter_by(
+                    other_id=int(other_id)
+                ).first()
+                if other_item:
+                    other_item.buy = True
+                    app.logger.debug(f"Sonstiges {other_id} als gekauft markiert")
+
+            # Sonstiges Text verarbeiten
+            elif key.startswith("ID Andere: ") and not key.startswith(
+                "ID Andere gekauft: "
+            ):
+                # Other ID aus dem Key extrahieren
+                other_id = key.replace("ID Andere: ", "")
+
+                # Other Item in der Datenbank finden und Text aktualisieren
+                other_item = EinkaufslisteOther.query.filter_by(
+                    other_id=int(other_id)
+                ).first()
+                if other_item:
+                    other_item.other_name = value.strip() if value else ""
+                    app.logger.debug(f"Sonstiges {other_id} Text aktualisiert")
+
+        # 4. Sonstiges als nicht gekauft markieren (falls nicht gecheckt)
+        other_item = EinkaufslisteOther.query.filter_by(list_id=list_id).first()
+        if other_item:
+            gekauft_key = f"ID Andere gekauft: {other_item.other_id}"
+            if gekauft_key not in form_data:
+                other_item.buy = False
+                app.logger.debug(
+                    f"Sonstiges {other_item.other_id} als nicht gekauft markiert"
+                )
+
+        # 5. Änderungen in der Datenbank speichern
+        db.session.commit()
+
+        # Success-Nachricht setzen
+        flash("Änderungen erfolgreich gespeichert!", "success")
+        app.logger.info(f"Shiplist {list_id} erfolgreich aktualisiert")
+
+    except Exception as e:
+        # Fehler abfangen und Rollback durchführen
+        db.session.rollback()
+        flash(
+            "Fehler beim Speichern der Änderungen. Bitte versuchen Sie es erneut.",
+            "error",
+        )
+        app.logger.error(f"Fehler beim Aktualisieren der Shiplist {list_id}: {str(e)}")
+
+    # Zurück zur Shiplist-Seite weiterleiten
+    return redirect(url_for("Einkaufsliste.ship_list", list_id=list_id))
 
 
 @blueprint.route("/delete_group/<group_id>", methods=["GET", "POST"])
@@ -613,10 +717,10 @@ def join_or_leave_group(group_id):
     )
 
 
-@blueprint.route("/edit_group/<group_id>", methods=["GET", "POST"])
+@blueprint.route("/modify_group/<group_id>", methods=["GET", "POST"])
 @enabled_required
-def edit_group(group_id):
-    app.logger.debug("edit_group wurde angesurft")
+def modify_group(group_id):
+    app.logger.debug("modify_group wurde angesurft")
     new_registration = User.query.filter(User.user_enable.is_(None)).count()
     # Hier fehlt noch die Filterung nach Gruppen, bei welchen visibal = true ist, allerdings sollen die Eigene Gruppen angezeigt werden
     group = EinkaufslisteGroup.query.get(group_id)
@@ -688,7 +792,7 @@ def edit_group(group_id):
             EinkaufslisteGroup.group_id != group_id,
         ).first():
             flash("Dieser Gruppenname existiert bereits!", "warning")
-            return redirect(url_for("edit_group", group_id=group_id))
+            return redirect(url_for("modify_group", group_id=group_id))
 
         group.group_name = form.group_name.data
         group.group_public = form.group_public.data

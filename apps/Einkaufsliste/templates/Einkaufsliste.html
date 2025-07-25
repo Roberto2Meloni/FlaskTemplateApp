@@ -10,16 +10,22 @@ content %}
 
     <!-- Page Header -->
     <div class="page-header">
-      <h1 class="page-title">
-        <i class="bi bi-cart3" style="margin-right: 0.5rem; color: #28a745"></i>
-        Einkaufsliste
-      </h1>
-      <div class="header-info">
-        <small class="text-muted">
-          <i class="bi bi-calendar-date"></i>
-          {{ moment().format('DD. MMMM YYYY') if moment else today.strftime('%d.
-          %B %Y') }}
-        </small>
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <i class="bi bi-cart3"></i>
+            <span>Einkaufsliste</span>
+          </h1>
+        </div>
+        <div class="header-right">
+          <div class="date-display">
+            <i class="bi bi-calendar-date"></i>
+            <span class="current-date">
+              {{ moment().format('DD. MMMM YYYY') if moment else
+              today.strftime('%d. %B %Y') }}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -30,176 +36,248 @@ content %}
         class="btn-custom btn-success-custom"
       >
         <i class="bi bi-plus-circle"></i>
-        Neue Liste erstellen
+        <span class="btn-text">Neue Liste erstellen</span>
       </a>
       <a
         href="{{ url_for('Einkaufsliste.Einkaufsliste_index') }}"
         class="btn-custom btn-light-custom"
       >
         <i class="bi bi-arrow-clockwise"></i>
-        Aktualisieren
+        <span class="btn-text">Aktualisieren</span>
       </a>
       <a
         href="{{ url_for('Einkaufsliste.group') }}"
         class="btn-custom btn-light-custom"
       >
         <i class="bi bi-people"></i>
-        Gruppen verwalten
+        <span class="btn-text">Gruppen verwalten</span>
       </a>
     </div>
 
-    <!-- Table Container -->
-    <div class="table-container">
+    <!-- Lists Content -->
+    <div class="lists-content">
       {% if lists %}
-      <table class="table-custom">
-        <thead>
-          <tr>
-            <th style="text-align: center; width: 5%">
-              <i class="bi bi-star" title="Heute aktiv"></i>
-            </th>
-            <th style="text-align: center; width: 15%">
-              <i class="bi bi-calendar-event"></i>
-              Start Tag
-            </th>
-            <th class="tabel_end_day" style="text-align: center; width: 15%">
-              <i class="bi bi-calendar-x"></i>
-              End Tag
-            </th>
-            <th style="width: 25%">
-              <i class="bi bi-people"></i>
-              Gruppe
-            </th>
-            <th style="width: 25%">
-              <i class="bi bi-person"></i>
-              Ersteller
-            </th>
-            <th style="width: 15%; text-align: center">
-              <i class="bi bi-gear"></i>
-              Aktionen
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for list, group, user in lists %} {% set today_datetime =
-          datetime.combine(today, datetime.min.time()) %}
-          <tr
-            class="clickable-row"
-            onclick="window.location='{{ url_for('Einkaufsliste.ship_list', list_id=list.list_id) }}';"
-          >
-            <!-- Today Indicator -->
-            <td style="text-align: center">
+      <!-- Desktop Table View -->
+      <div class="table-container desktop-view">
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th class="text-center" style="width: 5%">
+                <i class="bi bi-star" title="Heute aktiv"></i>
+              </th>
+              <th class="text-center" style="width: 15%">
+                <i class="bi bi-calendar-event"></i>
+                <span class="header-text">Start Tag</span>
+              </th>
+              <th class="text-center end-day-col" style="width: 15%">
+                <i class="bi bi-calendar-x"></i>
+                <span class="header-text">End Tag</span>
+              </th>
+              <th style="width: 25%">
+                <i class="bi bi-people"></i>
+                <span class="header-text">Gruppe</span>
+              </th>
+              <th style="width: 25%">
+                <i class="bi bi-person"></i>
+                <span class="header-text">Ersteller</span>
+              </th>
+              <th class="text-center" style="width: 15%">
+                <i class="bi bi-gear"></i>
+                <span class="header-text">Aktionen</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for list, group, user in lists %} {% set today_datetime =
+            datetime.combine(today, datetime.min.time()) %}
+            <tr
+              class="clickable-row"
+              onclick="navigateToList('{{ url_for('Einkaufsliste.ship_list', list_id=list.list_id) }}')"
+            >
+              <!-- Today Indicator -->
+              <td class="text-center">
+                {% if today_datetime >= list.first_day and today_datetime <=
+                list.last_day %}
+                <span class="today-star">&#9733;</span>
+                {% else %}
+                <span class="inactive-star">&#9733;</span>
+                {% endif %}
+              </td>
+
+              <!-- Start Date -->
+              <td class="text-center date-cell">
+                <div class="date-main">
+                  {{ list.first_day.strftime('%d. %b') }}
+                </div>
+                <small class="date-year"
+                  >{{ list.first_day.strftime('%Y') }}</small
+                >
+              </td>
+
+              <!-- End Date -->
+              <td class="text-center date-cell end-day-col">
+                <div class="date-main">
+                  {{ list.last_day.strftime('%d. %b') }}
+                </div>
+                <small class="date-year"
+                  >{{ list.last_day.strftime('%Y') }}</small
+                >
+              </td>
+
+              <!-- Group -->
+              <td>
+                <div class="group-info">
+                  <span class="info-label">Gruppe</span>
+                  <div class="group-content">
+                    <span class="group-name">{{ group.group_name }}</span>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Creator -->
+              <td>
+                <div class="user-info">
+                  <span class="info-label">Erstellt von</span>
+                  <div class="user-content">
+                    <span class="user-name">{{ user.username }}</span>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Actions -->
+              <td class="text-center">
+                <div class="action-buttons">
+                  <a
+                    href="{{ url_for('Einkaufsliste.ship_list', list_id=list.list_id) }}"
+                    class="btn btn-sm btn-outline-primary action-btn"
+                    onclick="event.stopPropagation();"
+                    title="Liste anzeigen"
+                  >
+                    <i class="bi bi-eye"></i>
+                  </a>
+                  <a
+                    href="{{ url_for('Einkaufsliste.delete_list', list_id=list.list_id) }}"
+                    class="delete-icon action-btn"
+                    data-date-range="{{ list.first_day.strftime('%d.%m.%Y') }} - {{ list.last_day.strftime('%d.%m.%Y') }}"
+                    data-group-name="{{ group.group_name }}"
+                    title="Liste löschen"
+                  >
+                    <i class="bi bi-trash3-fill"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile Card View -->
+      <div class="mobile-view">
+        {% for list, group, user in lists %} {% set today_datetime =
+        datetime.combine(today, datetime.min.time()) %}
+        <div
+          class="list-card"
+          onclick="navigateToList('{{ url_for('Einkaufsliste.ship_list', list_id=list.list_id) }}')"
+        >
+          <div class="card-header">
+            <div class="card-status">
               {% if today_datetime >= list.first_day and today_datetime <=
               list.last_day %}
               <span class="today-star">&#9733;</span>
+              <span class="status-text active">Aktiv</span>
               {% else %}
-              <span style="color: #dee2e6">&#9733;</span>
+              <span class="inactive-star">&#9733;</span>
+              <span class="status-text">Inaktiv</span>
               {% endif %}
-            </td>
-
-            <!-- Start Date -->
-            <td style="text-align: center">
-              <div style="font-weight: 600; color: #28a745">
-                {{ list.first_day.strftime('%d. %b') }}
-              </div>
-              <small class="text-muted"
-                >{{ list.first_day.strftime('%Y') }}</small
+            </div>
+            <div class="card-actions">
+              <button
+                class="action-btn view-btn"
+                onclick="event.stopPropagation(); window.location='{{ url_for('Einkaufsliste.ship_list', list_id=list.list_id) }}';"
+                title="Liste anzeigen"
               >
-            </td>
-
-            <!-- End Date -->
-            <td class="tabel_end_day" style="text-align: center">
-              <div style="font-weight: 600; color: #dc3545">
-                {{ list.last_day.strftime('%d. %b') }}
-              </div>
-              <small class="text-muted"
-                >{{ list.last_day.strftime('%Y') }}</small
+                <i class="bi bi-eye"></i>
+              </button>
+              <a
+                href="{{ url_for('Einkaufsliste.delete_list', list_id=list.list_id) }}"
+                class="action-btn delete-btn"
+                data-date-range="{{ list.first_day.strftime('%d.%m.%Y') }} - {{ list.last_day.strftime('%d.%m.%Y') }}"
+                data-group-name="{{ group.group_name }}"
+                title="Liste löschen"
               >
-            </td>
+                <i class="bi bi-trash3-fill"></i>
+              </a>
+            </div>
+          </div>
 
-            <!-- Group -->
-            <td>
-              <div style="display: flex; align-items: center; gap: 0.5rem">
-                <div
-                  style="
-                    width: 10px;
-                    height: 10px;
-                    background: #28a745;
-                    border-radius: 50%;
-                  "
-                ></div>
-                <span style="font-weight: 500">{{ group.group_name }}</span>
-              </div>
-            </td>
-
-            <!-- Creator -->
-            <td>
-              <div style="display: flex; align-items: center; gap: 0.5rem">
-                <div
-                  style="
-                    width: 32px;
-                    height: 32px;
-                    background: linear-gradient(135deg, #007bff, #6610f2);
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: white;
-                    font-weight: bold;
-                    font-size: 0.8rem;
-                  "
-                >
-                  {{ user.username[0].upper() if user.username else 'U' }}
+          <div class="card-content">
+            <div class="date-range">
+              <div class="date-item">
+                <i class="bi bi-calendar-event"></i>
+                <div class="date-info">
+                  <div class="date-main">
+                    {{ list.first_day.strftime('%d. %b %Y') }}
+                  </div>
+                  <small class="date-label">Start</small>
                 </div>
-                <span>{{ user.username }}</span>
               </div>
-            </td>
-
-            <!-- Actions -->
-            <td style="text-align: center">
-              <div
-                style="
-                  display: flex;
-                  gap: 0.5rem;
-                  justify-content: center;
-                  align-items: center;
-                "
-              >
-                <!-- View Button -->
-                <a
-                  href="{{ url_for('Einkaufsliste.ship_list', list_id=list.list_id) }}"
-                  class="btn btn-sm btn-outline-primary"
-                  onclick="event.stopPropagation();"
-                  title="Liste anzeigen"
-                >
-                  <i class="bi bi-eye"></i>
-                </a>
-
-                <!-- Delete Button -->
-                <a
-                  href="{{ url_for('Einkaufsliste.delete_list', list_id=list.list_id) }}"
-                  class="delete-icon"
-                  onclick="event.stopPropagation(); return confirm('Möchten Sie diese Einkaufsliste wirklich löschen?\n\nListe: ' + '{{ list.first_day.strftime('%d.%m.%Y') }} - {{ list.last_day.strftime('%d.%m.%Y') }}' + '\nGruppe: {{ group.group_name }}');"
-                  title="Liste löschen"
-                >
-                  <i class="bi bi-trash3-fill"></i>
-                </a>
+              <div class="date-separator">
+                <i class="bi bi-arrow-right"></i>
               </div>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+              <div class="date-item">
+                <i class="bi bi-calendar-x"></i>
+                <div class="date-info">
+                  <div class="date-main">
+                    {{ list.last_day.strftime('%d. %b %Y') }}
+                  </div>
+                  <small class="date-label">Ende</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-details">
+              <div class="detail-item">
+                <div class="detail-header">
+                  <i class="bi bi-people"></i>
+                  <span>Gruppe</span>
+                </div>
+                <div class="detail-content">
+                  <div class="group-info-mobile">
+                    <div class="group-indicator"></div>
+                    <span class="group-name">{{ group.group_name }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="detail-item">
+                <div class="detail-header">
+                  <i class="bi bi-person"></i>
+                  <span>Erstellt von</span>
+                </div>
+                <div class="detail-content">
+                  <div class="user-info-mobile">
+                    <div class="user-avatar-mobile">
+                      {{ user.username[0].upper() if user.username else 'U' }}
+                    </div>
+                    <span class="user-name">{{ user.username }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
       {% else %}
       <!-- Empty State -->
-      <div style="text-align: center; padding: 4rem 2rem; color: #6c757d">
-        <i
-          class="bi bi-cart-x"
-          style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.5"
-        ></i>
-        <h3 style="margin-bottom: 1rem; color: #495057">
-          Keine Einkaufslisten vorhanden
-        </h3>
-        <p style="margin-bottom: 2rem; font-size: 1.1rem">
+      <div class="empty-state">
+        <div class="empty-icon">
+          <i class="bi bi-cart-x"></i>
+        </div>
+        <h3 class="empty-title">Keine Einkaufslisten vorhanden</h3>
+        <p class="empty-description">
           Erstellen Sie Ihre erste Einkaufsliste, um loszulegen!
         </p>
         <a
@@ -207,43 +285,26 @@ content %}
           class="btn-custom btn-success-custom"
         >
           <i class="bi bi-plus-circle"></i>
-          Erste Liste erstellen
+          <span>Erste Liste erstellen</span>
         </a>
       </div>
       {% endif %}
     </div>
 
     <!-- Footer Info -->
-    <div
-      style="
-        margin-top: 2rem;
-        padding-top: 1rem;
-        border-top: 1px solid rgba(0, 0, 0, 0.1);
-        text-align: center;
-        color: #6c757d;
-        font-size: 0.9rem;
-      "
-    >
-      <div
-        style="
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 1rem;
-        "
-      >
-        <div>
+    <div class="footer-info">
+      <div class="footer-content">
+        <div class="footer-stats">
           <i class="bi bi-info-circle"></i>
           {% if lists %} {{ lists|length }} Liste{{ 's' if lists|length != 1
           else '' }} insgesamt {% else %} Keine Listen verfügbar {% endif %}
         </div>
-        <div>
-          <small>
-            <i class="bi bi-clock"></i>
-            Letzte Aktualisierung: {{ moment().format('HH:mm') if moment else
-            'jetzt' }}
-          </small>
+        <div class="footer-time">
+          <i class="bi bi-clock"></i>
+          <small
+            >Letzte Aktualisierung: {{ moment().format('HH:mm') if moment else
+            'jetzt' }}</small
+          >
         </div>
       </div>
     </div>

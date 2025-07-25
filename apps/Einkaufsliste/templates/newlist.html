@@ -1,53 +1,52 @@
-<div class="card-body">
-  <div class="container mt-5">
-    <div class="row justify-content-center">
-      <div class="col-lg-8">
-        <div class="card shadow-lg">
-          <div class="card-body">
-            <h1 class="h3 mb-4 fw-normal text-center">
-              Erstelle eine neue Einkaufsliste
-            </h1>
-            <form action="" method="post">
-              {{ form.hidden_tag() }} {% include
-              "layouts/websites/flash_message.html" %}
+{% extends "layouts/websites/base.html" %} {% block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-lg">
+        <div class="card-body">
+          <h1 class="h3 mb-4 fw-normal text-center">
+            Erstelle eine neue Einkaufsliste
+          </h1>
+          <form action="" method="post">
+            {{ form.hidden_tag() }} {% include
+            "layouts/websites/flash_message.html" %}
 
-              <div class="mb-3">
-                {{ form.first_day.label(class_='form-label') }} {{
-                form.first_day(class_='form-control') }}
-              </div>
-              <div class="mb-3">
-                {{ form.last_day.label(class_='form-label') }} {{
-                form.last_day(class_='form-control') }}
-              </div>
-              <div class="mb-3">
-                <div class="form-check">
-                  {{ form.no_lunch_on_weekday(class_='form-check-input') }}
-                  <label
-                    class="form-check-label"
-                    for="{{ form.no_lunch_on_weekday.id }}"
-                  >
-                    {{ form.no_lunch_on_weekday.label }}
-                  </label>
-                </div>
-              </div>
-              <div class="mb-3">
-                {{ form.group_name.label(class='form-label') }} {{
-                form.group_name(class='form-select') }}
-                <!-- Das Dropdown-Menü wird automatisch mit den in der Route definierten choices gefüllt -->
-              </div>
-              <div class="d-grid gap-2 mb-3">
-                {{ form.submit(class_='btn btn-success btn-lg') }}
-                <a
-                  href="{{ url_for('Einkaufsliste.Einkaufsliste_index') }}"
-                  class="btn btn-danger btn-lg"
-                  >Abbrechen</a
+            <div class="mb-3">
+              {{ form.first_day.label(class_='form-label') }} {{
+              form.first_day(class_='form-control') }}
+            </div>
+            <div class="mb-3">
+              {{ form.last_day.label(class_='form-label') }} {{
+              form.last_day(class_='form-control') }}
+            </div>
+            <div class="mb-3">
+              <div class="form-check">
+                {{ form.no_lunch_on_weekday(class_='form-check-input') }}
+                <label
+                  class="form-check-label"
+                  for="{{ form.no_lunch_on_weekday.id }}"
                 >
+                  {{ form.no_lunch_on_weekday.label }}
+                </label>
               </div>
-            </form>
-          </div>
+            </div>
+            <div class="mb-3">
+              {{ form.group_name.label(class='form-label') }} {{
+              form.group_name(class='form-select') }}
+              <!-- Das Dropdown-Menü wird automatisch mit den in der Route definierten choices gefüllt -->
+            </div>
+            <div class="d-grid gap-2 mb-3">
+              {{ form.submit(class_='btn btn-success btn-lg') }}
+              <a
+                href="{{ url_for('Einkaufsliste.Einkaufsliste_index') }}"
+                class="btn btn-danger btn-lg"
+                >Abbrechen</a
+              >
+            </div>
+          </form>
         </div>
       </div>
     </div>
   </div>
-  {% endblock %}
 </div>
+{% endblock %}

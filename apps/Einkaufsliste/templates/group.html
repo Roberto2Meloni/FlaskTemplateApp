@@ -1,102 +1,433 @@
 {% extends "layouts/web_app_layouts/Einkaufsliste_web_app_base.html" %} {% block
 content %}
-
-<div class="container-fluid" style="margin-top: 50px">
-  <div class="row justify-content-center">
-    <div class="col-md-8">
-      {% include "layouts/websites/flash_message.html" %}
-      <h4>Gruppen</h4>
-      {% if current_user.is_admin == True %}
-      <p>
-        Hinweiss: Du bist als Admin eingeloggt. Du kannst alle Gruppen ansehen
-        und bearbeiten.
-      </p>
-      {% endif %}
-      <br />
-      <div class="button_home">
-        <div>
-          <a
-            href="{{ url_for('Einkaufsliste.newgroup') }}"
-            class="btn btn-success"
-          >
-            <i class="bi bi-plus"></i> Hinzufügen
-          </a>
-          <a href="{{ url_for('Einkaufsliste.group') }}" class="btn btn-light">
-            <i class="bi bi-arrow-clockwise"></i> Aktualisieren
-          </a>
-          <a
-            href="{{ url_for('Einkaufsliste.Einkaufsliste_index') }}"
-            class="btn btn-danger"
-          >
-            <i class="bi bi-arrow-left"></i> Zurück
-          </a>
+<div class="einkaufsliste-container">
+  <!-- Header Section -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-left">
+        <h1 class="page-title">
+          <i class="bi bi-people-fill"></i>
+          Gruppen-Verwaltung
+        </h1>
+        <div class="header-info">
+          {% if current_user.is_admin == True %}
+          <i class="bi bi-shield-check"></i>
+          <span>Admin-Modus: Alle Gruppen sichtbar</span>
+          {% else %}
+          <i class="bi bi-person-circle"></i>
+          <span>Meine Gruppen</span>
+          {% endif %}
         </div>
       </div>
-      <div>
-        <table class="table">
-          <thead>
-            <tr>
-              <th style="text-align: center" scope="col">Gruppenname</th>
-              <th class="tabel_members" style="text-align: center" scope="col">
-                Mitglieder
-              </th>
-              <th style="text-align: center" scope="col">Eigentümer</th>
-              <th scope="col">Typ</th>
-              {% if current_user.is_admin == True %}
-              <th scope="col">Visibale</th>
-              {% endif %}
+      <div class="header-right">
+        <div class="date-display">
+          <i class="bi bi-calendar-check"></i>
+          <span class="current-date" id="currentDate"></span>
+        </div>
+      </div>
+    </div>
+  </div>
 
-              <th class="no-sort" style="width: 5%"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for group in all_groups %}
-            <tr
-              onclick="window.location='{{ url_for('Einkaufsliste.edit_group', group_id=group.group_id) }}'"
-              style="cursor: pointer"
-            >
-              <td style="text-align: center">{{ group.group_name }}</td>
-              <td style="text-align: center" class="tabel_members">
-                {{ group.group_members.count() }}
-              </td>
-              <td style="text-align: center">{{ group.owner.username }}</td>
-              <td style="text-align: center">
-                {% if group.group_public %}
-                <i class="bi bi-unlock-fill" title="Öffentlich"></i>
-                {% else %}
-                <i class="bi bi-lock-fill" title="Privat"></i>
-                {% endif %}
-              </td>
-              {% if current_user.is_admin %}
-              <td scope="col" style="text-align: center">
-                {% if group.group_visible %}
-                <i class="bi bi-eye-fill" title="Sichtbar"></i>
-                <!-- Auge-Icon für 'True' -->
-                {% else %}
-                <i class="bi bi-eye-slash-fill" title="Nicht sichtbar"></i>
-                <!-- Durchgestrichenes Auge-Icon für 'False' -->
-                {% endif %}
-              </td>
-              {% endif %}
+  <!-- Flash Messages -->
+  {% include "layouts/websites/flash_message.html" %}
 
-              <td>
+  <!-- Action Buttons -->
+  <div class="button-container">
+    <a
+      href="{{ url_for('Einkaufsliste.Einkaufsliste_index') }}"
+      class="btn-custom back-btn"
+    >
+      <i class="bi bi-arrow-left-circle"></i>
+      <span class="btn-text">Zurück</span>
+    </a>
+    <a
+      href="{{ url_for('Einkaufsliste.newgroup') }}"
+      class="btn-custom btn-success-custom"
+    >
+      <i class="bi bi-plus-circle"></i>
+      <span class="btn-text">Neue Gruppe</span>
+    </a>
+    <a
+      href="{{ url_for('Einkaufsliste.group') }}"
+      class="btn-custom btn-light-custom"
+    >
+      <i class="bi bi-arrow-clockwise"></i>
+      <span class="btn-text">Aktualisieren</span>
+    </a>
+  </div>
+
+  <!-- Desktop View -->
+  <div class="desktop-view">
+    <div class="table-container">
+      <table class="table-custom">
+        <thead>
+          <tr>
+            <th style="text-align: center">
+              <i class="bi bi-tag"></i> Gruppenname
+            </th>
+            <th style="text-align: center" class="tabel_members">
+              <i class="bi bi-people"></i> Mitglieder
+            </th>
+            <th style="text-align: center">
+              <i class="bi bi-person-badge"></i> Eigentümer
+            </th>
+            <th style="text-align: center"><i class="bi bi-shield"></i> Typ</th>
+            {% if current_user.is_admin == True %}
+            <th style="text-align: center">
+              <i class="bi bi-eye"></i> Sichtbar
+            </th>
+            {% endif %}
+            <th style="text-align: center; width: 5%">
+              <i class="bi bi-gear"></i> Aktionen
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for group in all_groups %}
+          <tr
+            class="clickable-row"
+            onclick="window.location='{{ url_for('Einkaufsliste.modify_group', group_id=group.group_id) }}'"
+          >
+            <!-- Gruppenname -->
+            <td style="text-align: center">
+              <div class="group-info">
+                <div class="group-content">
+                  <div class="group-indicator"></div>
+                  <span class="group-name">{{ group.group_name }}</span>
+                </div>
+              </div>
+            </td>
+            <!-- Mitglieder -->
+            <td style="text-align: center" class="tabel_members">
+              <div class="user-info">
+                <div class="user-content">
+                  <div class="user-avatar">
+                    {{ group.group_members.count() }}
+                  </div>
+                  <span class="info-label">Mitglieder</span>
+                </div>
+              </div>
+            </td>
+            <!-- Eigentümer -->
+            <td style="text-align: center">
+              <div class="user-info">
+                <div class="user-content">
+                  <div class="user-avatar">
+                    {{ group.owner.username[0].upper() }}
+                  </div>
+                  <span class="user-name">{{ group.owner.username }}</span>
+                </div>
+              </div>
+            </td>
+            <!-- Typ -->
+            <td style="text-align: center">
+              {% if group.group_public %}
+              <div class="action-btn view-btn" title="Öffentliche Gruppe">
+                <i class="bi bi-unlock-fill"></i>
+              </div>
+              {% else %}
+              <div
+                class="action-btn"
+                style="background: rgba(220, 53, 69, 0.15); color: #dc3545"
+                title="Private Gruppe"
+              >
+                <i class="bi bi-lock-fill"></i>
+              </div>
+              {% endif %}
+            </td>
+            <!-- Admin Sichtbarkeit -->
+            {% if current_user.is_admin == True %}
+            <td style="text-align: center">
+              {% if group.group_visible %}
+              <div class="action-btn view-btn" title="Gruppe ist sichtbar">
+                <i class="bi bi-eye-fill"></i>
+              </div>
+              {% else %}
+              <div
+                class="action-btn delete-btn"
+                title="Gruppe ist nicht sichtbar"
+              >
+                <i class="bi bi-eye-slash-fill"></i>
+              </div>
+              {% endif %}
+            </td>
+            {% endif %}
+            <!-- Aktionen -->
+            <td style="text-align: center">
+              <div class="action-buttons">
                 {% if current_user.id == group.group_owner %}
-                <a
-                  href="{{ url_for('Einkaufsliste.delete_group', group_id=group.group_id) }}"
-                  onclick="return confirm('Möchten Sie diese Einkaufsliste wirklich löschen?');"
+                <button
+                  class="action-btn delete-icon"
+                  onclick="event.stopPropagation(); openDeleteModal('{{ group.group_id }}', '{{ group.group_name }}', '{{ group.group_members.count() }}', '{{ url_for('Einkaufsliste.delete_group', group_id=group.group_id) }}')"
                 >
-                  <i class="bi bi-trash-fill text-danger"></i>
-                </a>
+                  <i class="bi bi-trash-fill"></i>
+                </button>
                 {% endif %}
-              </td>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-              <td style="text-align: center"></td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+  <!-- Mobile View -->
+  <div class="mobile-view">
+    {% for group in all_groups %}
+    <div
+      class="list-card"
+      onclick="window.location='{{ url_for('Einkaufsliste.modify_group', group_id=group.group_id) }}'"
+    >
+      <!-- Card Header -->
+      <div class="card-header">
+        <div class="card-status">
+          {% if group.group_public %}
+          <i class="bi bi-unlock-fill" style="color: #198754"></i>
+          <span class="status-text active">Öffentlich</span>
+          {% else %}
+          <i class="bi bi-lock-fill" style="color: #dc3545"></i>
+          <span class="status-text">Privat</span>
+          {% endif %}
+        </div>
+        <div class="card-actions">
+          {% if current_user.id == group.group_owner %}
+          <button
+            class="action-btn delete-btn"
+            onclick="event.stopPropagation(); openDeleteModal('{{ group.group_id }}', '{{ group.group_name }}', '{{ group.group_members.count() }}', '{{ url_for('Einkaufsliste.delete_group', group_id=group.group_id) }}')"
+          >
+            <i class="bi bi-trash-fill"></i>
+          </button>
+          {% endif %}
+        </div>
+      </div>
+      <!-- Card Content -->
+      <div class="card-content">
+        <div class="card-details">
+          <div class="detail-item">
+            <div class="detail-header">
+              <i class="bi bi-tag-fill"></i>
+              <span>Gruppenname</span>
+            </div>
+            <div class="detail-content">
+              <div class="group-info-mobile">
+                <div class="group-indicator"></div>
+                <span class="group-name">{{ group.group_name }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-header">
+              <i class="bi bi-people-fill"></i>
+              <span>Mitglieder</span>
+            </div>
+            <div class="detail-content">
+              <div class="user-info-mobile">
+                <div class="user-avatar-mobile">
+                  {{ group.group_members.count() }}
+                </div>
+                <span class="user-name"
+                  >{{ group.group_members.count() }} Mitglied{% if
+                  group.group_members.count() != 1 %}er{% endif %}</span
+                >
+              </div>
+            </div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-header">
+              <i class="bi bi-person-badge-fill"></i>
+              <span>Eigentümer</span>
+            </div>
+            <div class="detail-content">
+              <div class="user-info-mobile">
+                <div class="user-avatar-mobile">
+                  {{ group.owner.username[0].upper() }}
+                </div>
+                <span class="user-name">{{ group.owner.username }}</span>
+              </div>
+            </div>
+          </div>
+          {% if current_user.is_admin == True %}
+          <div class="detail-item">
+            <div class="detail-header">
+              <i class="bi bi-eye-fill"></i>
+              <span>Sichtbarkeit</span>
+            </div>
+            <div class="detail-content">
+              {% if group.group_visible %}
+              <span style="color: #198754; font-weight: 600">
+                <i class="bi bi-check-circle-fill"></i> Sichtbar
+              </span>
+              {% else %}
+              <span style="color: #dc3545; font-weight: 600">
+                <i class="bi bi-x-circle-fill"></i> Nicht sichtbar
+              </span>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Empty State -->
+  {% set group_count = all_groups.count() %} {% if group_count == 0 %}
+  <div class="empty-state">
+    <div class="empty-icon">
+      <i class="bi bi-people"></i>
+    </div>
+    <h3 class="empty-title">Keine Gruppen gefunden</h3>
+    <p class="empty-description">
+      Du hast noch keine Gruppen erstellt oder bist keiner Gruppe beigetreten.
+      Erstelle deine erste Gruppe, um loszulegen!
+    </p>
+    <a
+      href="{{ url_for('Einkaufsliste.newgroup') }}"
+      class="btn-custom btn-success-custom"
+    >
+      <i class="bi bi-plus-circle"></i>
+      <span class="btn-text">Erste Gruppe erstellen</span>
+    </a>
+  </div>
+  {% endif %}
+
+  <!-- Footer Info -->
+  <div class="footer-info">
+    <div class="footer-content">
+      <div class="footer-stats">
+        <i class="bi bi-graph-up"></i>
+        <span
+          >{{ group_count }} Gruppe{% if group_count != 1 %}n{% endif %}
+          insgesamt</span
+        >
+      </div>
+      <div class="footer-time">
+        <i class="bi bi-clock"></i>
+        <span>Zuletzt aktualisiert: <span id="lastUpdated"></span></span>
       </div>
     </div>
   </div>
 </div>
+
+<!-- Delete Modal -->
+<div id="deleteModal" class="modal-overlay">
+  <div class="modal-container">
+    <div class="modal-header">
+      <div class="modal-icon-container">
+        <i class="bi bi-exclamation-triangle-fill modal-warning-icon"></i>
+      </div>
+      <h2 class="modal-title">Gruppe löschen</h2>
+      <button class="modal-close" onclick="closeDeleteModal()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="modal-warning-box">
+        <p class="modal-warning-text">
+          <strong>Achtung!</strong> Diese Aktion kann nicht rückgängig gemacht
+          werden.
+        </p>
+      </div>
+
+      <div class="modal-group-info">
+        <div class="modal-info-item">
+          <div class="modal-info-label">
+            <i class="bi bi-tag-fill"></i>
+            Gruppenname:
+          </div>
+          <div class="modal-info-value" id="modalGroupName"></div>
+        </div>
+
+        <div class="modal-info-item">
+          <div class="modal-info-label">
+            <i class="bi bi-people-fill"></i>
+            Mitglieder:
+          </div>
+          <div class="modal-info-value" id="modalMemberCount"></div>
+        </div>
+      </div>
+
+      <p class="modal-description">
+        Alle Einkaufslisten und Daten dieser Gruppe werden unwiderruflich
+        gelöscht. Möchten Sie die Gruppe wirklich löschen?
+      </p>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDeleteModal()">
+        <i class="bi bi-x-circle"></i>
+        Abbrechen
+      </button>
+      <a id="confirmDeleteBtn" href="#" class="btn btn-danger">
+        <i class="bi bi-trash-fill"></i>
+        Gruppe löschen
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openDeleteModal(groupId, groupName, memberCount, deleteUrl) {
+    document.getElementById("modalGroupName").textContent = groupName;
+    document.getElementById("modalMemberCount").textContent =
+      memberCount + " Mitglied" + (memberCount != 1 ? "er" : "");
+    document.getElementById("confirmDeleteBtn").href = deleteUrl;
+
+    const modal = document.getElementById("deleteModal");
+    modal.classList.add("show");
+
+    // Disable background scrolling
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeDeleteModal() {
+    const modal = document.getElementById("deleteModal");
+    modal.classList.remove("show");
+
+    // Re-enable background scrolling
+    document.body.style.overflow = "";
+  }
+
+  // Close modal when clicking outside
+  document
+    .getElementById("deleteModal")
+    .addEventListener("click", function (e) {
+      if (e.target === this) {
+        closeDeleteModal();
+      }
+    });
+
+  // Close modal with ESC key
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      closeDeleteModal();
+    }
+  });
+
+  // Date and time updates
+  document.addEventListener("DOMContentLoaded", function () {
+    const now = new Date();
+    document.getElementById("currentDate").textContent = now.toLocaleDateString(
+      "de-DE",
+      {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }
+    );
+
+    document.getElementById("lastUpdated").textContent = now.toLocaleTimeString(
+      "de-DE",
+      {
+        hour: "2-digit",
+        minute: "2-digit",
+      }
+    );
+  });
+</script>
+
 {% endblock %}
