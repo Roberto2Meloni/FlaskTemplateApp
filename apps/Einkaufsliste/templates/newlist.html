@@ -1,52 +1,412 @@
-{% extends "layouts/websites/base.html" %} {% block content %}
-<div class="container mt-5">
-  <div class="row justify-content-center">
-    <div class="col-lg-8">
-      <div class="card shadow-lg">
-        <div class="card-body">
-          <h1 class="h3 mb-4 fw-normal text-center">
-            Erstelle eine neue Einkaufsliste
-          </h1>
-          <form action="" method="post">
-            {{ form.hidden_tag() }} {% include
-            "layouts/websites/flash_message.html" %}
+{% extends "layouts/web_app_layouts/Einkaufsliste_web_app_base.html" %} {% block
+content %}
 
-            <div class="mb-3">
-              {{ form.first_day.label(class_='form-label') }} {{
-              form.first_day(class_='form-control') }}
-            </div>
-            <div class="mb-3">
-              {{ form.last_day.label(class_='form-label') }} {{
-              form.last_day(class_='form-control') }}
-            </div>
-            <div class="mb-3">
-              <div class="form-check">
-                {{ form.no_lunch_on_weekday(class_='form-check-input') }}
-                <label
-                  class="form-check-label"
-                  for="{{ form.no_lunch_on_weekday.id }}"
-                >
-                  {{ form.no_lunch_on_weekday.label }}
-                </label>
+<div class="container-fluid">
+  <div class="einkaufsliste-container">
+    <!-- Flash Messages -->
+    <div class="flash-container">
+      {% include "layouts/websites/flash_message.html" %}
+    </div>
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <i class="bi bi-plus-circle"></i>
+            <span>Neue Einkaufsliste erstellen</span>
+          </h1>
+          <div class="header-info">
+            <i class="bi bi-info-circle"></i>
+            <span>Erstellen Sie eine neue Einkaufsliste für Ihre Gruppe</span>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="date-display">
+            <i class="bi bi-calendar-date"></i>
+            <span class="current-date" id="currentDate"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form Container -->
+    <div class="form-container">
+      <div class="form-card">
+        <div class="form-header">
+          <div class="form-icon-container">
+            <i class="bi bi-cart-plus-fill form-icon"></i>
+          </div>
+          <h2 class="form-title">Liste konfigurieren</h2>
+          <p class="form-subtitle">
+            Legen Sie den Zeitraum und die Einstellungen für Ihre neue
+            Einkaufsliste fest
+          </p>
+        </div>
+
+        <form action="" method="post" class="modern-form">
+          {{ form.hidden_tag() }}
+
+          <div class="form-body">
+            <!-- Start Datum -->
+            <div class="form-group">
+              <div class="form-label-container">
+                <i class="bi bi-calendar-event"></i>
+                {{ form.first_day.label(class_='form-label-modern') }}
               </div>
-            </div>
-            <div class="mb-3">
-              {{ form.group_name.label(class='form-label') }} {{
-              form.group_name(class='form-select') }}
-              <!-- Das Dropdown-Menü wird automatisch mit den in der Route definierten choices gefüllt -->
-            </div>
-            <div class="d-grid gap-2 mb-3">
-              {{ form.submit(class_='btn btn-success btn-lg') }}
-              <a
-                href="{{ url_for('Einkaufsliste.Einkaufsliste_index') }}"
-                class="btn btn-danger btn-lg"
-                >Abbrechen</a
+              <div class="form-input-container">
+                {{ form.first_day(class_='form-control-modern', id='startDate')
+                }}
+                <div class="form-input-icon">
+                  <i class="bi bi-calendar3"></i>
+                </div>
+              </div>
+              <small class="form-help-text"
+                >Wählen Sie das Startdatum für die Einkaufsliste</small
               >
             </div>
-          </form>
+
+            <!-- End Datum -->
+            <div class="form-group">
+              <div class="form-label-container">
+                <i class="bi bi-calendar-x"></i>
+                {{ form.last_day.label(class_='form-label-modern') }}
+              </div>
+              <div class="form-input-container">
+                {{ form.last_day(class_='form-control-modern', id='endDate') }}
+                <div class="form-input-icon">
+                  <i class="bi bi-calendar3"></i>
+                </div>
+              </div>
+              <small class="form-help-text"
+                >Wählen Sie das Enddatum für die Einkaufsliste</small
+              >
+            </div>
+
+            <!-- Zeitraum Anzeige -->
+            <div
+              class="date-range-display"
+              id="dateRangeDisplay"
+              style="display: none"
+            >
+              <div class="range-info">
+                <div class="range-item">
+                  <i class="bi bi-hourglass-split"></i>
+                  <span class="range-label">Dauer:</span>
+                  <span class="range-value" id="rangeDuration">-</span>
+                </div>
+                <div class="range-item">
+                  <i class="bi bi-calendar-week"></i>
+                  <span class="range-label">Wochentage:</span>
+                  <span class="range-value" id="rangeWeekdays">-</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mittagessen Checkbox -->
+            <div class="form-group">
+              <div class="form-checkbox-container">
+                <div class="checkbox-wrapper">
+                  {{ form.no_lunch_on_weekday(class_='form-checkbox-modern',
+                  id='noLunchCheck') }}
+                  <label
+                    class="checkbox-label-modern"
+                    for="{{ form.no_lunch_on_weekday.id }}"
+                  >
+                    <div class="checkbox-icon">
+                      <i class="bi bi-cup-hot"></i>
+                    </div>
+                    <div class="checkbox-content">
+                      <span class="checkbox-title"
+                        >{{ form.no_lunch_on_weekday.label.text }}</span
+                      >
+                      <small class="checkbox-description"
+                        >Keine Mittagsplanung an Wochentagen</small
+                      >
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Gruppen Auswahl -->
+            <div class="form-group">
+              <div class="form-label-container">
+                <i class="bi bi-people"></i>
+                {{ form.group_name.label(class='form-label-modern') }}
+              </div>
+              <div class="form-select-container">
+                {{ form.group_name(class='form-select-modern', id='groupSelect')
+                }}
+                <div class="form-select-icon">
+                  <i class="bi bi-chevron-down"></i>
+                </div>
+              </div>
+              <small class="form-help-text"
+                >Wählen Sie die Gruppe für diese Einkaufsliste</small
+              >
+            </div>
+          </div>
+
+          <!-- Form Actions -->
+          <div class="form-actions">
+            <div class="action-buttons-container">
+              <a
+                href="{{ url_for('Einkaufsliste.Einkaufsliste_index') }}"
+                class="btn-custom btn-cancel"
+              >
+                <i class="bi bi-x-circle"></i>
+                <span class="btn-text">Abbrechen</span>
+              </a>
+              {{ form.submit(class_='btn-custom btn-success-custom btn-submit',
+              id='submitBtn') }}
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Form Tips -->
+    <div class="form-tips">
+      <div class="tips-header">
+        <i class="bi bi-lightbulb"></i>
+        <span>Hilfreiche Tipps</span>
+      </div>
+      <div class="tips-content">
+        <div class="tip-item">
+          <i class="bi bi-calendar-check"></i>
+          <span
+            >Listen können für mehrere Tage oder Wochen erstellt werden</span
+          >
+        </div>
+        <div class="tip-item">
+          <i class="bi bi-people-fill"></i>
+          <span
+            >Alle Gruppenmitglieder können Artikel zur Liste hinzufügen</span
+          >
+        </div>
+        <div class="tip-item">
+          <i class="bi bi-phone"></i>
+          <span>Listen sind auf allen Geräten synchronisiert verfügbar</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Info -->
+    <div class="footer-info">
+      <div class="footer-content">
+        <div class="footer-stats">
+          <i class="bi bi-info-circle"></i>
+          <span>Neue Liste wird für ausgewählte Gruppe erstellt</span>
+        </div>
+        <div class="footer-time">
+          <i class="bi bi-clock"></i>
+          <small id="footer-time-text"
+            >Zuletzt aktualisiert: <span id="lastUpdated">jetzt</span></small
+          >
         </div>
       </div>
     </div>
   </div>
 </div>
+
+<!-- Enhanced Form JavaScript -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Datum und Zeit Updates
+    updateDateTime();
+    setInterval(updateDateTime, 30000);
+
+    // Form Enhancement
+    enhanceForm();
+
+    // Date Range Calculator
+    setupDateRangeCalculator();
+
+    // Form Validation
+    setupFormValidation();
+
+    // Smooth Animations
+    addFormAnimations();
+  });
+
+  function updateDateTime() {
+    const now = new Date();
+
+    const currentDateEl = document.getElementById("currentDate");
+    if (currentDateEl) {
+      currentDateEl.textContent = now.toLocaleDateString("de-DE", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    }
+
+    const lastUpdatedEl = document.getElementById("lastUpdated");
+    if (lastUpdatedEl) {
+      lastUpdatedEl.textContent = now.toLocaleTimeString("de-DE", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+  }
+
+  function enhanceForm() {
+    // Submit Button Enhancement
+    const submitBtn = document.getElementById("submitBtn");
+    if (submitBtn) {
+      // Icon hinzufügen falls nicht vorhanden
+      if (!submitBtn.querySelector("i")) {
+        submitBtn.innerHTML =
+          '<i class="bi bi-check-circle"></i><span class="btn-text">' +
+          submitBtn.textContent +
+          "</span>";
+      }
+
+      // Loading state beim Submit
+      submitBtn.addEventListener("click", function (e) {
+        if (this.form && this.form.checkValidity()) {
+          this.classList.add("loading");
+          this.innerHTML =
+            '<i class="bi bi-hourglass-split"></i><span class="btn-text">Wird erstellt...</span>';
+        }
+      });
+    }
+
+    // Input Focus Effects
+    const inputs = document.querySelectorAll(
+      ".form-control-modern, .form-select-modern"
+    );
+    inputs.forEach((input) => {
+      input.addEventListener("focus", function () {
+        this.closest(
+          ".form-input-container, .form-select-container"
+        ).classList.add("focused");
+      });
+
+      input.addEventListener("blur", function () {
+        this.closest(
+          ".form-input-container, .form-select-container"
+        ).classList.remove("focused");
+      });
+    });
+  }
+
+  function setupDateRangeCalculator() {
+    const startDateEl = document.getElementById("startDate");
+    const endDateEl = document.getElementById("endDate");
+    const rangeDisplayEl = document.getElementById("dateRangeDisplay");
+    const durationEl = document.getElementById("rangeDuration");
+    const weekdaysEl = document.getElementById("rangeWeekdays");
+
+    function calculateRange() {
+      const startDate = new Date(startDateEl.value);
+      const endDate = new Date(endDateEl.value);
+
+      if (startDate && endDate && startDate <= endDate) {
+        const timeDiff = endDate.getTime() - startDate.getTime();
+        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
+
+        // Wochentage zählen
+        let weekdays = 0;
+        let currentDate = new Date(startDate);
+        while (currentDate <= endDate) {
+          const dayOfWeek = currentDate.getDay();
+          if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+            // Mo-Fr
+            weekdays++;
+          }
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+        durationEl.textContent = `${daysDiff} Tag${daysDiff !== 1 ? "e" : ""}`;
+        weekdaysEl.textContent = `${weekdays} Wochentag${
+          weekdays !== 1 ? "e" : ""
+        }`;
+
+        rangeDisplayEl.style.display = "block";
+        rangeDisplayEl.style.animation = "slideInUp 0.3s ease-out";
+      } else {
+        rangeDisplayEl.style.display = "none";
+      }
+    }
+
+    if (startDateEl && endDateEl) {
+      startDateEl.addEventListener("change", calculateRange);
+      endDateEl.addEventListener("change", calculateRange);
+
+      // Initial calculation if values are present
+      if (startDateEl.value && endDateEl.value) {
+        calculateRange();
+      }
+    }
+  }
+
+  function setupFormValidation() {
+    const form = document.querySelector(".modern-form");
+    if (!form) return;
+
+    form.addEventListener("submit", function (e) {
+      const startDate = new Date(document.getElementById("startDate").value);
+      const endDate = new Date(document.getElementById("endDate").value);
+
+      if (startDate > endDate) {
+        e.preventDefault();
+        alert("Das Enddatum muss nach dem Startdatum liegen!");
+        return false;
+      }
+
+      // Visual feedback
+      const submitBtn = document.getElementById("submitBtn");
+      if (submitBtn) {
+        submitBtn.classList.add("loading");
+      }
+    });
+  }
+
+  function addFormAnimations() {
+    // Staggered animation for form groups
+    const formGroups = document.querySelectorAll(".form-group");
+    formGroups.forEach((group, index) => {
+      group.style.opacity = "0";
+      group.style.transform = "translateY(20px)";
+
+      setTimeout(() => {
+        group.style.transition = "all 0.5s ease-out";
+        group.style.opacity = "1";
+        group.style.transform = "translateY(0)";
+      }, index * 100);
+    });
+
+    // Form card animation
+    const formCard = document.querySelector(".form-card");
+    if (formCard) {
+      formCard.style.animation = "slideInUp 0.6s ease-out";
+    }
+  }
+
+  // Date input enhancement for better UX
+  function enhanceDateInputs() {
+    const dateInputs = document.querySelectorAll('input[type="date"]');
+
+    dateInputs.forEach((input) => {
+      // Set minimum date to today
+      const today = new Date().toISOString().split("T")[0];
+      if (!input.getAttribute("min")) {
+        input.setAttribute("min", today);
+      }
+
+      // Visual feedback for date selection
+      input.addEventListener("change", function () {
+        this.closest(".form-input-container").classList.add("has-value");
+        this.style.color = "#198754";
+      });
+    });
+  }
+
+  // Initialize date enhancements
+  document.addEventListener("DOMContentLoaded", enhanceDateInputs);
+</script>
+
 {% endblock %}

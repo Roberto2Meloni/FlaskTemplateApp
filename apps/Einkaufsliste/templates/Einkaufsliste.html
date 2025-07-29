@@ -149,21 +149,24 @@ content %}
                 <div class="action-buttons">
                   <a
                     href="{{ url_for('Einkaufsliste.ship_list', list_id=list.list_id) }}"
-                    class="btn btn-sm btn-outline-primary action-btn"
+                    class="btn btn-sm btn-outline-primary action-btn view-btn"
                     onclick="event.stopPropagation();"
                     title="Liste anzeigen"
                   >
                     <i class="bi bi-eye"></i>
                   </a>
-                  <a
-                    href="{{ url_for('Einkaufsliste.delete_list', list_id=list.list_id) }}"
+                  <button
                     class="delete-icon action-btn"
-                    data-date-range="{{ list.first_day.strftime('%d.%m.%Y') }} - {{ list.last_day.strftime('%d.%m.%Y') }}"
-                    data-group-name="{{ group.group_name }}"
+                    onclick="event.stopPropagation(); openListDeleteModal(
+                      '{{ list.first_day.strftime('%d.%m.%Y') }} - {{ list.last_day.strftime('%d.%m.%Y') }}',
+                      '{{ group.group_name }}',
+                      '{{ url_for('Einkaufsliste.delete_list', list_id=list.list_id) }}',
+                      {% if today_datetime >= list.first_day and today_datetime <= list.last_day %}true{% else %}false{% endif %}
+                    )"
                     title="Liste löschen"
                   >
                     <i class="bi bi-trash3-fill"></i>
-                  </a>
+                  </button>
                 </div>
               </td>
             </tr>
@@ -199,15 +202,18 @@ content %}
               >
                 <i class="bi bi-eye"></i>
               </button>
-              <a
-                href="{{ url_for('Einkaufsliste.delete_list', list_id=list.list_id) }}"
+              <button
                 class="action-btn delete-btn"
-                data-date-range="{{ list.first_day.strftime('%d.%m.%Y') }} - {{ list.last_day.strftime('%d.%m.%Y') }}"
-                data-group-name="{{ group.group_name }}"
+                onclick="event.stopPropagation(); openListDeleteModal(
+                  '{{ list.first_day.strftime('%d.%m.%Y') }} - {{ list.last_day.strftime('%d.%m.%Y') }}',
+                  '{{ group.group_name }}',
+                  '{{ url_for('Einkaufsliste.delete_list', list_id=list.list_id) }}',
+                  {% if today_datetime >= list.first_day and today_datetime <= list.last_day %}true{% else %}false{% endif %}
+                )"
                 title="Liste löschen"
               >
                 <i class="bi bi-trash3-fill"></i>
-              </a>
+              </button>
             </div>
           </div>
 
@@ -301,10 +307,77 @@ content %}
         </div>
         <div class="footer-time">
           <i class="bi bi-clock"></i>
-          <small
+          <small id="footer-time-text"
             >Letzte Aktualisierung: {{ moment().format('HH:mm') if moment else
             'jetzt' }}</small
           >
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete List Modal -->
+    <div id="deleteListModal" class="modal-overlay">
+      <div class="modal-container">
+        <div class="modal-header">
+          <div class="modal-icon-container">
+            <i class="bi bi-exclamation-triangle-fill modal-warning-icon"></i>
+          </div>
+          <h2 class="modal-title">Einkaufsliste löschen</h2>
+          <button class="modal-close" onclick="closeListDeleteModal()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="modal-warning-box">
+            <p class="modal-warning-text">
+              <strong>Achtung!</strong> Diese Aktion kann nicht rückgängig
+              gemacht werden.
+            </p>
+          </div>
+
+          <div class="modal-list-info">
+            <div class="modal-info-item">
+              <div class="modal-info-label">
+                <i class="bi bi-calendar-range-fill"></i>
+                Zeitraum:
+              </div>
+              <div class="modal-info-value" id="modalListDateRange"></div>
+            </div>
+
+            <div class="modal-info-item">
+              <div class="modal-info-label">
+                <i class="bi bi-people-fill"></i>
+                Gruppe:
+              </div>
+              <div class="modal-info-value" id="modalListGroupName"></div>
+            </div>
+
+            <div class="modal-info-item">
+              <div class="modal-info-label">
+                <i class="bi bi-cart3"></i>
+                Status:
+              </div>
+              <div class="modal-info-value" id="modalListStatus"></div>
+            </div>
+          </div>
+
+          <p class="modal-description">
+            Alle Artikel und Daten dieser Einkaufsliste werden unwiderruflich
+            gelöscht. Die anderen Mitglieder der Gruppe haben keinen Zugriff
+            mehr auf diese Liste. Möchten Sie die Liste wirklich löschen?
+          </p>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeListDeleteModal()">
+            <i class="bi bi-x-circle"></i>
+            Abbrechen
+          </button>
+          <a id="confirmListDeleteBtn" href="#" class="btn btn-danger">
+            <i class="bi bi-trash-fill"></i>
+            Liste löschen
+          </a>
         </div>
       </div>
     </div>
