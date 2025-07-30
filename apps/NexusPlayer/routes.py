@@ -17,9 +17,7 @@ config = Config()
 print("NexusPlayer Version 0.0.0")
 
 
-@blueprint.route("/NexusPlayer", methods=["GET"])
+@blueprint.route("/NexusPlayer_index", methods=["GET"])
 @admin_required
-def NexusPlayer():
-    return render_template(
-        "NexusPlayer.html", user=current_user, config=config
-    )
+def NexusPlayer_index():
+    return render_template("NexusPlayer.html", user=current_user, config=config)
