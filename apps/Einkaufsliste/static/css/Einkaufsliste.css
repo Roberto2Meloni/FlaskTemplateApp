@@ -2605,3 +2605,81 @@ body {
         font-weight: 700;
     }
 }
+
+/* Zusätzliche Styling für Select2 Integration */
+.select2-container {
+    width: 100% !important;
+}
+
+.select2-container .select2-selection--multiple {
+    border: 2px solid rgba(0, 0, 0, 0.1) !important;
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    min-height: 50px !important;
+    padding: 0.5rem !important;
+}
+
+.select2-container--default .select2-selection--multiple:focus-within {
+    border-color: #198754 !important;
+    box-shadow: 0 0 0 4px rgba(25, 135, 84, 0.15) !important;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background-color: #198754 !important;
+    border: none !important;
+    color: white !important;
+    border-radius: 20px !important;
+    padding: 0.25rem 0.75rem !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    color: rgba(255, 255, 255, 0.8) !important;
+    margin-right: 0.5rem !important;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+    color: white !important;
+}
+
+.select2-dropdown {
+    border: 2px solid rgba(25, 135, 84, 0.2) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: #198754 !important;
+}
+
+/* Dark Mode Support für Select2 */
+@media (prefers-color-scheme: dark) {
+    .select2-container .select2-selection--multiple {
+        background: rgba(52, 58, 64, 0.9) !important;
+        color: #f8f9fa !important;
+        border-color: rgba(255, 255, 255, 0.15) !important;
+    }
+
+    .select2-dropdown {
+        background: rgba(52, 58, 64, 0.95) !important;
+        color: #f8f9fa !important;
+    }
+
+    .select2-container--default .select2-results__option {
+        color: #f8f9fa !important;
+    }
+}
+
+/* Submit Button Icon */
+.btn-submit::before {
+    content: "\F26B";
+    /* Bootstrap Icons: check-circle */
+    font-family: "bootstrap-icons";
+    margin-right: 0.5rem;
+}
+
+/* Loading State */
+.btn-submit.loading::before {
+    display: none;
+}

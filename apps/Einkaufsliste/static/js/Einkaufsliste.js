@@ -1788,3 +1788,94 @@ function navigateToList(url) {
 }
 
 console.log("🛡️ Safe Modal System loaded with defensive programming");
+
+// Aktuelles Datum anzeigen
+document.addEventListener("DOMContentLoaded", function () {
+  const currentDateElement = document.getElementById("current-date");
+  const now = new Date();
+  const options = {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  };
+  currentDateElement.textContent = now.toLocaleDateString("de-DE", options);
+
+  // Form Groups Animation
+  const formGroups = document.querySelectorAll(".form-group");
+  formGroups.forEach((group, index) => {
+    setTimeout(() => {
+      group.style.opacity = "1";
+      group.style.transform = "translateY(0)";
+    }, index * 150);
+  });
+
+  // Input Focus Effects
+  const inputs = document.querySelectorAll(
+    ".form-control-modern, .form-select-modern"
+  );
+  inputs.forEach((input) => {
+    const container = input.closest(
+      ".form-input-container, .form-select-container"
+    );
+
+    input.addEventListener("focus", function () {
+      container.classList.add("focused");
+    });
+
+    input.addEventListener("blur", function () {
+      container.classList.remove("focused");
+    });
+  });
+
+  // Form Submission Loading State
+  const form = document.querySelector("form");
+  const submitBtn = document.querySelector(".btn-submit");
+
+  if (form && submitBtn) {
+    form.addEventListener("submit", function () {
+      submitBtn.classList.add("loading");
+      submitBtn.disabled = true;
+    });
+  }
+});
+
+$(document).ready(function () {
+  // Select2 Initialization mit modernem Styling
+  $(".select2").select2({
+    placeholder: "Mitglieder auswählen...",
+    allowClear: true,
+    width: "100%",
+    theme: "default",
+    language: {
+      noResults: function () {
+        return "Keine Ergebnisse gefunden";
+      },
+      searching: function () {
+        return "Suche...";
+      },
+      loadingMore: function () {
+        return "Lade weitere Ergebnisse...";
+      },
+    },
+  });
+
+  // Select2 Focus Effects
+  $(".select2").on("select2:open", function () {
+    $(this).closest(".form-select-container").addClass("focused");
+  });
+
+  $(".select2").on("select2:close", function () {
+    $(this).closest(".form-select-container").removeClass("focused");
+  });
+
+  // Tooltip Initialization (falls Bootstrap Tooltips verwendet werden)
+  if (typeof bootstrap !== "undefined") {
+    var tooltipTriggerList = [].slice.call(
+      document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    );
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  }
+});
