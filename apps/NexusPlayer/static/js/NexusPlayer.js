@@ -1,185 +1,172 @@
+// Sidebar Toggle Funktionalität - Mobile + Desktop
 document.addEventListener("DOMContentLoaded", function () {
-  let connectedElement = document.querySelector(".cli-connected p");
-  console.log(connectedElement);
-  let connectedRow = connectedElement.textContent;
-  console.log(connectedRow);
-  let systemName = connectedRow.match(/Verbunden mit (.*)/)[1];
-  console.log(systemName);
-  var commandSystemName = systemName + " # ";
-  console.log(commandSystemName);
-});
+  // Elemente finden
+  const sidebar = document.getElementById("sidebar");
+  const sidebarToggle = document.getElementById("sidebar-toggle"); // Desktop
+  const mobileToggle = document.getElementById("mobile-toggle"); // Mobile
+  const sidebarOverlay = document.getElementById("sidebar-overlay");
 
-function clearConsole() {
-  const output = document.getElementById("cli-history");
-  output.innerHTML = "";
-}
-
-function handleKeyDown(event, url_receive_command, url_check_output) {
-  const inputField = document.getElementById("cli-input-field");
-  const command = inputField.value;
-
-  if (event.key === "Enter" && command.length > 0) {
-    processCommand(command, url_receive_command, url_check_output);
-    inputField.value = "";
-  } else if (event.key === "Escape") {
-    inputField.value = "";
+  // Prüfen ob Mobile oder Desktop
+  function isMobile() {
+    return window.innerWidth <= 768;
   }
-}
 
-async function processCommand(command, url_check_command, url_check_output) {
-  try {
-    const response = await fetch(url_check_command, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ command: command }),
+  // Toggle Sidebar Funktion
+  function toggleSidebar() {
+    const isCurrentlyCollapsed = sidebar.classList.contains("collapsed");
+
+    if (isMobile()) {
+      // MOBILE: collapsed = sichtbar, nicht collapsed = versteckt
+      sidebar.classList.toggle("collapsed");
+
+      // Mobile Toggle Button Animation
+      if (mobileToggle) {
+        mobileToggle.classList.toggle("active");
+      }
+
+      // Overlay NUR auf Mobile
+      if (sidebarOverlay) {
+        sidebarOverlay.classList.toggle("active");
+      }
+
+      // Body-Scroll verhindern wenn Sidebar offen
+      if (!isCurrentlyCollapsed) {
+        // Wird sichtbar
+        document.body.style.overflow = "hidden";
+      } else {
+        // Wird versteckt
+        document.body.style.overflow = "auto";
+      }
+    } else {
+      // DESKTOP: collapsed = schmal, nicht collapsed = normal
+      sidebar.classList.toggle("collapsed");
+
+      // Desktop Toggle Button Animation
+      if (sidebarToggle) {
+        sidebarToggle.classList.toggle("active");
+      }
+
+      // KEIN Overlay auf Desktop
+      if (sidebarOverlay) {
+        sidebarOverlay.classList.remove("active");
+      }
+
+      // Body-Scroll immer normal auf Desktop
+      document.body.style.overflow = "auto";
+    }
+
+    console.log(
+      "Sidebar toggled - Mobile:",
+      isMobile(),
+      "Collapsed:",
+      sidebar.classList.contains("collapsed")
+    );
+  }
+
+  // Click Event für Desktop Hamburger-Button
+  if (sidebarToggle) {
+    sidebarToggle.addEventListener("click", function (event) {
+      event.preventDefault();
+      toggleSidebar();
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP Fehler! Status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const commandId = data.command_id;
-
-    addCommandToHistory(command, { output: [] }, commandId);
-
-    // Starte periodische Überprüfung der Befehlsausgabe
-    checkCommandOutput(commandId, url_check_output);
-  } catch (error) {
-    console.error("Fehler bei der Verarbeitung des Befehls:", error);
-    addCommandToHistory(command, { error: [error.message] });
   }
-}
 
-function safeDecodeURIComponent(str) {
-  try {
-    // Versuche zuerst, den String als UTF-8 zu dekodieren
-    return decodeURIComponent(escape(str));
-  } catch (e) {
-    try {
-      // Wenn das fehlschlägt, versuche eine direkte Dekodierung
-      return decodeURIComponent(str);
-    } catch (e2) {
-      console.warn("Fehler beim Dekodieren:", e2);
-      // Wenn auch das fehlschlägt, gib den Originalstring zurück
-      return str;
-    }
+  // Click Event für Mobile Toggle-Button
+  if (mobileToggle) {
+    mobileToggle.addEventListener("click", function (event) {
+      event.preventDefault();
+      toggleSidebar();
+    });
   }
-}
-function updateCommandOutput(commandId, output, error) {
-  const historyEntry = document.querySelector(
-    `[data-command-id="${commandId}"]`
+
+  // Click Event für Overlay - NUR auf Mobile
+  if (sidebarOverlay) {
+    sidebarOverlay.addEventListener("click", function () {
+      if (isMobile()) {
+        toggleSidebar();
+      }
+    });
+  }
+
+  // ESC-Taste zum Schließen
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape") {
+      if (isMobile()) {
+        // Auf Mobile: Schließen wenn sichtbar
+        if (sidebar.classList.contains("collapsed")) {
+          toggleSidebar();
+        }
+      } else {
+        // Auf Desktop: Ausklappen wenn collapsed
+        if (sidebar.classList.contains("collapsed")) {
+          toggleSidebar();
+        }
+      }
+    }
+  });
+
+  // Window Resize Handler - Responsive Verhalten
+  window.addEventListener("resize", function () {
+    const wasMobile = document.body.dataset.wasMobile === "true";
+    const nowMobile = isMobile();
+
+    if (wasMobile !== nowMobile) {
+      // Gerätewechsel: Alles zurücksetzen
+      sidebar.classList.remove("collapsed");
+
+      // Beide Toggle-Buttons zurücksetzen
+      if (sidebarToggle) {
+        sidebarToggle.classList.remove("active");
+      }
+      if (mobileToggle) {
+        mobileToggle.classList.remove("active");
+      }
+
+      if (sidebarOverlay) {
+        sidebarOverlay.classList.remove("active");
+      }
+
+      document.body.style.overflow = "auto";
+      document.body.dataset.wasMobile = nowMobile.toString();
+    }
+  });
+
+  // Initial state
+  document.body.dataset.wasMobile = isMobile().toString();
+
+  // Aktiven Link highlighten
+  const sidebarLinks = document.querySelectorAll(
+    ".sidebar-link:not(.sidebar-toggle)"
   );
-  if (historyEntry) {
-    const outputElement = historyEntry.querySelector(".cli-output-command");
-    if (output && output.length > 0) {
-      output.forEach((line) => {
-        const decodedLine = safeDecodeURIComponent(line);
-        outputElement.innerHTML += decodedLine + "<br>";
-      });
-    }
-    if (error && error.length > 0) {
-      error.forEach((line) => {
-        const decodedLine = safeDecodeURIComponent(line);
-        outputElement.innerHTML += `<span style="color: red;">${decodedLine}</span><br>`;
-      });
-    }
-    // Scroll to the top after updating
-    const cliWrapper = document.querySelector(".cli-console-container");
-    cliWrapper.scrollTop = 0;
-  }
-}
 
-function checkCommandOutput(commandId, url_check_output) {
-  console.log("checkCommandOutput");
-  console.log(commandId);
-  let new_url = url_check_output.replace("/0", `/${commandId}`);
-  console.log(new_url);
-  const intervalId = setInterval(async () => {
-    try {
-      const response = await fetch(new_url);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+  sidebarLinks.forEach((link) => {
+    link.addEventListener("click", function (event) {
+      if (this.getAttribute("href") === "#") {
+        event.preventDefault();
       }
-      const data = await response.json();
 
-      updateCommandOutput(commandId, data.output, data.error);
+      // Aktiven Link markieren
+      sidebarLinks.forEach((l) => l.classList.remove("active"));
+      this.classList.add("active");
 
-      if (data.complete) {
-        clearInterval(intervalId);
+      // Auf Mobile: Sidebar nach Link-Klick schließen
+      if (isMobile() && sidebar.classList.contains("collapsed")) {
+        setTimeout(() => {
+          toggleSidebar();
+        }, 200);
       }
-    } catch (error) {
-      console.error("Fehler beim Abrufen der Befehlsausgabe:", error);
-      updateCommandOutput(commandId, [], [`Fehler: ${error.message}`]);
-      clearInterval(intervalId);
-    }
-  }, 500);
-}
 
-function addCommandToHistory(command, response, commandId) {
-  const history = document.getElementById("cli-history");
-  const commandUl = document.createElement("div");
-  commandUl.classList.add("cli-history-entry");
-  commandUl.dataset.commandId = commandId;
+      const linkText = this.querySelector(".sidebar-text")?.textContent;
+      console.log("Link geklickt:", linkText);
+    });
+  });
 
-  const commandInput = document.createElement("div");
-  const commandOutput = document.createElement("div");
-
-  commandInput.classList.add("cli-input-command");
-  commandOutput.classList.add("cli-output-command");
-
-  let connectedElement = document.querySelector(".cli-connected p");
-  let connectedRow = connectedElement.textContent;
-  let systemName = connectedRow.match(/Verbunden mit (.*)/)[1];
-  var commandSystemName = systemName + " # ";
-
-  commandInput.textContent = commandSystemName + command;
-
-  if (response.output) {
-    commandOutput.innerHTML = response.output.join("<br>");
-  } else if (response.error) {
-    commandOutput.innerHTML = `Fehler: ${response.error.join("<br>")}`;
-    commandOutput.style.color = "red";
-  } else {
-    commandOutput.textContent = "Keine Antwort vom Server";
+  // Initialer aktiver Link (Dashboard)
+  if (sidebarLinks.length > 0) {
+    sidebarLinks[0].classList.add("active");
   }
 
-  commandUl.appendChild(commandInput);
-  commandUl.appendChild(commandOutput);
-
-  // Füge den neuen Befehl ganz oben ein
-  history.prepend(commandUl);
-
-  // Scrolle zum Anfang des CLI-Bereichs
-  const cliWrapper = document.querySelector(".cli-console-container");
-  cliWrapper.scrollTop = 0; // Scrolle ganz nach oben
-}
-
-function replaceSpecialChars(str) {
-  const specialChars = {
-    "Ã¼": "ü",
-    "Ã¤": "ä",
-    "Ã¶": "ö",
-    Ã: "Ü",
-    "Ã„": "Ä",
-    "Ã–": "Ö",
-    ÃŸ: "ß",
-    "â‚¬": "€",
-  };
-  return str.replace(/[ÃüäöÜÄÖßâ‚¬]/g, (match) => specialChars[match] || match);
-}
-
-function safeDecodeURIComponent(str) {
-  try {
-    return replaceSpecialChars(decodeURIComponent(escape(str)));
-  } catch (e) {
-    try {
-      return replaceSpecialChars(decodeURIComponent(str));
-    } catch (e2) {
-      console.warn("Fehler beim Dekodieren:", e2);
-      return replaceSpecialChars(str);
-    }
-  }
-}
+  console.log("Sidebar JavaScript geladen - Initial Mobile:", isMobile());
+  console.log("Mobile Toggle gefunden:", !!mobileToggle);
+  console.log("Desktop Toggle gefunden:", !!sidebarToggle);
+});
