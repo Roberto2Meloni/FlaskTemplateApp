@@ -36,7 +36,7 @@ print("Einkaufsliste Version 0.0.0")
 
 
 @blueprint.route("/Einkaufsliste_index", methods=["GET"])
-@admin_required
+@enabled_required
 def Einkaufsliste_index():
     new_registration = User.query.filter(User.user_enable.is_(None)).count()
     page = request.args.get(
