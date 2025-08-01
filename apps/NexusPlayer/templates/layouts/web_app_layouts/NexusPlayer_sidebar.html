@@ -1,64 +1,49 @@
-<div class="app-container">
-  <!-- Mobile Toggle Button -->
-  <button class="mobile-toggle" id="mobile-toggle">
-    <span></span>
-    <span></span>
-    <span></span>
-  </button>
-
-  <div class="sidebar" id="sidebar">
-    <!-- Sidebar Header -->
-    <div class="sidebar-header">
-      <button class="sidebar-toggle" id="sidebar-toggle">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-      <h3>NexusPlayer</h3>
-    </div>
-
-    <!-- Sidebar Navigation -->
-    <nav class="sidebar-nav">
-      <!-- Haupt-Navigation -->
-      <ul class="sidebar-menu">
-        <li class="sidebar-item">
-          <a href="#" class="sidebar-link" data-tooltip="Dashboard">
-            <i class="sidebar-icon bi bi-house-door-fill"></i>
-            <span class="sidebar-text">Dashboard</span>
-          </a>
-        </li>
-        <li class="sidebar-item">
-          <a href="#" class="sidebar-link" data-tooltip="Dateien">
-            <i class="sidebar-icon bi bi-folder-fill"></i>
-            <span class="sidebar-text">Dateien</span>
-          </a>
-        </li>
-        <li class="sidebar-item">
-          <a href="#" class="sidebar-link" data-tooltip="Playlists">
-            <i class="sidebar-icon bi bi-collection-play-fill"></i>
-            <span class="sidebar-text">Playlists</span>
-          </a>
-        </li>
-        <li class="sidebar-item">
-          <a href="#" class="sidebar-link" data-tooltip="Geräte">
-            <i class="sidebar-icon bi bi-display-fill"></i>
-            <span class="sidebar-text">Geräte</span>
-          </a>
-        </li>
-      </ul>
-
-      <!-- Admin-Navigation (unten) -->
-      <ul class="sidebar-menu-bottom">
-        <li class="sidebar-item">
-          <a href="#" class="sidebar-link" data-tooltip="Admin">
-            <i class="sidebar-icon bi bi-gear-fill"></i>
-            <span class="sidebar-text">Admin</span>
-          </a>
-        </li>
-      </ul>
-    </nav>
+<div class="sidebar" id="sidebar">
+  <!-- Sidebar Header -->
+  <div class="sidebar-header">
+    <button class="sidebar-toggle" id="sidebar-toggle"></button>
+    <h3>NexusPlayer</h3>
   </div>
 
-  <!-- Overlay für Mobile -->
-  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <!-- Sidebar Navigation -->
+  <nav class="sidebar-nav">
+    <!-- Haupt-Navigation -->
+    <ul class="sidebar-menu">
+      <li class="sidebar-item">
+        <a href="#" class="sidebar-link" data-tooltip="Dashboard">
+          <i class="sidebar-icon bi bi-house-door-fill"></i>
+          <span class="sidebar-text">Dashboard</span>
+        </a>
+      </li>
+      <li class="sidebar-item">
+        <a href="#" class="sidebar-link" data-tooltip="Dateien">
+          <i class="sidebar-icon bi bi-folder-fill"></i>
+          <span class="sidebar-text">Dateien</span>
+        </a>
+      </li>
+      <li class="sidebar-item">
+        <a href="#" class="sidebar-link" data-tooltip="Playlists">
+          <i class="sidebar-icon bi bi-collection-play-fill"></i>
+          <span class="sidebar-text">Playlists</span>
+        </a>
+      </li>
+      <li class="sidebar-item">
+        <a href="#" class="sidebar-link" data-tooltip="Geräte">
+          <i class="sidebar-icon bi bi-display-fill"></i>
+          <span class="sidebar-text">Geräte</span>
+        </a>
+      </li>
+    </ul>
+
+    {% if current_user|has_admin_rights %}
+    <ul class="sidebar-menu-bottom">
+      <li class="sidebar-item">
+        <a href="#" class="sidebar-link" data-tooltip="Admin">
+          <i class="sidebar-icon bi bi-gear-fill"></i>
+          <span class="sidebar-text">Admin</span>
+        </a>
+      </li>
+    </ul>
+    {% endif %}
+  </nav>
 </div>

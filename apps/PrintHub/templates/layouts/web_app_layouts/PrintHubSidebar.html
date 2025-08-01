@@ -109,6 +109,23 @@
           <i class="bi bi-percent"></i> Rabatt/Aufschlag
         </a>
       </li>
+
+      {% if current_user|has_admin_rights %}
+      <!-- Kalkulation Section -->
+      <li class="nav-section">
+        <span class="nav-section-title">
+          <i class="bi bi-calculator"></i> Admin Tools
+        </span>
+      </li>
+      <li class="nav-item">
+        <a
+          class="nav-link {{ 'active' if active_page == 'export' else '' }}"
+          href=""
+        >
+          <i class="bi bi-percent"></i> Daten Exportieren
+        </a>
+      </li>
+      {% endif %}
     </ul>
   </nav>
 </div>
