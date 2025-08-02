@@ -102,7 +102,7 @@ content %}
               <div class="user-info">
                 <div class="user-content">
                   <div class="user-avatar">
-                    {{ group.group_members.count() }}
+                    {{ group.group_members|length }}
                   </div>
                   <span class="info-label">Mitglieder</span>
                 </div>
@@ -158,7 +158,7 @@ content %}
                 {% if current_user.id == group.group_owner %}
                 <button
                   class="action-btn delete-icon"
-                  onclick="event.stopPropagation(); openDeleteModal('{{ group.group_id }}', '{{ group.group_name }}', '{{ group.group_members.count() }}', '{{ url_for('Einkaufsliste.delete_group', group_id=group.group_id) }}')"
+                  onclick="event.stopPropagation(); openDeleteModal('{{ group.group_id }}', '{{ group.group_name }}', '{{ group.group_members|length }}', '{{ url_for('Einkaufsliste.delete_group', group_id=group.group_id) }}')"
                 >
                   <i class="bi bi-trash-fill"></i>
                 </button>
@@ -194,7 +194,7 @@ content %}
           {% if current_user.id == group.group_owner %}
           <button
             class="action-btn delete-btn"
-            onclick="event.stopPropagation(); openDeleteModal('{{ group.group_id }}', '{{ group.group_name }}', '{{ group.group_members.count() }}', '{{ url_for('Einkaufsliste.delete_group', group_id=group.group_id) }}')"
+            onclick="event.stopPropagation(); openDeleteModal('{{ group.group_id }}', '{{ group.group_name }}', '{{ group.group_members|length }}', '{{ url_for('Einkaufsliste.delete_group', group_id=group.group_id) }}')"
           >
             <i class="bi bi-trash-fill"></i>
           </button>
@@ -224,11 +224,11 @@ content %}
             <div class="detail-content">
               <div class="user-info-mobile">
                 <div class="user-avatar-mobile">
-                  {{ group.group_members.count() }}
+                  {{ group.group_members|length }}
                 </div>
                 <span class="user-name"
-                  >{{ group.group_members.count() }} Mitglied{% if
-                  group.group_members.count() != 1 %}er{% endif %}</span
+                  >{{ group.group_members|length }} Mitglied{% if
+                  group.group_members|length != 1 %}er{% endif %}</span
                 >
               </div>
             </div>
@@ -273,7 +273,7 @@ content %}
   </div>
 
   <!-- Empty State -->
-  {% set group_count = all_groups.count() %} {% if group_count == 0 %}
+  {% set group_count = all_groups|length %} {% if group_count == 0 %}
   <div class="empty-state">
     <div class="empty-icon">
       <i class="bi bi-people"></i>
