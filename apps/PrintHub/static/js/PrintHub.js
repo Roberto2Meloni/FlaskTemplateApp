@@ -1365,3 +1365,119 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 console.log("Corrected PrintHub functions loaded");
+
+// Export funktionen
+function handleFileSelect(input) {
+  const file = input.files[0];
+  const fileInfo = document.getElementById("fileInfo");
+  const importBtn = document.getElementById("importBtn");
+  const csvOptions = document.getElementById("csvOptions");
+
+  if (file) {
+    document.getElementById("fileName").textContent = file.name;
+    document.getElementById("fileSize").textContent = formatFileSize(file.size);
+    document.getElementById("fileType").textContent = file.type || "Unbekannt";
+
+    fileInfo.style.display = "block";
+    importBtn.disabled = false;
+
+    // CSV-Optionen nur bei CSV-Dateien anzeigen
+    if (file.name.toLowerCase().endsWith(".csv")) {
+      csvOptions.style.display = "block";
+    } else {
+      csvOptions.style.display = "none";
+    }
+  } else {
+    fileInfo.style.display = "none";
+    importBtn.disabled = true;
+    csvOptions.style.display = "none";
+  }
+}
+
+function formatFileSize(bytes) {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+}
+
+function showExportInfo() {
+  const info = document.getElementById("exportInfo");
+  info.style.display = info.style.display === "none" ? "block" : "none";
+}
+
+function showImportInfo() {
+  const info = document.getElementById("importInfo");
+  info.style.display = info.style.display === "none" ? "block" : "none";
+}
+
+// Drag & Drop Funktionalität
+const dropZone = document.getElementById("dropZone");
+const fileInput = document.getElementById("import_file");
+
+dropZone.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  dropZone.classList.add("dragover");
+});
+
+dropZone.addEventListener("dragleave", (e) => {
+  e.preventDefault();
+  dropZone.classList.remove("dragover");
+});
+
+dropZone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  dropZone.classList.remove("dragover");
+
+  const files = e.dataTransfer.files;
+  if (files.length > 0) {
+    fileInput.files = files;
+    handleFileSelect(fileInput);
+  }
+});
+
+// Form-Submit mit Progress-Anzeige
+document.getElementById("importForm").addEventListener("submit", function (e) {
+  const progressContainer = document.getElementById("progressContainer");
+  const progressBar = document.getElementById("progressBar");
+  const progressText = document.getElementById("progressText");
+  const importBtn = document.getElementById("importBtn");
+
+  progressContainer.style.display = "block";
+  importBtn.disabled = true;
+  progressText.textContent = "Import läuft...";
+
+  // Simulated progress
+  let progress = 0;
+  const interval = setInterval(() => {
+    progress += Math.random() * 30;
+    if (progress > 90) progress = 90;
+
+    progressBar.style.width = progress + "%";
+    progressText.textContent = `Import läuft... ${Math.round(progress)}%`;
+
+    if (progress >= 90) {
+      clearInterval(interval);
+      progressText.textContent = "Import wird abgeschlossen...";
+    }
+  }, 500);
+});
+
+// Export-Typ Änderung - Format entsprechend anpassen
+document.querySelectorAll('input[name="export_type"]').forEach((radio) => {
+  radio.addEventListener("change", function () {
+    const zipRadio = document.getElementById("format_zip");
+    const csvRadio = document.getElementById("format_csv");
+
+    if (this.value === "all") {
+      zipRadio.checked = true;
+      zipRadio.disabled = false;
+      csvRadio.disabled = true;
+    } else {
+      csvRadio.checked = true;
+      zipRadio.disabled = true;
+      csvRadio.disabled = false;
+    }
+  });
+});

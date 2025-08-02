@@ -7,6 +7,7 @@ from flask import (
     url_for,
     jsonify,
     current_app,
+    send_file,
 )
 from . import blueprint
 
@@ -29,9 +30,15 @@ from .models import (
 
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
+import tempfile
+import os
+import csv
+import io
+import zipfile
+from werkzeug.utils import secure_filename
 
 config = Config()
-print("PrintHub 0.0.0")
+print("PrintHub Version 0.0.0")
 
 
 # Erweiterte Dashboard Route (in routes.py ersetzen/erweitern)
@@ -2402,3 +2409,985 @@ def api_quote_edit_redirect(quote_id):
     except Exception as e:
         current_app.logger.error(f"Error in edit redirect: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+# import export
+
+
+@blueprint.route("/printHub_export_import", methods=["GET", "POST"])
+@enabled_required
+def printHub_export_import():
+    """Export/Import-Verwaltung für PrintHub-Daten"""
+
+    if request.method == "POST":
+        action = request.form.get("action")
+
+        if action == "export":
+            return handle_export_request()
+        elif action == "import":
+            return handle_import_request()
+
+    # GET Request - Seite anzeigen
+    try:
+        # Statistiken für die Übersicht
+        stats = get_export_stats(current_user.username)
+
+        return render_template(
+            "PrintHubExportImport.html",
+            user=current_user,
+            config=config,
+            active_page="export",
+            stats=stats,
+        )
+
+    except Exception as e:
+        flash("Fehler beim Laden der Export/Import-Seite.", "error")
+        current_app.logger.error(f"Error loading export/import page: {e}")
+        return redirect(url_for("PrintHub.PrintHub_index"))
+
+
+def get_export_stats(username):
+    """Sammelt Statistiken für die Export-Übersicht"""
+    try:
+        stats = {
+            "filaments": len(PrintHubFilament.get_by_user(username)),
+            "printers": len(PrintHubPrinter.get_by_user(username)),
+            "energy_costs": len(
+                PrintHubEnergyCost.get_by_user(username, include_inactive=True)
+            ),
+            "work_hours": len(PrintHubWorkHours.get_by_user(username)),
+            "overhead_profiles": len(
+                PrintHubOverheadProfile.get_by_user(username, include_inactive=True)
+            ),
+            "discount_profiles": len(
+                PrintHubDiscountProfile.get_by_user(username, include_inactive=True)
+            ),
+            "quotes": len(PrintHubQuote.get_by_user(username, include_archived=True)),
+            "suborders": 0,
+        }
+
+        # SubOrders zählen
+        all_quotes = PrintHubQuote.get_by_user(username, include_archived=True)
+        stats["suborders"] = sum(len(quote.suborders) for quote in all_quotes)
+
+        stats["total_records"] = sum(stats.values())
+
+        return stats
+
+    except Exception as e:
+        current_app.logger.error(f"Error getting export stats: {e}")
+        return {
+            "filaments": 0,
+            "printers": 0,
+            "energy_costs": 0,
+            "work_hours": 0,
+            "overhead_profiles": 0,
+            "discount_profiles": 0,
+            "quotes": 0,
+            "suborders": 0,
+            "total_records": 0,
+        }
+
+
+def handle_export_request():
+    """Verarbeitet Export-Anfragen"""
+    try:
+        export_type = request.form.get("export_type", "all")
+        export_format = request.form.get("export_format", "zip")
+        include_archived = request.form.get("include_archived") == "on"
+        include_inactive = request.form.get("include_inactive") == "on"
+
+        if export_type == "all":
+            return export_all_data(export_format, include_archived, include_inactive)
+        else:
+            return export_single_table(export_type, include_archived, include_inactive)
+
+    except Exception as e:
+        flash(f"Fehler beim Export: {str(e)}", "error")
+        current_app.logger.error(f"Export error: {e}")
+        return redirect(url_for("PrintHub.printHub_export_import"))
+
+
+def export_all_data(export_format, include_archived=True, include_inactive=True):
+    """Exportiert alle Daten als ZIP-Datei"""
+    try:
+        # ZIP-Datei in Memory erstellen
+        zip_buffer = io.BytesIO()
+
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            # Alle Tabellen exportieren
+            tables = [
+                ("filaments", lambda: export_filaments_csv(current_user.username)),
+                ("printers", lambda: export_printers_csv(current_user.username)),
+                (
+                    "energy_costs",
+                    lambda: export_energy_costs_csv(
+                        current_user.username, include_inactive
+                    ),
+                ),
+                ("work_hours", lambda: export_work_hours_csv(current_user.username)),
+                (
+                    "overhead_profiles",
+                    lambda: export_overhead_profiles_csv(
+                        current_user.username, include_inactive
+                    ),
+                ),
+                (
+                    "discount_profiles",
+                    lambda: export_discount_profiles_csv(
+                        current_user.username, include_inactive
+                    ),
+                ),
+                (
+                    "quotes",
+                    lambda: export_quotes_csv(current_user.username, include_archived),
+                ),
+                (
+                    "suborders",
+                    lambda: export_suborders_csv(
+                        current_user.username, include_archived
+                    ),
+                ),
+            ]
+
+            for table_name, export_func in tables:
+                try:
+                    csv_content = export_func()
+                    if csv_content:
+                        zip_file.writestr(
+                            f"{table_name}.csv", csv_content.encode("utf-8")
+                        )
+                except Exception as e:
+                    current_app.logger.error(f"Error exporting {table_name}: {e}")
+                    continue
+
+            # Zusätzliche Metadaten-Datei
+            metadata = generate_export_metadata()
+            zip_file.writestr("export_metadata.txt", metadata.encode("utf-8"))
+
+        zip_buffer.seek(0)
+
+        # ZIP-Datei zurücksenden
+        return send_file(
+            zip_buffer,
+            as_attachment=True,
+            download_name=f"printhub_export_{current_user.username}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
+            mimetype="application/zip",
+        )
+
+    except Exception as e:
+        current_app.logger.error(f"Error creating export ZIP: {e}")
+        flash("Fehler beim Erstellen der Export-Datei.", "error")
+        return redirect(url_for("PrintHub.printHub_export_import"))
+
+
+def export_single_table(table_name, include_archived=True, include_inactive=True):
+    """Exportiert eine einzelne Tabelle als CSV"""
+    try:
+        export_functions = {
+            "filaments": lambda: export_filaments_csv(current_user.username),
+            "printers": lambda: export_printers_csv(current_user.username),
+            "energy_costs": lambda: export_energy_costs_csv(
+                current_user.username, include_inactive
+            ),
+            "work_hours": lambda: export_work_hours_csv(current_user.username),
+            "overhead_profiles": lambda: export_overhead_profiles_csv(
+                current_user.username, include_inactive
+            ),
+            "discount_profiles": lambda: export_discount_profiles_csv(
+                current_user.username, include_inactive
+            ),
+            "quotes": lambda: export_quotes_csv(
+                current_user.username, include_archived
+            ),
+            "suborders": lambda: export_suborders_csv(
+                current_user.username, include_archived
+            ),
+        }
+
+        if table_name not in export_functions:
+            flash("Ungültiger Tabellentyp für Export.", "error")
+            return redirect(url_for("PrintHub.printHub_export_import"))
+
+        csv_content = export_functions[table_name]()
+
+        if not csv_content:
+            flash(f"Keine Daten für {table_name} zum Exportieren gefunden.", "warning")
+            return redirect(url_for("PrintHub.printHub_export_import"))
+
+        # CSV-Datei erstellen und zurücksenden
+        output = io.BytesIO()
+        output.write(csv_content.encode("utf-8"))
+        output.seek(0)
+
+        return send_file(
+            output,
+            as_attachment=True,
+            download_name=f"printhub_{table_name}_{current_user.username}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+            mimetype="text/csv",
+        )
+
+    except Exception as e:
+        current_app.logger.error(f"Error exporting {table_name}: {e}")
+        flash(f"Fehler beim Export von {table_name}.", "error")
+        return redirect(url_for("PrintHub.printHub_export_import"))
+
+
+# Export-Funktionen für einzelne Tabellen
+
+
+def export_filaments_csv(username):
+    """Exportiert Filamente als CSV"""
+    filaments = PrintHubFilament.get_by_user(username)
+    if not filaments:
+        return None
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Header
+    writer.writerow(
+        [
+            "id",
+            "filament_type",
+            "name",
+            "manufacturer",
+            "weight",
+            "price",
+            "notes",
+            "created_at",
+            "updated_at",
+        ]
+    )
+
+    # Daten
+    for filament in filaments:
+        writer.writerow(
+            [
+                filament.id,
+                filament.filament_type,
+                filament.name,
+                filament.manufacturer,
+                filament.weight,
+                float(filament.price),
+                filament.notes or "",
+                filament.created_at.isoformat() if filament.created_at else "",
+                filament.updated_at.isoformat() if filament.updated_at else "",
+            ]
+        )
+
+    return output.getvalue()
+
+
+def export_printers_csv(username):
+    """Exportiert Drucker als CSV"""
+    printers = PrintHubPrinter.get_by_user(username)
+    if not printers:
+        return None
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Header
+    writer.writerow(
+        [
+            "id",
+            "name",
+            "brand",
+            "machine_cost_per_hour",
+            "energy_consumption",
+            "notes",
+            "created_at",
+            "updated_at",
+        ]
+    )
+
+    # Daten
+    for printer in printers:
+        writer.writerow(
+            [
+                printer.id,
+                printer.name,
+                printer.brand,
+                float(printer.machine_cost_per_hour),
+                printer.energy_consumption or "",
+                printer.notes or "",
+                printer.created_at.isoformat() if printer.created_at else "",
+                printer.updated_at.isoformat() if printer.updated_at else "",
+            ]
+        )
+
+    return output.getvalue()
+
+
+def export_energy_costs_csv(username, include_inactive=True):
+    """Exportiert Energiekosten als CSV"""
+    energy_costs = PrintHubEnergyCost.get_by_user(
+        username, include_inactive=include_inactive
+    )
+    if not energy_costs:
+        return None
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Header
+    writer.writerow(
+        [
+            "id",
+            "name",
+            "provider",
+            "cost_per_kwh",
+            "base_fee_monthly",
+            "tariff_type",
+            "valid_from",
+            "valid_until",
+            "night_rate",
+            "is_active",
+            "notes",
+            "created_at",
+            "updated_at",
+        ]
+    )
+
+    # Daten
+    for energy in energy_costs:
+        writer.writerow(
+            [
+                energy.id,
+                energy.name,
+                energy.provider,
+                float(energy.cost_per_kwh),
+                float(energy.base_fee_monthly) if energy.base_fee_monthly else "",
+                energy.tariff_type or "",
+                energy.valid_from.isoformat() if energy.valid_from else "",
+                energy.valid_until.isoformat() if energy.valid_until else "",
+                float(energy.night_rate) if energy.night_rate else "",
+                energy.is_active,
+                energy.notes or "",
+                energy.created_at.isoformat() if energy.created_at else "",
+                energy.updated_at.isoformat() if energy.updated_at else "",
+            ]
+        )
+
+    return output.getvalue()
+
+
+def export_work_hours_csv(username):
+    """Exportiert Arbeitszeiten als CSV"""
+    work_hours = PrintHubWorkHours.get_by_user(username)
+    if not work_hours:
+        return None
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Header
+    writer.writerow(["id", "name", "role", "cost_per_hour", "created_at", "updated_at"])
+
+    # Daten
+    for work in work_hours:
+        writer.writerow(
+            [
+                work.id,
+                work.name,
+                work.role,
+                float(work.cost_per_hour),
+                work.created_at.isoformat() if work.created_at else "",
+                work.updated_at.isoformat() if work.updated_at else "",
+            ]
+        )
+
+    return output.getvalue()
+
+
+def export_overhead_profiles_csv(username, include_inactive=True):
+    """Exportiert Overhead-Profile als CSV"""
+    profiles = PrintHubOverheadProfile.get_by_user(
+        username, include_inactive=include_inactive
+    )
+    if not profiles:
+        return None
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Header
+    writer.writerow(
+        [
+            "id",
+            "name",
+            "location",
+            "rent_monthly",
+            "heating_electricity",
+            "insurance",
+            "internet",
+            "software_cost",
+            "software_billing",
+            "other_costs",
+            "planned_hours_monthly",
+            "is_active",
+            "notes",
+            "created_at",
+            "updated_at",
+        ]
+    )
+
+    # Daten
+    for profile in profiles:
+        writer.writerow(
+            [
+                profile.id,
+                profile.name,
+                profile.location or "",
+                float(profile.rent_monthly),
+                float(profile.heating_electricity),
+                float(profile.insurance),
+                float(profile.internet),
+                float(profile.software_cost),
+                profile.software_billing,
+                float(profile.other_costs),
+                profile.planned_hours_monthly,
+                profile.is_active,
+                profile.notes or "",
+                profile.created_at.isoformat() if profile.created_at else "",
+                profile.updated_at.isoformat() if profile.updated_at else "",
+            ]
+        )
+
+    return output.getvalue()
+
+
+def export_discount_profiles_csv(username, include_inactive=True):
+    """Exportiert Rabatt-Profile als CSV"""
+    profiles = PrintHubDiscountProfile.get_by_user(
+        username, include_inactive=include_inactive
+    )
+    if not profiles:
+        return None
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Header
+    writer.writerow(
+        [
+            "id",
+            "name",
+            "discount_type",
+            "percentage",
+            "is_active",
+            "notes",
+            "created_at",
+            "updated_at",
+        ]
+    )
+
+    # Daten
+    for profile in profiles:
+        writer.writerow(
+            [
+                profile.id,
+                profile.name,
+                profile.discount_type,
+                float(profile.percentage),
+                profile.is_active,
+                profile.notes or "",
+                profile.created_at.isoformat() if profile.created_at else "",
+                profile.updated_at.isoformat() if profile.updated_at else "",
+            ]
+        )
+
+    return output.getvalue()
+
+
+def export_quotes_csv(username, include_archived=True):
+    """Exportiert Offerten als CSV"""
+    quotes = PrintHubQuote.get_by_user(username, include_archived=include_archived)
+    if not quotes:
+        return None
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Header
+    writer.writerow(
+        [
+            "id",
+            "order_name",
+            "customer_name",
+            "status",
+            "is_archived",
+            "total_cost",
+            "total_time",
+            "total_work_time",
+            "total_machine_cost",
+            "total_material_cost",
+            "total_energy_cost",
+            "total_work_cost",
+            "total_overhead_cost",
+            "global_printer_id",
+            "global_energy_profile_id",
+            "global_work_profile_id",
+            "global_overhead_profile_id",
+            "global_discount_profile_id",
+            "created_at",
+            "updated_at",
+        ]
+    )
+
+    # Daten
+    for quote in quotes:
+        writer.writerow(
+            [
+                quote.id,
+                quote.order_name,
+                quote.customer_name or "",
+                quote.status,
+                quote.is_archived,
+                float(quote.total_cost),
+                float(quote.total_time),
+                float(quote.total_work_time),
+                float(quote.total_machine_cost),
+                float(quote.total_material_cost),
+                float(quote.total_energy_cost),
+                float(quote.total_work_cost),
+                float(quote.total_overhead_cost),
+                quote.global_printer_id or "",
+                quote.global_energy_profile_id or "",
+                quote.global_work_profile_id or "",
+                quote.global_overhead_profile_id or "",
+                quote.global_discount_profile_id or "",
+                quote.created_at.isoformat() if quote.created_at else "",
+                quote.updated_at.isoformat() if quote.updated_at else "",
+            ]
+        )
+
+    return output.getvalue()
+
+
+def export_suborders_csv(username, include_archived=True):
+    """Exportiert SubOrders als CSV"""
+    quotes = PrintHubQuote.get_by_user(username, include_archived=include_archived)
+    if not quotes:
+        return None
+
+    suborders = []
+    for quote in quotes:
+        suborders.extend(quote.suborders)
+
+    if not suborders:
+        return None
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Header
+    writer.writerow(
+        [
+            "id",
+            "quote_id",
+            "name",
+            "filament_id",
+            "filament_usage_grams",
+            "print_time_hours",
+            "work_time_hours",
+            "printer_id",
+            "energy_profile_id",
+            "work_profile_id",
+            "overhead_profile_id",
+            "machine_cost",
+            "material_cost",
+            "energy_cost",
+            "work_cost",
+            "overhead_cost",
+            "suborder_total",
+            "printer_name",
+            "filament_name",
+            "printer_cost_per_hour",
+            "energy_cost_per_kwh",
+            "work_cost_per_hour",
+            "overhead_cost_per_hour",
+        ]
+    )
+
+    # Daten
+    for suborder in suborders:
+        writer.writerow(
+            [
+                suborder.id,
+                suborder.quote_id,
+                suborder.name,
+                suborder.filament_id,
+                suborder.filament_usage_grams,
+                float(suborder.print_time_hours),
+                float(suborder.work_time_hours),
+                suborder.printer_id or "",
+                suborder.energy_profile_id or "",
+                suborder.work_profile_id or "",
+                suborder.overhead_profile_id or "",
+                float(suborder.machine_cost),
+                float(suborder.material_cost),
+                float(suborder.energy_cost),
+                float(suborder.work_cost),
+                float(suborder.overhead_cost),
+                float(suborder.suborder_total),
+                suborder.printer_name or "",
+                suborder.filament_name or "",
+                float(suborder.printer_cost_per_hour),
+                float(suborder.energy_cost_per_kwh),
+                float(suborder.work_cost_per_hour),
+                float(suborder.overhead_cost_per_hour),
+            ]
+        )
+
+    return output.getvalue()
+
+
+def generate_export_metadata():
+    """Generiert Metadaten für den Export"""
+    stats = get_export_stats(current_user.username)
+
+    metadata = f"""PrintHub Datenexport
+===================
+
+Benutzer: {current_user.username}
+Export-Zeitpunkt: {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}
+PrintHub Version: 0.0.0
+
+Exportierte Datensätze:
+- Filamente: {stats['filaments']}
+- Drucker: {stats['printers']}
+- Energiekosten: {stats['energy_costs']}
+- Arbeitszeiten: {stats['work_hours']}
+- Overhead-Profile: {stats['overhead_profiles']}
+- Rabatt-Profile: {stats['discount_profiles']}
+- Offerten: {stats['quotes']}
+- Subaufträge: {stats['suborders']}
+
+Gesamt: {stats['total_records']} Datensätze
+
+Hinweise:
+- Alle Datums- und Zeitangaben sind im ISO-Format (YYYY-MM-DD bzw. YYYY-MM-DDTHH:MM:SS)
+- Dezimalzahlen verwenden Punkt als Dezimaltrennzeichen
+- Leere Felder sind als leere Strings exportiert
+- Boolean-Werte sind als True/False exportiert
+"""
+
+    return metadata
+
+
+def handle_import_request():
+    """Verarbeitet Import-Anfragen"""
+    try:
+        if "import_file" not in request.files:
+            flash("Keine Datei ausgewählt.", "error")
+            return redirect(url_for("PrintHub.printHub_export_import"))
+
+        file = request.files["import_file"]
+        if file.filename == "":
+            flash("Keine Datei ausgewählt.", "error")
+            return redirect(url_for("PrintHub.printHub_export_import"))
+
+        overwrite_existing = request.form.get("overwrite_existing") == "on"
+        import_type = request.form.get("import_type", "auto")
+
+        filename = secure_filename(file.filename)
+
+        if filename.endswith(".zip"):
+            return handle_zip_import(file, overwrite_existing)
+        elif filename.endswith(".csv"):
+            return handle_csv_import(file, import_type, overwrite_existing)
+        else:
+            flash(
+                "Ungültiges Dateiformat. Nur ZIP und CSV-Dateien sind erlaubt.", "error"
+            )
+            return redirect(url_for("PrintHub.printHub_export_import"))
+
+    except Exception as e:
+        flash(f"Fehler beim Import: {str(e)}", "error")
+        current_app.logger.error(f"Import error: {e}")
+        return redirect(url_for("PrintHub.printHub_export_import"))
+
+
+def handle_zip_import(file, overwrite_existing):
+    """Verarbeitet ZIP-Import"""
+    try:
+        # ZIP-Datei direkt aus dem Upload-Stream lesen
+        zip_content = io.BytesIO(file.read())
+
+        with zipfile.ZipFile(zip_content, "r") as zip_file:
+            # Alle CSV-Dateien importieren
+            imported_tables = []
+            errors = []
+
+            # Liste der Dateien in der ZIP
+            file_list = zip_file.namelist()
+            csv_files = [f for f in file_list if f.endswith(".csv")]
+
+            for csv_filename in csv_files:
+                table_name = csv_filename.replace(".csv", "")
+
+                try:
+                    # CSV-Inhalt aus ZIP lesen
+                    with zip_file.open(csv_filename) as csv_file:
+                        csv_content = csv_file.read().decode("utf-8")
+                        csv_io = io.StringIO(csv_content)
+
+                        result = import_csv_data(csv_io, table_name, overwrite_existing)
+                        if result["success"]:
+                            imported_tables.append(
+                                f"{table_name}: {result['imported']} Datensätze"
+                            )
+                        else:
+                            errors.append(f"{table_name}: {result['error']}")
+                except Exception as e:
+                    errors.append(f"{table_name}: {str(e)}")
+
+            if imported_tables:
+                flash(f"Import erfolgreich: {', '.join(imported_tables)}", "success")
+
+            if errors:
+                flash(f"Import-Fehler: {', '.join(errors)}", "warning")
+
+            return redirect(url_for("PrintHub.printHub_export_import"))
+
+    except Exception as e:
+        current_app.logger.error(f"ZIP import error: {e}")
+        flash(f"Fehler beim ZIP-Import: {str(e)}", "error")
+        return redirect(url_for("PrintHub.printHub_export_import"))
+
+
+def handle_csv_import(file, import_type, overwrite_existing):
+    """Verarbeitet CSV-Import"""
+    try:
+        # Tabellentyp aus Dateiname ermitteln, falls auto
+        if import_type == "auto":
+            filename = secure_filename(file.filename)
+            for table_name in [
+                "filaments",
+                "printers",
+                "energy_costs",
+                "work_hours",
+                "overhead_profiles",
+                "discount_profiles",
+                "quotes",
+                "suborders",
+            ]:
+                if table_name in filename.lower():
+                    import_type = table_name
+                    break
+
+            if import_type == "auto":
+                flash(
+                    "Tabellentyp konnte nicht automatisch erkannt werden. Bitte manuell auswählen.",
+                    "error",
+                )
+                return redirect(url_for("PrintHub.printHub_export_import"))
+
+        # CSV-Inhalt lesen
+        file.seek(0)
+        content = file.read()
+        if isinstance(content, bytes):
+            content = content.decode("utf-8")
+
+        # StringIO-Object für CSV-Import erstellen
+        csv_io = io.StringIO(content)
+
+        result = import_csv_data(csv_io, import_type, overwrite_existing)
+
+        if result["success"]:
+            flash(
+                f"Import erfolgreich: {result['imported']} {import_type} importiert.",
+                "success",
+            )
+        else:
+            flash(f"Import-Fehler: {result['error']}", "error")
+
+        return redirect(url_for("PrintHub.printHub_export_import"))
+
+    except Exception as e:
+        current_app.logger.error(f"CSV import error: {e}")
+        flash(f"Fehler beim CSV-Import: {str(e)}", "error")
+        return redirect(url_for("PrintHub.printHub_export_import"))
+
+
+def import_csv_data(file_obj, table_name, overwrite_existing=False):
+    """Importiert CSV-Daten in die entsprechende Tabelle"""
+    try:
+        # CSV lesen - file_obj kann FileUpload oder StringIO sein
+        if hasattr(file_obj, "read"):
+            # File Upload Object
+            file_obj.seek(0)
+            content = file_obj.read()
+            if isinstance(content, bytes):
+                content = content.decode("utf-8")
+        else:
+            # StringIO Object
+            content = file_obj.getvalue()
+
+        csv_reader = csv.DictReader(io.StringIO(content))
+
+        import_functions = {
+            "filaments": import_filaments_from_csv,
+            "printers": import_printers_from_csv,
+            "energy_costs": import_energy_costs_from_csv,
+            "work_hours": import_work_hours_from_csv,
+            "overhead_profiles": import_overhead_profiles_from_csv,
+            "discount_profiles": import_discount_profiles_from_csv,
+            "quotes": import_quotes_from_csv,
+            "suborders": import_suborders_from_csv,
+        }
+
+        if table_name not in import_functions:
+            return {"success": False, "error": f"Unbekannter Tabellentyp: {table_name}"}
+
+        return import_functions[table_name](csv_reader, overwrite_existing)
+
+    except Exception as e:
+        current_app.logger.error(f"CSV data import error: {e}")
+        return {"success": False, "error": str(e)}
+
+
+# Import-Funktionen für einzelne Tabellen (vereinfacht dargestellt)
+
+
+def import_filaments_from_csv(csv_reader, overwrite_existing):
+    """Importiert Filamente aus CSV"""
+    try:
+        imported_count = 0
+
+        for row in csv_reader:
+            # Überprüfen ob Datensatz bereits existiert (nach name + manufacturer)
+            existing = PrintHubFilament.query.filter_by(
+                name=row["name"],
+                manufacturer=row["manufacturer"],
+                created_by=current_user.username,
+            ).first()
+
+            if existing and not overwrite_existing:
+                continue
+
+            if existing and overwrite_existing:
+                # Update existing
+                existing.filament_type = row["filament_type"]
+                existing.weight = int(row["weight"])
+                existing.price = float(row["price"])
+                existing.notes = row["notes"] if row["notes"] else None
+                existing.updated_at = get_current_time()
+            else:
+                # Create new
+                new_filament = PrintHubFilament(
+                    filament_type=row["filament_type"],
+                    name=row["name"],
+                    manufacturer=row["manufacturer"],
+                    weight=int(row["weight"]),
+                    price=float(row["price"]),
+                    notes=row["notes"] if row["notes"] else None,
+                    created_by=current_user.username,
+                    created_at=get_current_time(),
+                    updated_at=get_current_time(),
+                )
+                db.session.add(new_filament)
+
+            imported_count += 1
+
+        db.session.commit()
+        return {"success": True, "imported": imported_count}
+
+    except Exception as e:
+        db.session.rollback()
+        return {"success": False, "error": str(e)}
+
+
+# Die anderen Import-Funktionen folgen dem gleichen Muster...
+# (Aus Platzgründen verkürzt, aber vollständig implementierbar)
+
+
+def import_printers_from_csv(csv_reader, overwrite_existing):
+    """Importiert Drucker aus CSV"""
+    # Ähnliche Implementierung wie import_filaments_from_csv
+    try:
+        imported_count = 0
+
+        for row in csv_reader:
+            existing = PrintHubPrinter.query.filter_by(
+                name=row["name"], created_by=current_user.username
+            ).first()
+
+            if existing and not overwrite_existing:
+                continue
+
+            if existing and overwrite_existing:
+                existing.brand = row["brand"]
+                existing.machine_cost_per_hour = float(row["machine_cost_per_hour"])
+                existing.energy_consumption = (
+                    int(row["energy_consumption"])
+                    if row["energy_consumption"]
+                    else None
+                )
+                existing.notes = row["notes"] if row["notes"] else None
+                existing.updated_at = get_current_time()
+            else:
+                new_printer = PrintHubPrinter(
+                    name=row["name"],
+                    brand=row["brand"],
+                    machine_cost_per_hour=float(row["machine_cost_per_hour"]),
+                    energy_consumption=(
+                        int(row["energy_consumption"])
+                        if row["energy_consumption"]
+                        else None
+                    ),
+                    notes=row["notes"] if row["notes"] else None,
+                    created_by=current_user.username,
+                )
+                db.session.add(new_printer)
+
+            imported_count += 1
+
+        db.session.commit()
+        return {"success": True, "imported": imported_count}
+
+    except Exception as e:
+        db.session.rollback()
+        return {"success": False, "error": str(e)}
+
+
+# Placeholder-Implementierungen für die anderen Import-Funktionen
+def import_energy_costs_from_csv(csv_reader, overwrite_existing):
+    return {
+        "success": False,
+        "error": "Import für Energiekosten noch nicht implementiert",
+    }
+
+
+def import_work_hours_from_csv(csv_reader, overwrite_existing):
+    return {
+        "success": False,
+        "error": "Import für Arbeitszeiten noch nicht implementiert",
+    }
+
+
+def import_overhead_profiles_from_csv(csv_reader, overwrite_existing):
+    return {
+        "success": False,
+        "error": "Import für Overhead-Profile noch nicht implementiert",
+    }
+
+
+def import_discount_profiles_from_csv(csv_reader, overwrite_existing):
+    return {
+        "success": False,
+        "error": "Import für Rabatt-Profile noch nicht implementiert",
+    }
+
+
+def import_quotes_from_csv(csv_reader, overwrite_existing):
+    return {"success": False, "error": "Import für Offerten noch nicht implementiert"}
+
+
+def import_suborders_from_csv(csv_reader, overwrite_existing):
+    return {
+        "success": False,
+        "error": "Import für Subaufträge noch nicht implementiert",
+    }

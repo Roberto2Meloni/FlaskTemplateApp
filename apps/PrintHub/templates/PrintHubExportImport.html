@@ -1,0 +1,618 @@
+{% extends "layouts/web_app_layouts/PrintHub_Web_app_base.html" %} {% block
+content %}
+<div class="printhub-container">
+  <!-- Sidebar -->
+  {% include "layouts/web_app_layouts/PrintHubSidebar.html" %}
+
+  <!-- Main Content -->
+  <div class="printhub-content">
+    <div class="content-header">
+      <h1><i class="bi bi-download"></i> Export/Import</h1>
+      <p class="lead">Sichern und wiederherstellen Sie Ihre PrintHub-Daten</p>
+    </div>
+
+    <!-- Statistiken -->
+    {% if stats.total_records > 0 %}
+    <div class="stats-container">
+      <div class="row">
+        <div class="col-md-3">
+          <div class="stat-item">
+            <span class="stat-value">{{ stats.total_records }}</span>
+            <small>Gesamt Datensätze</small>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="stat-item text-success">
+            <span class="stat-value">{{ stats.quotes }}</span>
+            <small>Offerten</small>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="stat-item text-info">
+            <span class="stat-value">{{ stats.filaments }}</span>
+            <small>Filamente</small>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="stat-item text-warning">
+            <span class="stat-value">{{ stats.printers }}</span>
+            <small>Drucker</small>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-item text-primary">
+            <span class="stat-value"
+              >{{ stats.energy_costs + stats.work_hours +
+              stats.overhead_profiles + stats.discount_profiles }}</span
+            >
+            <small>Profile & Kosten</small>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %} {% for category, message in messages %}
+    <div
+      class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show"
+      role="alert"
+    >
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %} {% endif %} {% endwith %}
+
+    <!-- Export-Bereich -->
+    <div class="filament-form-container">
+      <h3 class="text-prusa-orange mb-4">
+        <i class="bi bi-download"></i> Datenexport
+      </h3>
+
+      <form
+        method="post"
+        action="{{ url_for('PrintHub.printHub_export_import') }}"
+      >
+        <input type="hidden" name="action" value="export" />
+
+        <div class="row">
+          <!-- Export-Typ -->
+          <div class="col-md-6">
+            <div class="form-group mb-3">
+              <label><i class="bi bi-layers"></i> Export-Umfang</label>
+              <div class="export-options">
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="export_type"
+                    value="all"
+                    id="export_all"
+                    checked
+                  />
+                  <label class="form-check-label" for="export_all">
+                    <strong>Alle Daten</strong> - Kompletter Export aller
+                    Tabellen
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="export_type"
+                    value="filaments"
+                    id="export_filaments"
+                  />
+                  <label class="form-check-label" for="export_filaments"
+                    >Nur Filamente</label
+                  >
+                </div>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="export_type"
+                    value="printers"
+                    id="export_printers"
+                  />
+                  <label class="form-check-label" for="export_printers"
+                    >Nur Drucker</label
+                  >
+                </div>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="export_type"
+                    value="quotes"
+                    id="export_quotes"
+                  />
+                  <label class="form-check-label" for="export_quotes"
+                    >Nur Offerten</label
+                  >
+                </div>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="export_type"
+                    value="energy_costs"
+                    id="export_energy"
+                  />
+                  <label class="form-check-label" for="export_energy"
+                    >Nur Energiekosten</label
+                  >
+                </div>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="export_type"
+                    value="work_hours"
+                    id="export_work"
+                  />
+                  <label class="form-check-label" for="export_work"
+                    >Nur Arbeitszeiten</label
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Export-Optionen -->
+          <div class="col-md-6">
+            <div class="form-group mb-3">
+              <label><i class="bi bi-gear"></i> Export-Optionen</label>
+              <div class="export-options">
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    name="include_archived"
+                    id="include_archived"
+                    checked
+                  />
+                  <label class="form-check-label" for="include_archived">
+                    Archivierte Offerten einschließen
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    name="include_inactive"
+                    id="include_inactive"
+                    checked
+                  />
+                  <label class="form-check-label" for="include_inactive">
+                    Inaktive Profile einschließen
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="export_format"
+                    value="zip"
+                    id="format_zip"
+                    checked
+                  />
+                  <label class="form-check-label" for="format_zip">
+                    <strong>ZIP-Archiv</strong> (empfohlen)
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="export_format"
+                    value="csv"
+                    id="format_csv"
+                  />
+                  <label class="form-check-label" for="format_csv">
+                    Einzelne CSV-Datei
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between">
+          <button
+            type="button"
+            class="btn btn-secondary-prusa"
+            onclick="showExportInfo()"
+          >
+            <i class="bi bi-info-circle"></i> Export-Info
+          </button>
+          <button type="submit" class="btn btn-prusa">
+            <i class="bi bi-download"></i> Export starten
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Import-Bereich -->
+    <div class="filament-form-container">
+      <h3 class="text-prusa-orange mb-4">
+        <i class="bi bi-upload"></i> Datenimport
+      </h3>
+
+      <div class="alert alert-info" role="alert">
+        <i class="bi bi-info-circle"></i>
+        <strong>Wichtiger Hinweis:</strong> Der Import überschreibt/ergänzt
+        vorhandene Daten basierend auf den gewählten Optionen. Erstellen Sie vor
+        einem Import ein Backup Ihrer aktuellen Daten.
+      </div>
+
+      <form
+        method="post"
+        action="{{ url_for('PrintHub.printHub_export_import') }}"
+        enctype="multipart/form-data"
+        id="importForm"
+      >
+        <input type="hidden" name="action" value="import" />
+
+        <!-- Drop Zone -->
+        <div class="row">
+          <div class="col-md-12">
+            <div class="form-group mb-3">
+              <label><i class="bi bi-cloud-upload"></i> Datei auswählen</label>
+              <div
+                class="import-drop-zone"
+                id="dropZone"
+                onclick="document.getElementById('import_file').click()"
+              >
+                <div class="import-icon">
+                  <i class="bi bi-cloud-upload"></i>
+                </div>
+                <div class="import-text">
+                  <strong>Datei hier ablegen oder klicken zum Auswählen</strong
+                  ><br />
+                  <small class="text-muted"
+                    >Unterstützte Formate: ZIP-Archive oder CSV-Dateien</small
+                  >
+                </div>
+                <input
+                  type="file"
+                  id="import_file"
+                  name="import_file"
+                  accept=".zip,.csv"
+                  style="display: none"
+                  onchange="handleFileSelect(this)"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="file-info" id="fileInfo" style="display: none">
+          <div class="alert alert-success">
+            <strong>Ausgewählte Datei:</strong> <span id="fileName"></span
+            ><br />
+            <strong>Größe:</strong> <span id="fileSize"></span><br />
+            <strong>Typ:</strong> <span id="fileType"></span>
+          </div>
+        </div>
+
+        <div class="row">
+          <!-- Import-Typ (nur bei CSV) -->
+          <div class="col-md-6" id="csvOptions" style="display: none">
+            <div class="form-group mb-3">
+              <label><i class="bi bi-table"></i> CSV-Import-Typ</label>
+              <div class="export-options">
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="import_type"
+                    value="auto"
+                    id="import_auto"
+                    checked
+                  />
+                  <label class="form-check-label" for="import_auto">
+                    <strong>Automatisch erkennen</strong>
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="import_type"
+                    value="filaments"
+                    id="import_filaments"
+                  />
+                  <label class="form-check-label" for="import_filaments"
+                    >Filamente</label
+                  >
+                </div>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="import_type"
+                    value="printers"
+                    id="import_printers"
+                  />
+                  <label class="form-check-label" for="import_printers"
+                    >Drucker</label
+                  >
+                </div>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="import_type"
+                    value="quotes"
+                    id="import_quotes"
+                  />
+                  <label class="form-check-label" for="import_quotes"
+                    >Offerten</label
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Import-Verhalten -->
+          <div class="col-md-6">
+            <div class="form-group mb-3">
+              <label><i class="bi bi-arrow-repeat"></i> Import-Verhalten</label>
+              <div class="export-options">
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    name="overwrite_existing"
+                    id="overwrite_existing"
+                  />
+                  <label class="form-check-label" for="overwrite_existing">
+                    <strong>Vorhandene Datensätze überschreiben</strong><br />
+                    <small class="text-muted"
+                      >Sonst werden Duplikate übersprungen</small
+                    >
+                  </label>
+                </div>
+              </div>
+              <div class="alert alert-warning mt-2" role="alert">
+                <i class="bi bi-exclamation-triangle"></i>
+                <small
+                  ><strong>Achtung:</strong> Beim Überschreiben gehen die
+                  aktuellen Werte verloren!</small
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="progress-container"
+          id="progressContainer"
+          style="display: none"
+        >
+          <div class="form-group mb-3">
+            <label class="form-label">Import-Fortschritt:</label>
+            <div class="progress">
+              <div
+                class="progress-bar bg-success"
+                role="progressbar"
+                style="width: 0%"
+                id="progressBar"
+              ></div>
+            </div>
+            <small class="text-muted mt-1" id="progressText"
+              >Bereit für Import...</small
+            >
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between">
+          <button
+            type="button"
+            class="btn btn-secondary-prusa"
+            onclick="showImportInfo()"
+          >
+            <i class="bi bi-info-circle"></i> Import-Info
+          </button>
+          <button type="submit" class="btn btn-prusa" id="importBtn" disabled>
+            <i class="bi bi-upload"></i> Import starten
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Detaillierte Übersicht -->
+    <div class="filament-list-container">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="text-prusa-orange mb-0">
+          <i class="bi bi-bar-chart"></i> Detaillierte Datenübersicht
+        </h3>
+        <span class="badge badge-secondary"
+          >{{ stats.total_records }} Datensätze</span
+        >
+      </div>
+
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <div class="filament-item">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="filament-name mb-1">
+                  <i class="bi bi-disc"></i> Filamente
+                </h6>
+                <small class="text-muted">Materialien und Eigenschaften</small>
+              </div>
+              <span class="badge badge-primary">{{ stats.filaments }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+          <div class="filament-item">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="filament-name mb-1">
+                  <i class="bi bi-printer"></i> Drucker
+                </h6>
+                <small class="text-muted">Hardware-Konfiguration</small>
+              </div>
+              <span class="badge badge-primary">{{ stats.printers }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+          <div class="filament-item">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="filament-name mb-1">
+                  <i class="bi bi-lightning-charge"></i> Energiekosten
+                </h6>
+                <small class="text-muted">Tarife und Verbrauchskosten</small>
+              </div>
+              <span class="badge badge-primary">{{ stats.energy_costs }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+          <div class="filament-item">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="filament-name mb-1">
+                  <i class="bi bi-clock"></i> Arbeitszeiten
+                </h6>
+                <small class="text-muted">Stundensätze und Rollen</small>
+              </div>
+              <span class="badge badge-primary">{{ stats.work_hours }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+          <div class="filament-item">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="filament-name mb-1">
+                  <i class="bi bi-gear"></i> Overhead-Profile
+                </h6>
+                <small class="text-muted">Fixkosten und Gemeinkosten</small>
+              </div>
+              <span class="badge badge-primary"
+                >{{ stats.overhead_profiles }}</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+          <div class="filament-item">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="filament-name mb-1">
+                  <i class="bi bi-percent"></i> Rabatte/Aufschläge
+                </h6>
+                <small class="text-muted">Preisanpassungen</small>
+              </div>
+              <span class="badge badge-primary"
+                >{{ stats.discount_profiles }}</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+          <div class="filament-item">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="filament-name mb-1">
+                  <i class="bi bi-file-earmark-text"></i> Offerten
+                </h6>
+                <small class="text-muted"
+                  >Kundenofferten und Kalkulationen</small
+                >
+              </div>
+              <span class="badge badge-success">{{ stats.quotes }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+          <div class="filament-item">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="filament-name mb-1">
+                  <i class="bi bi-list-task"></i> Subaufträge
+                </h6>
+                <small class="text-muted">Einzelne Druckaufträge</small>
+              </div>
+              <span class="badge badge-success">{{ stats.suborders }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info-Bereiche (versteckt) -->
+    <div class="filament-form-container" id="exportInfo" style="display: none">
+      <h3 class="text-prusa-orange mb-4">
+        <i class="bi bi-info-circle"></i> Export-Informationen
+      </h3>
+      <div class="row">
+        <div class="col-md-6">
+          <h5>CSV-Format</h5>
+          <ul>
+            <li>UTF-8 Codierung</li>
+            <li>Komma-getrennte Werte</li>
+            <li>Erste Zeile enthält Spaltenüberschriften</li>
+            <li>Datumsformat: ISO 8601 (YYYY-MM-DD)</li>
+          </ul>
+        </div>
+        <div class="col-md-6">
+          <h5>ZIP-Archive</h5>
+          <ul>
+            <li>Enthält separate CSV-Datei für jede Tabelle</li>
+            <li>Zusätzliche Metadaten-Datei</li>
+            <li>Komprimiert für kleinere Dateigröße</li>
+            <li>Ideal für komplette Backups</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="filament-form-container" id="importInfo" style="display: none">
+      <h3 class="text-prusa-orange mb-4">
+        <i class="bi bi-info-circle"></i> Import-Informationen
+      </h3>
+      <div class="row">
+        <div class="col-md-6">
+          <h5>Unterstützte Formate</h5>
+          <ul>
+            <li><strong>ZIP:</strong> Vollständige PrintHub-Exporte</li>
+            <li><strong>CSV:</strong> Einzelne Tabellen</li>
+            <li>Encoding: UTF-8</li>
+            <li>Maximale Dateigröße: 50 MB</li>
+          </ul>
+        </div>
+        <div class="col-md-6">
+          <h5>Import-Verhalten</h5>
+          <ul>
+            <li>
+              <strong>Ohne Überschreiben:</strong> Duplikate werden übersprungen
+            </li>
+            <li>
+              <strong>Mit Überschreiben:</strong> Vorhandene Daten werden
+              aktualisiert
+            </li>
+            <li>Fehlerhafte Zeilen werden protokolliert</li>
+            <li>Import kann bei Fehlern abgebrochen werden</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
