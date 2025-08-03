@@ -1,49 +1,75 @@
-<div class="sidebar" id="sidebar">
-  <!-- Sidebar Header -->
-  <div class="sidebar-header">
-    <button class="sidebar-toggle" id="sidebar-toggle"></button>
-    <h3>NexusPlayer</h3>
+<div class="navigation" id="navigation">
+  <!-- Toggle Button -->
+  <div class="toggle" id="toggle">
+    <i class="bi bi-chevron-right"></i>
   </div>
 
-  <!-- Sidebar Navigation -->
-  <nav class="sidebar-nav">
-    <!-- Haupt-Navigation -->
-    <ul class="sidebar-menu">
-      <li class="sidebar-item">
-        <a href="#" class="sidebar-link" data-tooltip="Dashboard">
-          <i class="sidebar-icon bi bi-house-door-fill"></i>
-          <span class="sidebar-text">Dashboard</span>
-        </a>
-      </li>
-      <li class="sidebar-item">
-        <a href="#" class="sidebar-link" data-tooltip="Dateien">
-          <i class="sidebar-icon bi bi-folder-fill"></i>
-          <span class="sidebar-text">Dateien</span>
-        </a>
-      </li>
-      <li class="sidebar-item">
-        <a href="#" class="sidebar-link" data-tooltip="Playlists">
-          <i class="sidebar-icon bi bi-collection-play-fill"></i>
-          <span class="sidebar-text">Playlists</span>
-        </a>
-      </li>
-      <li class="sidebar-item">
-        <a href="#" class="sidebar-link" data-tooltip="Geräte">
-          <i class="sidebar-icon bi bi-display-fill"></i>
-          <span class="sidebar-text">Geräte</span>
-        </a>
-      </li>
-    </ul>
+  <ul>
+    <p class="m-soft">NexusPlayer</p>
 
+    <!-- Hauptmenü Items -->
+    <li class="list active">
+      <a href="#">
+        <span class="icon">
+          <i class="sidebar-icon bi bi-house-door-fill"></i>
+        </span>
+        <span class="title">Dashboard</span>
+        <span class="tooltip">Dashboard</span>
+      </a>
+    </li>
+
+    <li class="list">
+      <a href="#">
+        <span class="icon">
+          <i class="sidebar-icon bi bi-folder-fill"></i>
+        </span>
+        <span class="title">Datei</span>
+        <span class="tooltip">Datei</span>
+      </a>
+    </li>
+
+    <li class="list">
+      <a href="#">
+        <span class="icon">
+          <i class="sidebar-icon bi bi-collection-play-fill"></i>
+        </span>
+        <span class="title">Playlists</span>
+        <span class="tooltip">Playlists</span>
+      </a>
+    </li>
+
+    <li class="list">
+      <a href="#">
+        <span class="icon">
+          <i class="sidebar-icon bi bi-display-fill"></i>
+        </span>
+        <span class="title">Geräte</span>
+        <span class="tooltip">Geräte</span>
+      </a>
+    </li>
+
+    <!-- App Navigation (über Admin) -->
+    <li class="list app-separator">
+      <a href="/myapp/home">
+        <span class="icon">
+          <i class="sidebar-icon bi bi-grid-3x3-gap-fill"></i>
+        </span>
+        <span class="title">Apps</span>
+        <span class="tooltip">Apps</span>
+      </a>
+    </li>
+
+    <!-- Admin Bereich (ganz unten) -->
     {% if current_user|has_admin_rights %}
-    <ul class="sidebar-menu-bottom">
-      <li class="sidebar-item">
-        <a href="#" class="sidebar-link" data-tooltip="Admin">
+    <li class="list admin-item">
+      <a href="#">
+        <span class="icon">
           <i class="sidebar-icon bi bi-gear-fill"></i>
-          <span class="sidebar-text">Admin</span>
-        </a>
-      </li>
-    </ul>
+        </span>
+        <span class="title">Admin</span>
+        <span class="tooltip">Admin</span>
+      </a>
+    </li>
     {% endif %}
-  </nav>
+  </ul>
 </div>
