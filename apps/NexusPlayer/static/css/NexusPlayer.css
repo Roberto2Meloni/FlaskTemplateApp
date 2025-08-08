@@ -12,16 +12,60 @@
     height: 100vh;
     display: flex;
     flex-direction: column;
+    width: 250px;
+    /* Normale Breite */
+    transition: width 0.3s ease;
+    /* Smooth animation */
+}
+
+/* Eingeklappter Zustand */
+.navigation.collapsed {
+    width: 70px;
+    /* Schmale Breite */
 }
 
 .app-content {
     background: red;
     width: 100%;
+    transition: margin-left 0.3s ease;
 }
 
 .sidbear_header {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
+    padding: 15px;
+}
+
+/* Hamburger Menu Button */
+.hamburger-menu {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    margin-right: 15px;
+    padding: 5px;
+    border-radius: 3px;
+}
+
+.hamburger-menu:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar_title {
+    color: white;
+    margin: 0;
+    font-weight: bold;
+    white-space: nowrap;
+    transition: opacity 0.3s ease;
+}
+
+/* Title ausblenden wenn eingeklappt */
+.navigation.collapsed .sidebar_title {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
 }
 
 ul {
@@ -35,19 +79,62 @@ ul {
 
 .list {
     list-style: none;
-    /* Entfernt Listenpunkte */
 }
 
 .list a {
     display: flex;
     flex-direction: row;
-    /* Zentriert Icon und Text vertikal */
-    padding: 10px;
-    /* Besserer Abstand als margin-left */
+    align-items: center;
+    padding: 15px;
     text-decoration: none;
+    color: white;
+    transition: background-color 0.2s ease;
+    white-space: nowrap;
+}
+
+.list a:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.list.active a {
+    background: rgba(255, 255, 255, 0.2);
 }
 
 .icon {
-    margin-right: 10px;
-    /* Abstand zwischen Icon und Text */
+    margin-right: 15px;
+    font-size: 18px;
+    min-width: 20px;
+    /* Fixe Breite für Icons */
+    text-align: center;
+}
+
+.list_element {
+    transition: opacity 0.3s ease;
+}
+
+/* Text ausblenden wenn eingeklappt */
+.navigation.collapsed .list_element {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+}
+
+/* Tooltip für eingeklappten Zustand (optional) */
+.navigation.collapsed .list {
+    position: relative;
+}
+
+.navigation.collapsed .list:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 70px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    white-space: nowrap;
+    z-index: 1000;
 }
