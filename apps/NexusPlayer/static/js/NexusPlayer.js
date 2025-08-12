@@ -53,7 +53,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Optional: In der Konsole anzeigen, was angeklickt wurde
         const elementName = menuItem.querySelector(".list_element").textContent;
-        console.log("Menüelement angeklickt:", elementName);
       });
     }
   });
