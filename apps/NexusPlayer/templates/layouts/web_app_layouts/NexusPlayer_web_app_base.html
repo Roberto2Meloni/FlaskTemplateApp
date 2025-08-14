@@ -28,5 +28,17 @@
 </div>
 
 {% endblock %} {% block javascripts %}
+
+<!-- Hier findest du die Seiten -->
+<script>
+  window.NexusPlayerConfig = {
+    urls: {
+      // AJAX Seiten
+      dashboard: "{{ url_for('NexusPlayer.nexus_dashboard') }}",
+    },
+  };
+</script>
+
 <script src="{{ url_for('NexusPlayer.static', filename='js/NexusPlayer.js') }}"></script>
+
 {% endblock %}

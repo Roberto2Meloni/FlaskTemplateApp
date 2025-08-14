@@ -23,6 +23,12 @@ def NexusPlayer_index():
     return render_template("NexusPlayer.html", user=current_user, config=config)
 
 
+@blueprint.route("/nexus_dashboard", methods=["GET"])
+@enabled_required
+def nexus_dashboard():
+    return render_template("Nexus_Dashboard.html", user=current_user, config=config)
+
+
 @blueprint.route("/test_flex", methods=["GET"])
 @admin_required
 def test_flex():
