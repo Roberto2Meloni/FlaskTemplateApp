@@ -4,6 +4,7 @@ from . import blueprint
 from app.config import Config
 from app.decorators import admin_required, enabled_required
 from app import db
+from .helper_app_functions.helper_app_functions import get_both
 
 # for Debuging
 from icecream import ic
@@ -38,7 +39,14 @@ def nexus_dashboard():
 @blueprint.route("/nexus_files", methods=["GET"])
 @enabled_required
 def nexus_files():
-    return render_template("Nexus_Files.html", user=current_user, config=config)
+    full_architecture, simpel_architecture = get_both()
+    return render_template(
+        "Nexus_Files.html",
+        user=current_user,
+        config=config,
+        full_architecture=full_architecture,
+        simpel_architecture=simpel_architecture,
+    )
 
 
 @blueprint.route("/nexus_playlists", methods=["GET"])
