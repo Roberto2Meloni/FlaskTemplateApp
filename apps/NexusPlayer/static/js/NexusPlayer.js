@@ -49,7 +49,16 @@ document.addEventListener("DOMContentLoaded", function () {
           .textContent.trim();
 
         if (elementName === "Dashboard") {
-          loadDashboard();
+          loadPage(url_dashboard);
+        } else if (elementName === "Datei") {
+          // KORRIGIERT: else if statt elif
+          loadPage(url_files);
+        } else if (elementName === "Playlists") {
+          loadPage(url_playlists);
+        } else if (elementName === "Geräte") {
+          loadPage(url_devices);
+        } else if (elementName === "Admin") {
+          loadPage(url_admin);
         }
       });
     }
@@ -57,9 +66,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // NEU: Dashboard laden
-function loadDashboard() {
-  const url = window.NexusPlayerConfig.urls.dashboard;
-
+function loadPage(url) {
   fetch(url)
     .then((response) => response.text())
     .then((html) => {

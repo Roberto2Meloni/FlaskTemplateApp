@@ -31,12 +31,12 @@
 
 <!-- Hier findest du die Seiten -->
 <script>
-  window.NexusPlayerConfig = {
-    urls: {
-      // AJAX Seiten
-      dashboard: "{{ url_for('NexusPlayer.nexus_dashboard') }}",
-    },
-  };
+  // Hier sind die verschiedene Seiten dokumentiert
+  const url_dashboard = "{{ url_for('NexusPlayer.nexus_dashboard') }}";
+  const url_files = "{{ url_for('NexusPlayer.nexus_files') }}";
+  const url_playlists = "{{ url_for('NexusPlayer.nexus_playlists') }}";
+  const url_devices = "{{ url_for('NexusPlayer.nexus_devices') }}";
+  const url_admin = "{{ url_for('NexusPlayer.nexus_admin') }}";
 </script>
 
 <script src="{{ url_for('NexusPlayer.static', filename='js/NexusPlayer.js') }}"></script>

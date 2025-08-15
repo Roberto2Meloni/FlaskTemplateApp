@@ -23,13 +23,37 @@ def NexusPlayer_index():
     return render_template("NexusPlayer.html", user=current_user, config=config)
 
 
+@blueprint.route("/test_flex", methods=["GET"])
+@admin_required
+def test_flex():
+    return render_template("test_flex.html", user=current_user, config=config)
+
+
 @blueprint.route("/nexus_dashboard", methods=["GET"])
 @enabled_required
 def nexus_dashboard():
     return render_template("Nexus_Dashboard.html", user=current_user, config=config)
 
 
-@blueprint.route("/test_flex", methods=["GET"])
-@admin_required
-def test_flex():
-    return render_template("test_flex.html", user=current_user, config=config)
+@blueprint.route("/nexus_files", methods=["GET"])
+@enabled_required
+def nexus_files():
+    return render_template("Nexus_Files.html", user=current_user, config=config)
+
+
+@blueprint.route("/nexus_playlists", methods=["GET"])
+@enabled_required
+def nexus_playlists():
+    return render_template("Nexus_Playlists.html", user=current_user, config=config)
+
+
+@blueprint.route("/nexus_devices", methods=["GET"])
+@enabled_required
+def nexus_devices():
+    return render_template("Nexus_Devices.html", user=current_user, config=config)
+
+
+@blueprint.route("/nexus_admin", methods=["GET"])
+@enabled_required
+def nexus_admin():
+    return render_template("Nexus_Admin.html", user=current_user, config=config)
