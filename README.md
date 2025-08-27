@@ -6,7 +6,7 @@ Name: FlaskTemplateApp
 
 Author: Karatekti_123
 
-Createt: 24.01.2025
+Created: 24.01.2025
 
 Type: DEV
 

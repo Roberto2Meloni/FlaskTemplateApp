@@ -6,7 +6,7 @@ Name: NexusPlayer
 
 Author: Karatekti_123
 
-Createt: 30.07.2025
+Created: 30.07.2025
 
 Last Update: 30.07.2025
 

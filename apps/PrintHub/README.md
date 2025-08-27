@@ -6,7 +6,7 @@ Name: PrintHub
 
 Author: Karatekti_123
 
-Createt: 16.07.2025
+Created: 16.07.2025
 
 Last Update: 16.07.2025
 

@@ -1,0 +1,9 @@
+{% extends "layouts/web_app_layouts/TEST_web_app_base.html" %} {%
+block app_styles %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('TEST.static', filename='css/TEST.css') }}"
+/>
+{% endblock %} {% block content %} {% if current_user|has_admin_rights %}
+<h4>Du bist Admin</h4>
+{% endif %} {% endblock %}

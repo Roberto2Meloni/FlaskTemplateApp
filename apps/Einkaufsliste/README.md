@@ -6,7 +6,7 @@ Name: Einkaufsliste
 
 Author: Karatekti_123
 
-Createt: 24.07.2025
+Created: 24.07.2025
 
 Last Update: 24.07.2025
 
