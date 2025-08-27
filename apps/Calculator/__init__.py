@@ -1,10 +1,10 @@
 from flask import Blueprint
 
 blueprint = Blueprint(
-    "TEST",
+    "Calculator",
     __name__,
-    url_prefix="/TEST",
+    url_prefix="/Calculator",
     template_folder="templates",
     static_folder="static",
-    static_url_path="/TEST_static",
+    static_url_path="/Calculator_static",
 )

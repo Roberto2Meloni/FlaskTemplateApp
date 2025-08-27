@@ -1,8 +1,8 @@
-{% extends "layouts/web_app_layouts/TEST_web_app_base.html" %} {%
+{% extends "layouts/web_app_layouts/Calculator_web_app_base.html" %} {%
 block app_styles %}
 <link
   rel="stylesheet"
-  href="{{ url_for('TEST.static', filename='css/TEST.css') }}"
+  href="{{ url_for('Calculator.static', filename='css/Calculator.css') }}"
 />
 {% endblock %} {% block content %} {% if current_user|has_admin_rights %}
 <h4>Du bist Admin</h4>

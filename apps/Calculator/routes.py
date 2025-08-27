@@ -14,12 +14,12 @@ from icecream import ic
 
 config = Config()
 
-print("TEST Version 0.0.0")
+print("Calculator Version 0.0.0")
 
 
-@blueprint.route("/TEST", methods=["GET"])
+@blueprint.route("/Calculator", methods=["GET"])
 @enabled_required
-def TEST():
+def Calculator():
     return render_template(
-        "TEST.html", user=current_user, config=config
+        "Calculator.html", user=current_user, config=config
     )

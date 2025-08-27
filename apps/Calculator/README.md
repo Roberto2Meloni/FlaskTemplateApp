@@ -2,13 +2,13 @@
 
 ## App Information
 
-Name: TEST
+Name: Calculator
 
 Author: Karatekti_123
 
-Created: 28.07.2024
+Created: 27.08.2025
 
-Last Update: 11.07.2025
+Last Update: 27.08.2025
 
 Last Version: 0.0.0
 
