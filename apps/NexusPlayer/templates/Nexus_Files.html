@@ -1,0 +1,16 @@
+<div class="file-wraper">
+  <div class="file-header">
+    <h4>Hier ist der header</h4>
+  </div>
+  <div class="file-view">
+    <div class="file-three">
+      <p style="display: none">{{ simpel_architecture|tojson }}</p>
+    </div>
+    <div class="file-details">
+      <p style="display: none">{{ full_architecture|tojson }}</p>
+    </div>
+  </div>
+</div>
+<p id="admin-status" style="display: none">
+  {% if current_user|has_admin_rights %}true{% else %}false{% endif %}
+</p>

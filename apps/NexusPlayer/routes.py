@@ -4,6 +4,7 @@ from . import blueprint
 from app.config import Config
 from app.decorators import admin_required, enabled_required
 from app import db
+from .helper_app_functions.helper_app_functions import get_both
 
 # for Debuging
 from icecream import ic
@@ -27,3 +28,40 @@ def NexusPlayer_index():
 @admin_required
 def test_flex():
     return render_template("test_flex.html", user=current_user, config=config)
+
+
+@blueprint.route("/nexus_dashboard", methods=["GET"])
+@enabled_required
+def nexus_dashboard():
+    return render_template("Nexus_Dashboard.html", user=current_user, config=config)
+
+
+@blueprint.route("/nexus_files", methods=["GET"])
+@enabled_required
+def nexus_files():
+    full_architecture, simpel_architecture = get_both()
+    return render_template(
+        "Nexus_Files.html",
+        user=current_user,
+        config=config,
+        full_architecture=full_architecture,
+        simpel_architecture=simpel_architecture,
+    )
+
+
+@blueprint.route("/nexus_playlists", methods=["GET"])
+@enabled_required
+def nexus_playlists():
+    return render_template("Nexus_Playlists.html", user=current_user, config=config)
+
+
+@blueprint.route("/nexus_devices", methods=["GET"])
+@enabled_required
+def nexus_devices():
+    return render_template("Nexus_Devices.html", user=current_user, config=config)
+
+
+@blueprint.route("/nexus_admin", methods=["GET"])
+@enabled_required
+def nexus_admin():
+    return render_template("Nexus_Admin.html", user=current_user, config=config)
