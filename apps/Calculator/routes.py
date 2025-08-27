@@ -17,9 +17,7 @@ config = Config()
 print("Calculator Version 0.0.0")
 
 
-@blueprint.route("/Calculator", methods=["GET"])
+@blueprint.route("/Calculator_index", methods=["GET"])
 @enabled_required
-def Calculator():
-    return render_template(
-        "Calculator.html", user=current_user, config=config
-    )
+def Calculator_index():
+    return render_template("Calculator.html", user=current_user, config=config)

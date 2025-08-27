@@ -1,9 +1,82 @@
-{% extends "layouts/web_app_layouts/Calculator_web_app_base.html" %} {%
-block app_styles %}
+{% extends "layouts/web_app_layouts/Calculator_web_app_base.html" %} {% block
+app_styles %}
 <link
   rel="stylesheet"
   href="{{ url_for('Calculator.static', filename='css/Calculator.css') }}"
 />
-{% endblock %} {% block content %} {% if current_user|has_admin_rights %}
-<h4>Du bist Admin</h4>
-{% endif %} {% endblock %}
+{% endblock %} {% block content %}
+<div class="calculator-container">
+  <div class="calculator">
+    <!-- Display -->
+    <div class="calculator-display">
+      <input type="text" id="display" readonly value="0" />
+    </div>
+
+    <!-- Buttons -->
+    <div class="calculator-buttons">
+      <!-- Erste Reihe -->
+      <div class="button-row">
+        <button class="calculator-button" onclick="clearDisplay()">C</button>
+        <button class="calculator-button" onclick="deleteLastChar()">⌫</button>
+        <button class="calculator-button" onclick="inputOperator('+')">
+          +
+        </button>
+        <button class="calculator-button" onclick="inputOperator('-')">
+          -
+        </button>
+      </div>
+
+      <!-- Zweite Reihe -->
+      <div class="button-row">
+        <button class="calculator-button" onclick="addChar('7')">7</button>
+        <button class="calculator-button" onclick="addChar('8')">8</button>
+        <button class="calculator-button" onclick="addChar('9')">9</button>
+        <button class="calculator-button" onclick="inputOperator('*')">
+          *
+        </button>
+      </div>
+
+      <!-- Dritte Reihe -->
+      <div class="button-row">
+        <button class="calculator-button" onclick="addChar('4')">4</button>
+        <button class="calculator-button" onclick="addChar('5')">5</button>
+        <button class="calculator-button" onclick="addChar('6')">6</button>
+        <button class="calculator-button" onclick="inputOperator('/')">
+          /
+        </button>
+      </div>
+
+      <!-- Vierte Reihe -->
+      <div class="button-row">
+        <button class="calculator-button" onclick="addChar('1')">1</button>
+        <button class="calculator-button" onclick="addChar('2')">2</button>
+        <button class="calculator-button" onclick="addChar('3')">3</button>
+        <button class="calculator-button" onclick="addChar('.')">.</button>
+      </div>
+
+      <!-- NEUE Fünfte Reihe mit 0 und = -->
+      <div class="button-row">
+        <button
+          class="calculator-button"
+          onclick="addChar('0')"
+          style="flex: 2"
+        >
+          0
+        </button>
+        <button
+          class="calculator-button equals-button"
+          onclick="calculate()"
+          style="flex: 2; background-color: orange"
+        >
+          =
+        </button>
+      </div>
+    </div>
+
+    <!-- SPEICHERN BUTTON -->
+    <button class="save-button" onclick="saveCalculation()">
+      💾 Speichern
+    </button>
+  </div>
+</div>
+{% endblock %}
