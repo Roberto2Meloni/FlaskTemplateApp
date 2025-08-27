@@ -73,10 +73,24 @@ app_styles %}
       </div>
     </div>
 
-    <!-- SPEICHERN BUTTON -->
-    <button class="save-button" onclick="saveCalculation()">
-      💾 Speichern
-    </button>
+    <!-- BUTTON-CONTAINER für Speichern und History -->
+    <div class="action-buttons">
+      <!-- SPEICHERN BUTTON -->
+      <button
+        class="save-button"
+        onclick="saveCalculation('{{ url_for('Calculator.safe_calc_way') }}')"
+      >
+        💾 Speichern
+      </button>
+
+      <!-- HISTORY BUTTON - NEU -->
+      <button
+        class="history-button"
+        onclick="loadSavedCalculations('{{ url_for('Calculator.show_saved_calc') }}')"
+      >
+        📂 History
+      </button>
+    </div>
   </div>
 </div>
 {% endblock %}
