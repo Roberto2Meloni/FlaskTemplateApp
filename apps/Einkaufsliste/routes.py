@@ -573,6 +573,7 @@ def group():
                 EinkaufslisteGroup.group_id == group_membership.c.group_id,
             )
             .distinct()
+            .all()  # Hier .all() hinzugefügt
         )
     else:
         all_groups = (
@@ -596,12 +597,16 @@ def group():
             .all()
         )
 
+    # Gruppe-Anzahl berechnen
+    group_count = len(all_groups)
+
     return render_template(
         "group.html",
         user=current_user,
         new_registration=new_registration,
         config=config,
         all_groups=all_groups,
+        group_count=group_count,  # Neue Variable hinzugefügt
     )
 
 

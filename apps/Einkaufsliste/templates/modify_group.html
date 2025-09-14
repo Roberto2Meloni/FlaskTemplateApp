@@ -8,6 +8,16 @@ content %}
           <i class="bi bi-people-fill"></i>
           Gruppe Bearbeiten
         </h1>
+        <div class="header-info">
+          <i class="bi bi-pencil-square"></i>
+          Bearbeiten Sie die Details Ihrer Einkaufsgruppe
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="date-display">
+          <i class="bi bi-calendar3"></i>
+          <span class="current-date" id="current-date"></span>
+        </div>
       </div>
     </div>
   </div>
@@ -15,67 +25,170 @@ content %}
   {% include "layouts/websites/flash_message.html" %} {% if
   current_user.is_admin == True %}
   <div class="admin-info">
-    <i class="bi bi-shield-check"></i>
-    <span
-      >Hinweis: Du bist als Admin eingeloggt. Du kannst alle Gruppen ansehen und
-      bearbeiten.</span
-    >
+    <div class="admin-info-container">
+      <div class="admin-info-icon">
+        <i class="bi bi-shield-check"></i>
+      </div>
+      <div class="admin-info-content">
+        <strong>Admin-Modus:</strong> Du bist als Admin eingeloggt. Du kannst
+        alle Gruppen ansehen und bearbeiten.
+      </div>
+    </div>
   </div>
   {% endif %}
 
-  <div class="form-wrapper">
-    <form action="" method="post">
-      {{ form.hidden_tag() }}
-
-      <div class="form-group">
-        {{ form.group_name.label(class_='form-label') }} {{
-        form.group_name(class_='form-control') }}
-      </div>
-
-      <div class="form-group">
-        {{ form.group_members.label(class='form-label') }} {{
-        form.group_members(class='form-control select2', multiple=True) }}
-      </div>
-
-      <div class="settings-section">
-        <div class="form-check form-switch">
-          {{ form.group_public(class="form-check-input") }} {{
-          form.group_public.label(class="form-check-label") }}
-          <span
-            class="help-tooltip"
-            title="Wählen Sie diese Option, wenn jeder Benutzer der Gruppe zugreifen darf."
-          >
-            <i
-              class="bi bi-question-circle-fill"
-              data-bs-toggle="tooltip"
-              data-bs-placement="right"
-            ></i>
-          </span>
+  <!-- Form Container -->
+  <div class="form-container">
+    <div class="form-card">
+      <!-- Form Header -->
+      <div class="form-header">
+        <div class="form-icon-container">
+          <i class="form-icon bi bi-pencil-square"></i>
         </div>
+        <h2 class="form-title">Gruppe bearbeiten</h2>
+        <p class="form-subtitle">
+          Aktualisieren Sie die Details für Ihre Einkaufsgruppe
+        </p>
       </div>
 
-      <div class="settings-section">
-        <div class="form-check form-switch">
-          {{ form.group_visible(class="form-check-input") }} {{
-          form.group_visible.label(class="form-check-label") }}
-          <span
-            class="help-tooltip"
-            title="Wählen Sie diese Option, wenn die Gruppe in Suchergebnissen sichtbar sein soll."
-          >
-            <i
-              class="bi bi-question-circle-fill"
-              data-bs-toggle="tooltip"
-              data-bs-placement="right"
-            ></i>
-          </span>
+      <!-- Form Body -->
+      <form action="" method="post">
+        {{ form.hidden_tag() }}
+
+        <div class="form-body">
+          <!-- Gruppenname -->
+          <div class="form-group">
+            <div class="form-label-container">
+              <i class="bi bi-tag-fill"></i>
+              {{ form.group_name.label(class_='form-label-modern') }}
+            </div>
+            <div class="form-input-container">
+              {{ form.group_name(class_='form-control-modern', placeholder='z.B.
+              Familie Schmidt, WG Musterstraße...') }}
+              <i class="form-input-icon bi bi-tag"></i>
+            </div>
+            <small class="form-help-text"
+              >Ändern Sie den Namen Ihrer Gruppe nach Bedarf</small
+            >
+          </div>
+
+          <!-- Gruppenmitglieder -->
+          <div class="form-group">
+            <div class="card mb-4">
+              <div class="card-header bg-light">
+                <h5 class="card-title mb-0">
+                  <i class="bi bi-people"></i>
+                  Gruppenmitglieder
+                </h5>
+              </div>
+              <div class="card-body">
+                <div class="mb-3">
+                  {{ form.group_members.label(class="form-label") }}
+                  <div
+                    class="member-checkboxes row row-cols-1 row-cols-md-3 row-cols-lg-4 g-3"
+                  >
+                    {% for user_id, username in form.group_members.choices %}
+                    <div class="col">
+                      <div class="form-check">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          name="group_members"
+                          id="user_{{ user_id }}"
+                          value="{{ user_id }}"
+                          {%
+                          if
+                          user_id
+                          in
+                          form.group_members.data
+                          %}checked{%
+                          endif
+                          %}
+                        />
+                        <label
+                          class="form-check-label"
+                          for="user_{{ user_id }}"
+                        >
+                          {{ username }}
+                        </label>
+                      </div>
+                    </div>
+                    {% endfor %}
+                  </div>
+                </div>
+                <small class="form-help-text">
+                  Wählen Sie die Benutzer aus, die Mitglieder dieser Gruppe sein
+                  sollen
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Gruppe öffentlich -->
+          <div class="form-group">
+            <div class="form-checkbox-container">
+              <div class="checkbox-wrapper">
+                {{ form.group_public(class="form-checkbox-modern") }}
+                <label
+                  for="{{ form.group_public.id }}"
+                  class="checkbox-label-modern"
+                >
+                  <div class="checkbox-icon">
+                    <i class="bi bi-unlock-fill"></i>
+                  </div>
+                  <div class="checkbox-content">
+                    <span class="checkbox-title"
+                      >{{ form.group_public.label.text }}</span
+                    >
+                    <span class="checkbox-description"
+                      >Jeder Benutzer kann dieser Gruppe beitreten und auf
+                      Einkaufslisten zugreifen</span
+                    >
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Gruppe sichtbar -->
+          <div class="form-group">
+            <div class="form-checkbox-container">
+              <div class="checkbox-wrapper">
+                {{ form.group_visible(class="form-checkbox-modern") }}
+                <label
+                  for="{{ form.group_visible.id }}"
+                  class="checkbox-label-modern"
+                >
+                  <div class="checkbox-icon">
+                    <i class="bi bi-eye-fill"></i>
+                  </div>
+                  <div class="checkbox-content">
+                    <span class="checkbox-title"
+                      >{{ form.group_visible.label.text }}</span
+                    >
+                    <span class="checkbox-description"
+                      >Die Gruppe erscheint in Suchergebnissen und öffentlichen
+                      Listen</span
+                    >
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div class="button-group">
-        {{ form.submit(class_='btn btn-success btn-lg') }}
-        <a onclick="goBack()" class="btn btn-danger btn-lg">Abbrechen</a>
-      </div>
-    </form>
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <div class="action-buttons-container">
+            <a onclick="goBack()" class="btn-custom btn-cancel">
+              <i class="bi bi-x-circle"></i>
+              <span class="btn-text">Abbrechen</span>
+            </a>
+            {{ form.submit(class_='btn-custom btn-success-custom btn-submit') }}
+          </div>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 
@@ -83,7 +196,20 @@ content %}
   function goBack() {
     window.history.back();
   }
+
+  // Date update
+  document.addEventListener("DOMContentLoaded", function () {
+    const now = new Date();
+    document.getElementById("current-date").textContent =
+      now.toLocaleDateString("de-DE", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+  });
 </script>
+
 {% endblock %} {% block scripts %} {{ super() }}
 <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>

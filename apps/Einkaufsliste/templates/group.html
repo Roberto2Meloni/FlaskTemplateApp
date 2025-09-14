@@ -27,10 +27,8 @@ content %}
       </div>
     </div>
   </div>
-
   <!-- Flash Messages -->
   {% include "layouts/websites/flash_message.html" %}
-
   <!-- Action Buttons -->
   <div class="button-container">
     <a
@@ -83,7 +81,8 @@ content %}
           </tr>
         </thead>
         <tbody>
-          {% for group in all_groups %}
+          {% for group in all_groups %} {% set member_count =
+          group.group_members.count() if group.group_members else 0 %}
           <tr
             class="clickable-row"
             onclick="window.location='{{ url_for('Einkaufsliste.modify_group', group_id=group.group_id) }}'"
@@ -101,9 +100,7 @@ content %}
             <td style="text-align: center" class="tabel_members">
               <div class="user-info">
                 <div class="user-content">
-                  <div class="user-avatar">
-                    {{ group.group_members|length }}
-                  </div>
+                  <div class="user-avatar">{{ member_count }}</div>
                   <span class="info-label">Mitglieder</span>
                 </div>
               </div>
@@ -158,7 +155,7 @@ content %}
                 {% if current_user.id == group.group_owner %}
                 <button
                   class="action-btn delete-icon"
-                  onclick="event.stopPropagation(); openDeleteModal('{{ group.group_id }}', '{{ group.group_name }}', '{{ group.group_members|length }}', '{{ url_for('Einkaufsliste.delete_group', group_id=group.group_id) }}')"
+                  onclick="event.stopPropagation(); openDeleteModal('{{ group.group_id }}', '{{ group.group_name }}', '{{ member_count }}', '{{ url_for('Einkaufsliste.delete_group', group_id=group.group_id) }}')"
                 >
                   <i class="bi bi-trash-fill"></i>
                 </button>
@@ -174,7 +171,8 @@ content %}
 
   <!-- Mobile View -->
   <div class="mobile-view">
-    {% for group in all_groups %}
+    {% for group in all_groups %} {% set member_count =
+    group.group_members.count() if group.group_members else 0 %}
     <div
       class="list-card"
       onclick="window.location='{{ url_for('Einkaufsliste.modify_group', group_id=group.group_id) }}'"
@@ -194,7 +192,7 @@ content %}
           {% if current_user.id == group.group_owner %}
           <button
             class="action-btn delete-btn"
-            onclick="event.stopPropagation(); openDeleteModal('{{ group.group_id }}', '{{ group.group_name }}', '{{ group.group_members|length }}', '{{ url_for('Einkaufsliste.delete_group', group_id=group.group_id) }}')"
+            onclick="event.stopPropagation(); openDeleteModal('{{ group.group_id }}', '{{ group.group_name }}', '{{ member_count }}', '{{ url_for('Einkaufsliste.delete_group', group_id=group.group_id) }}')"
           >
             <i class="bi bi-trash-fill"></i>
           </button>
@@ -223,12 +221,10 @@ content %}
             </div>
             <div class="detail-content">
               <div class="user-info-mobile">
-                <div class="user-avatar-mobile">
-                  {{ group.group_members|length }}
-                </div>
+                <div class="user-avatar-mobile">{{ member_count }}</div>
                 <span class="user-name"
-                  >{{ group.group_members|length }} Mitglied{% if
-                  group.group_members|length != 1 %}er{% endif %}</span
+                  >{{ member_count }} Mitglied{% if member_count != 1 %}er{%
+                  endif %}</span
                 >
               </div>
             </div>
@@ -273,7 +269,7 @@ content %}
   </div>
 
   <!-- Empty State -->
-  {% set group_count = all_groups|length %} {% if group_count == 0 %}
+  {% if group_count == 0 %}
   <div class="empty-state">
     <div class="empty-icon">
       <i class="bi bi-people"></i>
@@ -323,7 +319,6 @@ content %}
         <i class="bi bi-x-lg"></i>
       </button>
     </div>
-
     <div class="modal-body">
       <div class="modal-warning-box">
         <p class="modal-warning-text">
@@ -331,7 +326,6 @@ content %}
           werden.
         </p>
       </div>
-
       <div class="modal-group-info">
         <div class="modal-info-item">
           <div class="modal-info-label">
@@ -340,7 +334,6 @@ content %}
           </div>
           <div class="modal-info-value" id="modalGroupName"></div>
         </div>
-
         <div class="modal-info-item">
           <div class="modal-info-label">
             <i class="bi bi-people-fill"></i>
@@ -349,13 +342,11 @@ content %}
           <div class="modal-info-value" id="modalMemberCount"></div>
         </div>
       </div>
-
       <p class="modal-description">
         Alle Einkaufslisten und Daten dieser Gruppe werden unwiderruflich
         gelöscht. Möchten Sie die Gruppe wirklich löschen?
       </p>
     </div>
-
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeDeleteModal()">
         <i class="bi bi-x-circle"></i>
@@ -375,22 +366,17 @@ content %}
     document.getElementById("modalMemberCount").textContent =
       memberCount + " Mitglied" + (memberCount != 1 ? "er" : "");
     document.getElementById("confirmDeleteBtn").href = deleteUrl;
-
     const modal = document.getElementById("deleteModal");
     modal.classList.add("show");
-
     // Disable background scrolling
     document.body.style.overflow = "hidden";
   }
-
   function closeDeleteModal() {
     const modal = document.getElementById("deleteModal");
     modal.classList.remove("show");
-
     // Re-enable background scrolling
     document.body.style.overflow = "";
   }
-
   // Close modal when clicking outside
   document
     .getElementById("deleteModal")
@@ -399,14 +385,12 @@ content %}
         closeDeleteModal();
       }
     });
-
   // Close modal with ESC key
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape") {
       closeDeleteModal();
     }
   });
-
   // Date and time updates
   document.addEventListener("DOMContentLoaded", function () {
     const now = new Date();
@@ -419,7 +403,6 @@ content %}
         day: "numeric",
       }
     );
-
     document.getElementById("lastUpdated").textContent = now.toLocaleTimeString(
       "de-DE",
       {
@@ -429,5 +412,4 @@ content %}
     );
   });
 </script>
-
 {% endblock %}
