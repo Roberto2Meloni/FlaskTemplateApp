@@ -10,7 +10,7 @@ from sqlalchemy import delete
 
 from flask import render_template, current_app as app, request, redirect, flash, url_for
 from flask_login import current_user
-from . import blueprint
+from . import blueprint, app_logger
 from .models import (
     EinkaufslisteList,
     EinkaufslisteItem,
@@ -32,6 +32,7 @@ from app.helper_functions.helper_db_file import check_if_user_has_admin_rights
 
 config = Config()
 
+app_logger.info("Starte Routing für APP-EINKAUFSLISTE")
 print("Einkaufsliste Version 0.0.0")
 
 
@@ -108,7 +109,7 @@ def Einkaufsliste_index():
 @blueprint.route("/newlist", methods=["GET", "POST"])
 @enabled_required
 def newlist():
-    app.logger.debug("newlist wurde angesurft")
+    app_logger.debug("newlist wurde angesurft")
     # Anzeige für neue Account-Logins
     new_registration = User.query.filter(User.user_enable.is_(None)).count()
     form = CreatNewList()
@@ -214,7 +215,7 @@ def newlist():
 
             # Commite alle Tage
             db.session.commit()
-            app.logger.info(
+            app_logger.info(
                 f"Die Einkaufsliste {list_id} wurde durch {current_user.username} erstellt."
             )
             flash("Die Einkaufsliste wurde erfolgreich erstellt!", "success")
@@ -232,7 +233,7 @@ def newlist():
 @blueprint.route("/newgroup", methods=["GET", "POST"])
 @enabled_required
 def newgroup():
-    app.logger.debug("newgroup wurde angesurft")
+    app_logger.debug("newgroup wurde angesurft")
     # Anzeige für neue Account-Logins
     new_registration = User.query.filter(User.user_enable.is_(None)).count()
     form = CreatNewGroup()
@@ -241,7 +242,7 @@ def newgroup():
         for user in User.query.filter(User.id != current_user.id).all()
     ]
     if form.validate_on_submit():
-        app.logger.debug(
+        app_logger.debug(
             "validate_on_submit der erstellung neuer Benutzer via Admin Settings"
         )
         # prüfe, ob der Gruppenname bereits existiert
@@ -277,7 +278,7 @@ def newgroup():
 @blueprint.route("/shiplist/<list_id>", methods=["GET"])
 @enabled_required
 def ship_list(list_id):
-    app.logger.debug(f"/access/shiplist/{list_id} wurde angesurft")
+    app_logger.debug(f"/access/shiplist/{list_id} wurde angesurft")
     # Anzeige für neue Account-Logins
     new_registration = User.query.filter(User.user_enable.is_(None)).count()
 
@@ -400,7 +401,7 @@ def ship_list(list_id):
 @blueprint.route("/shiplist/<list_id>/update", methods=["POST"])
 @enabled_required
 def ship_list_update(list_id):
-    app.logger.debug(f"/access/shiplist/{list_id}/update wurde angesurft")
+    app_logger.debug(f"/access/shiplist/{list_id}/update wurde angesurft")
 
     try:
         # Alle Formulardaten abrufen
@@ -417,7 +418,7 @@ def ship_list_update(list_id):
                 item = EinkaufslisteItem.query.filter_by(item_id=int(item_id)).first()
                 if item:
                     item.buy = True  # Checkbox ist gecheckt
-                    app.logger.debug(f"Item {item_id} als gekauft markiert")
+                    app_logger.debug(f"Item {item_id} als gekauft markiert")
 
             # Items Namen verarbeiten
             elif key.startswith("ID Gericht: "):
@@ -428,7 +429,7 @@ def ship_list_update(list_id):
                 item = EinkaufslisteItem.query.filter_by(item_id=int(item_id)).first()
                 if item:
                     item.item_name = value.strip() if value else ""
-                    app.logger.debug(f"Item {item_id} Name aktualisiert: {value}")
+                    app_logger.debug(f"Item {item_id} Name aktualisiert: {value}")
 
         # 2. Items als nicht gekauft markieren (für nicht gecheckte Checkboxen)
         # Alle Items dieser Liste abrufen
@@ -439,7 +440,7 @@ def ship_list_update(list_id):
             if gekauft_key not in form_data:
                 # Wenn nicht gecheckt, dann als nicht gekauft markieren
                 item.buy = False
-                app.logger.debug(f"Item {item.item_id} als nicht gekauft markiert")
+                app_logger.debug(f"Item {item.item_id} als nicht gekauft markiert")
 
         # 3. "Sonstiges" (andere_items) verarbeiten
         for key, value in form_data.items():
@@ -454,7 +455,7 @@ def ship_list_update(list_id):
                 ).first()
                 if other_item:
                     other_item.buy = True
-                    app.logger.debug(f"Sonstiges {other_id} als gekauft markiert")
+                    app_logger.debug(f"Sonstiges {other_id} als gekauft markiert")
 
             # Sonstiges Text verarbeiten
             elif key.startswith("ID Andere: ") and not key.startswith(
@@ -469,7 +470,7 @@ def ship_list_update(list_id):
                 ).first()
                 if other_item:
                     other_item.other_name = value.strip() if value else ""
-                    app.logger.debug(f"Sonstiges {other_id} Text aktualisiert")
+                    app_logger.debug(f"Sonstiges {other_id} Text aktualisiert")
 
         # 4. Sonstiges als nicht gekauft markieren (falls nicht gecheckt)
         other_item = EinkaufslisteOther.query.filter_by(list_id=list_id).first()
@@ -477,7 +478,7 @@ def ship_list_update(list_id):
             gekauft_key = f"ID Andere gekauft: {other_item.other_id}"
             if gekauft_key not in form_data:
                 other_item.buy = False
-                app.logger.debug(
+                app_logger.debug(
                     f"Sonstiges {other_item.other_id} als nicht gekauft markiert"
                 )
 
@@ -486,7 +487,7 @@ def ship_list_update(list_id):
 
         # Success-Nachricht setzen
         flash("Änderungen erfolgreich gespeichert!", "success")
-        app.logger.info(f"Shiplist {list_id} erfolgreich aktualisiert")
+        app_logger.info(f"Shiplist {list_id} erfolgreich aktualisiert")
 
     except Exception as e:
         # Fehler abfangen und Rollback durchführen
@@ -495,7 +496,7 @@ def ship_list_update(list_id):
             "Fehler beim Speichern der Änderungen. Bitte versuchen Sie es erneut.",
             "error",
         )
-        app.logger.error(f"Fehler beim Aktualisieren der Shiplist {list_id}: {str(e)}")
+        app_logger.error(f"Fehler beim Aktualisieren der Shiplist {list_id}: {str(e)}")
 
     # Zurück zur Shiplist-Seite weiterleiten
     return redirect(url_for("Einkaufsliste.ship_list", list_id=list_id))
@@ -504,7 +505,7 @@ def ship_list_update(list_id):
 @blueprint.route("/delete_group/<group_id>", methods=["GET", "POST"])
 @enabled_required
 def delete_group(group_id):
-    app.logger.debug("/access/delete_group/<group_id> wurde angesurft")
+    app_logger.debug("/access/delete_group/<group_id> wurde angesurft")
     group = EinkaufslisteGroup.query.filter_by(group_id=group_id).first()
 
     if group is None:
@@ -528,7 +529,7 @@ def delete_group(group_id):
 @blueprint.route("/delete_list/<list_id>", methods=["GET", "POST"])
 @enabled_required
 def delete_list(list_id):
-    app.logger.debug("/access/delete_list/<list_id> wurde angesurft")
+    app_logger.debug("/access/delete_list/<list_id> wurde angesurft")
     other = EinkaufslisteOther.query.filter_by(list_id=list_id).all()
     items = EinkaufslisteItem.query.filter_by(list_id=list_id).all()
     list = EinkaufslisteList.query.filter_by(list_id=list_id).all()
@@ -546,7 +547,7 @@ def delete_list(list_id):
     # bestätige die löschsequenz
     db.session.commit()
 
-    app.logger.info(
+    app_logger.info(
         f"Die Einkaufsliste {list_id} wurde durch {current_user.username} gelöscht"
     )
     flash(
@@ -560,7 +561,7 @@ def delete_list(list_id):
 @blueprint.route("/group", methods=["GET", "POST"])
 @enabled_required
 def group():
-    app.logger.debug("group wurde angesurft")
+    app_logger.debug("group wurde angesurft")
     new_registration = User.query.filter(User.user_enable.is_(None)).count()
 
     # Erstelle eine Abfrage, die alle relevanten Gruppen basierend auf Sichtbarkeit und Mitgliedschaft zurückgibt
@@ -613,7 +614,7 @@ def group():
 @blueprint.route("/request_join_group/<int:group_id>", methods=["GET", "POST"])
 @enabled_required
 def request_join_group(group_id):
-    app.logger.debug("request_join_group wurde angesurft")
+    app_logger.debug("request_join_group wurde angesurft")
     new_registration = User.query.filter(User.user_enable.is_(None)).count()
     group = EinkaufslisteGroup.query.get(group_id)
 
@@ -656,7 +657,7 @@ def request_join_group(group_id):
 @blueprint.route("/join_or_leave_group/<int:group_id>", methods=["GET", "POST"])
 @enabled_required
 def join_or_leave_group(group_id):
-    app.logger.debug("join_group wurde angesurft")
+    app_logger.debug("join_group wurde angesurft")
     new_registration = User.query.filter(User.user_enable.is_(None)).count()
     group = EinkaufslisteGroup.query.get(group_id)
 
@@ -725,7 +726,7 @@ def join_or_leave_group(group_id):
 @blueprint.route("/modify_group/<group_id>", methods=["GET", "POST"])
 @enabled_required
 def modify_group(group_id):
-    app.logger.debug("modify_group wurde angesurft")
+    app_logger.debug("modify_group wurde angesurft")
     new_registration = User.query.filter(User.user_enable.is_(None)).count()
     # Hier fehlt noch die Filterung nach Gruppen, bei welchen visibal = true ist, allerdings sollen die Eigene Gruppen angezeigt werden
     group = EinkaufslisteGroup.query.get(group_id)
@@ -840,3 +841,6 @@ def modify_group(group_id):
         form=form,
         group=group,
     )
+
+
+app_logger.info("Starte Routing für APP-EINKAUFSLISTE")

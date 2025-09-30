@@ -1,13 +1,77 @@
+<!-- Modal für neuen Ordner -->
+<div id="newFolderModal" class="modal" style="display: none">
+  <div class="modal-content">
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <h3>Neuer Ordner erstellen</h3>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="modal-body">
+      <p id="newFolderModalPath"></p>
+      <label for="folderName">Ordnername:</label>
+      <input
+        type="text"
+        id="newFolderName"
+        placeholder="Ordnername eingeben..."
+        onkeydown="if(event.key === 'Enter') createNewFolder()"
+        onkeyup="document.getElementById('folderNameError').style.display = 'none'"
+      />
+      <div
+        id="folderNameError"
+        style="color: red; margin-top: 5px; display: none"
+      ></div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer">
+      <button
+        type="button"
+        class="btn btn-success"
+        id="createFolderBtn"
+        onclick="createNewFolder()"
+      >
+        Erstellen
+      </button>
+      <button
+        type="button"
+        class="btn btn-danger"
+        id="cancelFolderBtn"
+        onclick="hideNewFolderModal()"
+      >
+        Abbrechen
+      </button>
+    </div>
+  </div>
+</div>
+
 <div class="file-wraper">
   <div class="file-header">
-    <h4>Hier ist der header</h4>
+    <h4 id="current-path">Aktueller Pfad: /</h4>
   </div>
   <div class="file-view">
     <div class="file-three">
       <p style="display: none">{{ simpel_architecture|tojson }}</p>
     </div>
     <div class="file-details">
-      <p style="display: none">{{ full_architecture|tojson }}</p>
+      <div class="file-details-buttons">
+        <button
+          type="button"
+          class="btn btn-warning"
+          disabled
+          onclick="showNewFolderModal()"
+        >
+          Neuer Ordner
+        </button>
+        <button
+          type="button"
+          class="btn btn-danger"
+          onclick="showDeleteModal()"
+        ></button>
+      </div>
+      <div class="file-details-view">
+        <p style="display: none">{{ full_architecture|tojson }}</p>
+      </div>
     </div>
   </div>
 </div>

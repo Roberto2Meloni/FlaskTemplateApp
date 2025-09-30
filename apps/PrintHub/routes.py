@@ -9,7 +9,7 @@ from flask import (
     current_app,
     send_file,
 )
-from . import blueprint
+from . import blueprint, app_logger
 
 from flask_login import login_required, current_user
 from app.decorators import enabled_required
@@ -38,6 +38,7 @@ import zipfile
 from werkzeug.utils import secure_filename
 
 config = Config()
+app_logger.info("Starte App-PrintHub Route Initialization")
 print("PrintHub Version 0.0.0")
 
 
@@ -48,7 +49,7 @@ print("PrintHub Version 0.0.0")
 @enabled_required
 def PrintHub_index():
     """Dashboard mit Offerten-Übersicht"""
-    app.logger.info("PrintHub page accessed")
+    app_logger.info("PrintHub page accessed")
 
     try:
         # Statistiken für Dashboard sammeln
@@ -95,7 +96,7 @@ def PrintHub_index():
         )
 
     except Exception as e:
-        app.logger.error(f"Error loading dashboard: {e}")
+        app_logger.error(f"Error loading dashboard: {e}")
         # Fallback für Fehlerfall
         return render_template(
             "PrintHub.html",
@@ -155,7 +156,7 @@ def printHub_filaments():
             db.session.commit()
 
             flash(f'Filament "{name}" erfolgreich hinzugefügt!', "success")
-            current_app.logger.info(
+            current_app_logger.info(
                 f"User {current_user.username} added filament: {name}"
             )
 
@@ -165,12 +166,12 @@ def printHub_filaments():
                 "Fehler beim Speichern des Filaments. Bitte versuchen Sie es erneut.",
                 "error",
             )
-            current_app.logger.error(f"Database integrity error: {e}")
+            current_app_logger.error(f"Database integrity error: {e}")
 
         except Exception as e:
             db.session.rollback()
             flash("Ein unerwarteter Fehler ist aufgetreten.", "error")
-            current_app.logger.error(f"Unexpected error adding filament: {e}")
+            current_app_logger.error(f"Unexpected error adding filament: {e}")
 
         return redirect(url_for("PrintHub.printHub_filaments"))
 
@@ -224,7 +225,7 @@ def printHub_filaments():
 
     except Exception as e:
         flash("Fehler beim Laden der Filamente.", "error")
-        current_app.logger.error(f"Error loading filaments: {e}")
+        current_app_logger.error(f"Error loading filaments: {e}")
         return render_template(
             "PrintHubFilaments.html",
             user=current_user,
@@ -271,14 +272,14 @@ def delete_filament(filament_id):
             f'Filament "{filament_name}" ({filament_type}) erfolgreich gelöscht!',
             "success",
         )
-        current_app.logger.info(
+        current_app_logger.info(
             f"User {current_user.username} deleted filament: {filament_name} ({filament_type})"
         )
 
     except Exception as e:
         db.session.rollback()
         flash("Fehler beim Löschen des Filaments.", "error")
-        current_app.logger.error(f"Error deleting filament: {e}")
+        current_app_logger.error(f"Error deleting filament: {e}")
 
     return redirect(url_for("PrintHub.printHub_filaments"))
 
@@ -292,7 +293,7 @@ def api_filaments():
         filaments = PrintHubFilament.get_by_user(current_user.username)
         return jsonify({"success": True, "data": [f.to_dict() for f in filaments]})
     except Exception as e:
-        current_app.logger.error(f"Error in API filaments: {e}")
+        current_app_logger.error(f"Error in API filaments: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -338,13 +339,13 @@ def printHub_printers():
             print("Reset session commit successful!")
 
             flash(f'Drucker "{name}" erfolgreich hinzugefügt!', "success")
-            current_app.logger.info(
+            current_app_logger.info(
                 f"User {current_user.username} added printer: {name}"
             )
 
         except Exception as e:
             flash("Ein unerwarteter Fehler ist aufgetreten.", "error")
-            current_app.logger.error(f"Error with reset session: {e}")
+            current_app_logger.error(f"Error with reset session: {e}")
             print(f"Error with reset session: {e}")
 
         return redirect(url_for("PrintHub.printHub_printers"))
@@ -379,7 +380,7 @@ def printHub_printers():
 
     except Exception as e:
         flash("Fehler beim Laden der Drucker.", "error")
-        current_app.logger.error(f"Error loading printers: {e}")
+        current_app_logger.error(f"Error loading printers: {e}")
         return render_template(
             "PrintHubPrinters.html",
             user=current_user,
@@ -420,14 +421,14 @@ def delete_printer(printer_id):
             f'Drucker "{printer_name}" ({printer_brand}) erfolgreich gelöscht!',
             "success",
         )
-        current_app.logger.info(
+        current_app_logger.info(
             f"User {current_user.username} deleted printer: {printer_name} ({printer_brand})"
         )
 
     except Exception as e:
         db.session.rollback()
         flash("Fehler beim Löschen des Druckers.", "error")
-        current_app.logger.error(f"Error deleting printer: {e}")
+        current_app_logger.error(f"Error deleting printer: {e}")
 
     return redirect(url_for("PrintHub.printHub_printers"))
 
@@ -442,7 +443,7 @@ def api_printers():
         printers = PrintHubPrinter.get_by_user(current_user.username)
         return jsonify({"success": True, "data": [p.to_dict() for p in printers]})
     except Exception as e:
-        current_app.logger.error(f"Error in API printers: {e}")
+        current_app_logger.error(f"Error in API printers: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -522,13 +523,13 @@ def printHub_energy_costs():
             db.session.commit()
 
             flash(f'Energietarif "{name}" erfolgreich hinzugefügt!', "success")
-            current_app.logger.info(
+            current_app_logger.info(
                 f"User {current_user.username} added energy cost: {name}"
             )
 
         except Exception as e:
             flash("Ein unerwarteter Fehler ist aufgetreten.", "error")
-            current_app.logger.error(f"Unexpected error adding energy cost: {e}")
+            current_app_logger.error(f"Unexpected error adding energy cost: {e}")
 
         return redirect(url_for("PrintHub.printHub_energy_costs"))
 
@@ -591,7 +592,7 @@ def printHub_energy_costs():
 
     except Exception as e:
         flash("Fehler beim Laden der Energiekosten.", "error")
-        current_app.logger.error(f"Error loading energy costs: {e}")
+        current_app_logger.error(f"Error loading energy costs: {e}")
         return render_template(
             "PrintHubEnergyCosts.html",
             user=current_user,
@@ -648,13 +649,13 @@ def delete_energy_cost(energy_cost_id):
             f'Energietarif "{energy_cost_name}" ({energy_cost_provider}) erfolgreich gelöscht!',
             "success",
         )
-        current_app.logger.info(
+        current_app_logger.info(
             f"User {current_user.username} deleted energy cost: {energy_cost_name} ({energy_cost_provider})"
         )
 
     except Exception as e:
         flash("Fehler beim Löschen des Energietarifs.", "error")
-        current_app.logger.error(f"Error deleting energy cost: {e}")
+        current_app_logger.error(f"Error deleting energy cost: {e}")
 
     return redirect(url_for("PrintHub.printHub_energy_costs"))
 
@@ -698,13 +699,13 @@ def printHub_work_hours():
             db.session.commit()
 
             flash(f'Arbeitszeit für "{name}" erfolgreich hinzugefügt!', "success")
-            current_app.logger.info(
+            current_app_logger.info(
                 f"User {current_user.username} added work hour: {name}"
             )
 
         except Exception as e:
             flash("Ein unerwarteter Fehler ist aufgetreten.", "error")
-            current_app.logger.error(f"Unexpected error adding work hour: {e}")
+            current_app_logger.error(f"Unexpected error adding work hour: {e}")
 
         return redirect(url_for("PrintHub.printHub_work_hours"))
 
@@ -757,7 +758,7 @@ def printHub_work_hours():
 
     except Exception as e:
         flash("Fehler beim Laden der Arbeitszeiten.", "error")
-        current_app.logger.error(f"Error loading work hours: {e}")
+        current_app_logger.error(f"Error loading work hours: {e}")
         return render_template(
             "PrintHubWorkHours.html",
             user=current_user,
@@ -807,13 +808,13 @@ def delete_work_hour(work_hour_id):
             f'Arbeitszeit für "{worker_name}" ({worker_role}) erfolgreich gelöscht!',
             "success",
         )
-        current_app.logger.info(
+        current_app_logger.info(
             f"User {current_user.username} deleted work hour: {worker_name} ({worker_role})"
         )
 
     except Exception as e:
         flash("Fehler beim Löschen der Arbeitszeit.", "error")
-        current_app.logger.error(f"Error deleting work hour: {e}")
+        current_app_logger.error(f"Error deleting work hour: {e}")
 
     return redirect(url_for("PrintHub.printHub_work_hours"))
 
@@ -826,7 +827,7 @@ def api_work_hours():
         work_hours = PrintHubWorkHours.get_by_user(current_user.username)
         return jsonify({"success": True, "data": [wh.to_dict() for wh in work_hours]})
     except Exception as e:
-        current_app.logger.error(f"Error in API work hours: {e}")
+        current_app_logger.error(f"Error in API work hours: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -892,13 +893,13 @@ def printHub_overhead_profiles():
             db.session.commit()
 
             flash(f'Overhead-Profil "{name}" erfolgreich hinzugefügt!', "success")
-            current_app.logger.info(
+            current_app_logger.info(
                 f"User {current_user.username} added overhead profile: {name}"
             )
 
         except Exception as e:
             flash("Ein unerwarteter Fehler ist aufgetreten.", "error")
-            current_app.logger.error(f"Unexpected error adding overhead profile: {e}")
+            current_app_logger.error(f"Unexpected error adding overhead profile: {e}")
 
         return redirect(url_for("PrintHub.printHub_overhead_profiles"))
 
@@ -960,7 +961,7 @@ def printHub_overhead_profiles():
 
     except Exception as e:
         flash("Fehler beim Laden der Overhead-Profile.", "error")
-        current_app.logger.error(f"Error loading overhead profiles: {e}")
+        current_app_logger.error(f"Error loading overhead profiles: {e}")
         return render_template(
             "PrintHubOverheadProfiles.html",
             user=current_user,
@@ -1013,13 +1014,13 @@ def delete_overhead_profile(profile_id):
             f'Overhead-Profil "{profile_name}"{location_text} erfolgreich gelöscht!',
             "success",
         )
-        current_app.logger.info(
+        current_app_logger.info(
             f"User {current_user.username} deleted overhead profile: {profile_name}"
         )
 
     except Exception as e:
         flash("Fehler beim Löschen des Overhead-Profils.", "error")
-        current_app.logger.error(f"Error deleting overhead profile: {e}")
+        current_app_logger.error(f"Error deleting overhead profile: {e}")
 
     return redirect(url_for("PrintHub.printHub_overhead_profiles"))
 
@@ -1038,7 +1039,7 @@ def api_overhead_profiles():
             {"success": True, "data": [op.to_dict() for op in overhead_profiles]}
         )
     except Exception as e:
-        current_app.logger.error(f"Error in API overhead profiles: {e}")
+        current_app_logger.error(f"Error in API overhead profiles: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -1107,7 +1108,7 @@ def printHub_discount_profiles():
                 "success",
             )
 
-            current_app.logger.info(
+            current_app_logger.info(
                 f"User {current_user.username} added {discount_type} profile: {name}"
             )
 
@@ -1118,7 +1119,7 @@ def printHub_discount_profiles():
             # Rollback bei Fehler
             db.session.rollback()
             flash("Ein unerwarteter Fehler ist aufgetreten.", "error")
-            current_app.logger.error(f"Unexpected error adding discount profile: {e}")
+            current_app_logger.error(f"Unexpected error adding discount profile: {e}")
 
         return redirect(url_for("PrintHub.printHub_discount_profiles"))
 
@@ -1187,7 +1188,7 @@ def printHub_discount_profiles():
 
     except Exception as e:
         flash("Fehler beim Laden der Rabatt-Profile.", "error")
-        current_app.logger.error(f"Error loading discount profiles: {e}")
+        current_app_logger.error(f"Error loading discount profiles: {e}")
 
         # Statistik-Struktur für Fehlerfall
         empty_stats = {
@@ -1244,13 +1245,13 @@ def delete_discount_profile(profile_id):
             f'{discount_type_display}-Profil "{profile_name}" ({discount_percentage}%) erfolgreich gelöscht!',
             "success",
         )
-        current_app.logger.info(
+        current_app_logger.info(
             f"User {current_user.username} deleted {discount_profile.discount_type} profile: {profile_name}"
         )
 
     except Exception as e:
         flash("Fehler beim Löschen des Rabatt-Profils.", "error")
-        current_app.logger.error(f"Error deleting discount profile: {e}")
+        current_app_logger.error(f"Error deleting discount profile: {e}")
 
     return redirect(url_for("PrintHub.printHub_discount_profiles"))
 
@@ -1301,7 +1302,7 @@ def api_discount_profiles():
         )
 
     except Exception as e:
-        current_app.logger.error(f"Error in API discount profiles: {e}")
+        current_app_logger.error(f"Error in API discount profiles: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -1343,7 +1344,7 @@ def api_calculate_discount(profile_id):
         )
 
     except Exception as e:
-        current_app.logger.error(f"Error calculating discount: {e}")
+        current_app_logger.error(f"Error calculating discount: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -1498,7 +1499,7 @@ def printHub_quote_calculator(quote_id=None):
 
         except Exception as e:
             flash(f"Fehler bei der Berechnung: {str(e)}", "error")
-            current_app.logger.error(f"Quote calculation error: {e}")
+            current_app_logger.error(f"Quote calculation error: {e}")
 
         return redirect(request.url)
 
@@ -1536,7 +1537,7 @@ def printHub_quote_calculator(quote_id=None):
 
     except Exception as e:
         flash(f"Fehler beim Laden der Kalkulationsseite: {e}", "error")
-        current_app.logger.error(f"Error loading quote calculator: {e}")
+        current_app_logger.error(f"Error loading quote calculator: {e}")
         return redirect(url_for("PrintHub.PrintHub_index"))
 
 
@@ -1815,7 +1816,7 @@ def calculate_and_save_quote(
 
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error calculating and saving quote: {e}")
+        current_app_logger.error(f"Error calculating and saving quote: {e}")
         return None
 
 
@@ -1879,7 +1880,7 @@ def printHub_quotes():
 
     except Exception as e:
         flash("Fehler beim Laden der Offerten.", "error")
-        current_app.logger.error(f"Error loading quotes: {e}")
+        current_app_logger.error(f"Error loading quotes: {e}")
         return redirect(url_for("PrintHub.PrintHub_index"))
 
 
@@ -1902,7 +1903,7 @@ def printHub_quote_detail(quote_id):
 
     except Exception as e:
         flash("Offerte nicht gefunden.", "error")
-        current_app.logger.error(f"Error loading quote detail: {e}")
+        current_app_logger.error(f"Error loading quote detail: {e}")
         return redirect(url_for("PrintHub.printHub_quotes"))
 
 
@@ -1940,7 +1941,7 @@ def api_update_quote_status(quote_id):
 
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error updating quote status: {e}")
+        current_app_logger.error(f"Error updating quote status: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -1974,7 +1975,7 @@ def api_toggle_quote_archive(quote_id):
 
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error toggling quote archive: {e}")
+        current_app_logger.error(f"Error toggling quote archive: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -2055,7 +2056,7 @@ def api_duplicate_quote(quote_id):
 
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error duplicating quote: {e}")
+        current_app_logger.error(f"Error duplicating quote: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -2091,7 +2092,7 @@ def api_delete_quote(quote_id):
 
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error deleting quote: {e}")
+        current_app_logger.error(f"Error deleting quote: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -2116,7 +2117,7 @@ def api_quotes():
         )
 
     except Exception as e:
-        current_app.logger.error(f"Error in API quotes: {e}")
+        current_app_logger.error(f"Error in API quotes: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -2312,7 +2313,7 @@ def update_existing_quote(
 
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error updating quote: {e}")
+        current_app_logger.error(f"Error updating quote: {e}")
         return None
 
 
@@ -2407,7 +2408,7 @@ def api_quote_edit_redirect(quote_id):
         )
 
     except Exception as e:
-        current_app.logger.error(f"Error in edit redirect: {e}")
+        current_app_logger.error(f"Error in edit redirect: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -2442,7 +2443,7 @@ def printHub_export_import():
 
     except Exception as e:
         flash("Fehler beim Laden der Export/Import-Seite.", "error")
-        current_app.logger.error(f"Error loading export/import page: {e}")
+        current_app_logger.error(f"Error loading export/import page: {e}")
         return redirect(url_for("PrintHub.PrintHub_index"))
 
 
@@ -2475,7 +2476,7 @@ def get_export_stats(username):
         return stats
 
     except Exception as e:
-        current_app.logger.error(f"Error getting export stats: {e}")
+        current_app_logger.error(f"Error getting export stats: {e}")
         return {
             "filaments": 0,
             "printers": 0,
@@ -2504,7 +2505,7 @@ def handle_export_request():
 
     except Exception as e:
         flash(f"Fehler beim Export: {str(e)}", "error")
-        current_app.logger.error(f"Export error: {e}")
+        current_app_logger.error(f"Export error: {e}")
         return redirect(url_for("PrintHub.printHub_export_import"))
 
 
@@ -2558,7 +2559,7 @@ def export_all_data(export_format, include_archived=True, include_inactive=True)
                             f"{table_name}.csv", csv_content.encode("utf-8")
                         )
                 except Exception as e:
-                    current_app.logger.error(f"Error exporting {table_name}: {e}")
+                    current_app_logger.error(f"Error exporting {table_name}: {e}")
                     continue
 
             # Zusätzliche Metadaten-Datei
@@ -2576,7 +2577,7 @@ def export_all_data(export_format, include_archived=True, include_inactive=True)
         )
 
     except Exception as e:
-        current_app.logger.error(f"Error creating export ZIP: {e}")
+        current_app_logger.error(f"Error creating export ZIP: {e}")
         flash("Fehler beim Erstellen der Export-Datei.", "error")
         return redirect(url_for("PrintHub.printHub_export_import"))
 
@@ -2628,7 +2629,7 @@ def export_single_table(table_name, include_archived=True, include_inactive=True
         )
 
     except Exception as e:
-        current_app.logger.error(f"Error exporting {table_name}: {e}")
+        current_app_logger.error(f"Error exporting {table_name}: {e}")
         flash(f"Fehler beim Export von {table_name}.", "error")
         return redirect(url_for("PrintHub.printHub_export_import"))
 
@@ -3106,7 +3107,7 @@ def handle_import_request():
 
     except Exception as e:
         flash(f"Fehler beim Import: {str(e)}", "error")
-        current_app.logger.error(f"Import error: {e}")
+        current_app_logger.error(f"Import error: {e}")
         return redirect(url_for("PrintHub.printHub_export_import"))
 
 
@@ -3153,7 +3154,7 @@ def handle_zip_import(file, overwrite_existing):
             return redirect(url_for("PrintHub.printHub_export_import"))
 
     except Exception as e:
-        current_app.logger.error(f"ZIP import error: {e}")
+        current_app_logger.error(f"ZIP import error: {e}")
         flash(f"Fehler beim ZIP-Import: {str(e)}", "error")
         return redirect(url_for("PrintHub.printHub_export_import"))
 
@@ -3207,7 +3208,7 @@ def handle_csv_import(file, import_type, overwrite_existing):
         return redirect(url_for("PrintHub.printHub_export_import"))
 
     except Exception as e:
-        current_app.logger.error(f"CSV import error: {e}")
+        current_app_logger.error(f"CSV import error: {e}")
         flash(f"Fehler beim CSV-Import: {str(e)}", "error")
         return redirect(url_for("PrintHub.printHub_export_import"))
 
@@ -3245,7 +3246,7 @@ def import_csv_data(file_obj, table_name, overwrite_existing=False):
         return import_functions[table_name](csv_reader, overwrite_existing)
 
     except Exception as e:
-        current_app.logger.error(f"CSV data import error: {e}")
+        current_app_logger.error(f"CSV data import error: {e}")
         return {"success": False, "error": str(e)}
 
 
@@ -3391,3 +3392,6 @@ def import_suborders_from_csv(csv_reader, overwrite_existing):
         "success": False,
         "error": "Import für Subaufträge noch nicht implementiert",
     }
+
+
+app_logger.info("Ende App-PrintHub Route Initialization")

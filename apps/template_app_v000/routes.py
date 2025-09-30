@@ -1,6 +1,6 @@
 from flask import render_template, current_app as app, request, jsonify
 from flask_login import current_user
-from . import blueprint
+from . import blueprint, app_logger
 from app.config import Config
 from app.decorators import admin_required, enabled_required
 from app import db
@@ -14,7 +14,7 @@ from icecream import ic
 # from . import socketio_events
 
 config = Config()
-
+app_logger.info("Starte App-Template_app_v000 Route Initialization")
 print("Template_app_v000 Version 0.0.0")
 
 
@@ -24,3 +24,6 @@ def Template_app_v000_index():
     return render_template(
         "Template_app_v000_index.html", user=current_user, config=config
     )
+
+
+app_logger.info("Starte Ende Route Initialization")

@@ -1,3 +1,5 @@
+// Globale Variable für den aktuellen Pfad
+let currentPath = "/";
 document.addEventListener("DOMContentLoaded", function () {
   // Hamburger Menu Funktionalität (unverändert)
   const hamburgerMenu = document.getElementById("hamburgerMenu");
@@ -187,16 +189,14 @@ function createFileElement(name, fileInfo) {
 }
 
 function showFolderDetails(name, content) {
-  const detailsDiv = document.querySelector(".file-details");
-  let detailsHtml = `<strong>Ordner: ${name}</strong><br><br>`;
+  const detailsDiv = document.querySelector(".file-details-view");
+  let detailsHtml = "";
 
   if (content && Object.keys(content).length > 0) {
-    detailsHtml += "Inhalt:<br>";
     Object.keys(content).forEach((itemName) => {
       const item = content[itemName];
-      if (item.type === "file") {
-        detailsHtml += `📄 ${itemName} (${formatFileSize(item.size || 0)})<br>`;
-      } else {
+      // Nur Ordner anzeigen, keine Dateien
+      if (item.type !== "file") {
         detailsHtml += `📁 ${itemName}/<br>`;
       }
     });
@@ -208,7 +208,7 @@ function showFolderDetails(name, content) {
 }
 
 function showFileDetails(name, fileInfo) {
-  const detailsDiv = document.querySelector(".file-details");
+  const detailsDiv = document.querySelector(".file-details-view");
   let detailsHtml = `<strong>Datei: ${name}</strong><br><br>`;
   detailsHtml += `Größe: ${formatFileSize(fileInfo.size || 0)}<br>`;
   detailsHtml += `Typ: ${fileInfo.type || "Unbekannt"}`;
@@ -219,7 +219,7 @@ function showFileDetails(name, fileInfo) {
 function initFileBrowser() {
   console.log("hole die Json's");
   const fileThreeDiv = document.querySelector(".file-three");
-  const fileDetailsDiv = document.querySelector(".file-details");
+  const fileDetailsDiv = document.querySelector(".file-details-view");
 
   // Name-Mapping für bessere Anzeige
   const folderNameMapping = {
@@ -260,9 +260,14 @@ function initFileBrowser() {
     "NexusPlayer_app_content_device",
     "NexusPlayer_app_content_log",
     "NexusPlayer_app_content_temp",
+    "NexusPlayer_app_content_template",
     "NexusPlayer_app_content_offline",
     "NexusPlayer_app_content_playlist",
   ];
+
+  // Nicht Admin-Ordner sind diese
+  // NexusPlayer_app_content_images: "Bilder",
+  // NexusPlayer_app_content_webpages: "Webseiten",
 
   // 4. Filtere Admin-Ordner raus (nur für normale User)
   const isAdminManuel = false; // TODO: Echte Admin-Prüfung implementieren
@@ -323,12 +328,12 @@ function initFileBrowser() {
     });
   }
 }
-
 function createSimpleFolder(
   displayName,
   folderContent,
   isAdminFolder = false,
-  originalName = null
+  originalName = null,
+  parentPath = ""
 ) {
   const folderDiv = document.createElement("div");
 
@@ -336,8 +341,15 @@ function createSimpleFolder(
   const folderHeader = document.createElement("div");
   folderHeader.style.cursor = "pointer";
   folderHeader.style.padding = "5px";
+  folderHeader.style.userSelect = "none";
+  folderHeader.title = displayName; // Tooltip für lange Namen
 
-  // Hat dieser Ordner Unterordner?
+  // Aktueller vollständiger Pfad
+  const fullPath = parentPath
+    ? `${parentPath}/${displayName}`
+    : `/${displayName}`;
+
+  // Hat dieser Ordner Unterelemente?
   const hasSubfolders = folderContent && Object.keys(folderContent).length > 0;
 
   // Text mit oder ohne Pfeil
@@ -348,16 +360,13 @@ function createSimpleFolder(
   }
 
   // Click auf Ordner
-  folderHeader.addEventListener("click", function () {
+  folderHeader.addEventListener("click", function (e) {
+    e.stopPropagation();
     const nameForProcessing = originalName || displayName;
-    console.log(
-      "Ordner geklickt:",
-      displayName,
-      "(Original:",
-      nameForProcessing,
-      ")"
-    );
+    console.log("Ordner geklickt:", displayName, "Pfad:", fullPath);
+
     showFolderDetails(displayName, folderContent);
+    updateCurrentPath(fullPath);
 
     // Unterordner auf/zuklappen
     if (hasSubfolders) {
@@ -383,25 +392,188 @@ function createSimpleFolder(
 
     Object.keys(folderContent).forEach((itemName) => {
       const item = folderContent[itemName];
-      const subDiv = document.createElement("div");
-      subDiv.style.padding = "3px";
-      subDiv.style.cursor = "pointer";
 
       if (item.type === "file") {
-        subDiv.innerHTML = `📄 ${itemName}`;
+        // ==================== DATEI ====================
+        const fileDiv = document.createElement("div");
+        fileDiv.style.padding = "3px";
+        fileDiv.style.cursor = "pointer";
+        fileDiv.style.userSelect = "none";
+        fileDiv.title = itemName; // Tooltip für lange Dateinamen
+        fileDiv.innerHTML = `&nbsp;&nbsp;├─ 📄 ${itemName}`;
+
+        fileDiv.addEventListener("click", function (e) {
+          e.stopPropagation();
+          console.log(
+            "Datei geklickt:",
+            itemName,
+            "Pfad:",
+            `${fullPath}/${itemName}`
+          );
+          updateCurrentPath(`${fullPath}/${itemName}`);
+          showFileDetails(itemName, item);
+        });
+
+        subContainer.appendChild(fileDiv);
       } else {
-        subDiv.innerHTML = `📁 ${itemName}`;
+        // ==================== UNTERORDNER (REKURSIV) ====================
+        const subFolderElement = createSimpleFolder(
+          itemName,
+          item.content || item,
+          isAdminFolder,
+          null,
+          fullPath // Vollständigen Pfad weitergeben
+        );
+        subContainer.appendChild(subFolderElement);
       }
-
-      subDiv.addEventListener("click", function () {
-        console.log("Unterelement geklickt:", itemName);
-      });
-
-      subContainer.appendChild(subDiv);
     });
 
     folderDiv.appendChild(subContainer);
   }
 
   return folderDiv;
+}
+
+function updateCurrentPath(newPath) {
+  currentPath = newPath;
+  const currentPathElement = document.getElementById("current-path");
+  if (currentPathElement) {
+    currentPathElement.textContent = `Aktueller Pfad: ${currentPath}`;
+  }
+
+  // NEU: Button-Status aktualisieren
+  updateButtonStates();
+}
+
+function updateButtonStates() {
+  const newFolderButton = document.querySelector(".btn-warning");
+
+  if (newFolderButton) {
+    if (currentPath === "/") {
+      newFolderButton.disabled = true;
+    } else {
+      newFolderButton.disabled = false;
+    }
+  }
+}
+
+function showNewFolderModal() {
+  document.getElementById("newFolderModal").style.display = "block";
+  const newFolderModalPath = document.getElementById("newFolderModalPath");
+  const currentPathElement = document.getElementById("current-path");
+
+  if (currentPathElement) {
+    newFolderModalPath.innerHTML = `Pfad für neuen Ordner: <strong>${currentPath}</strong>`;
+  }
+}
+function hideNewFolderModal() {
+  document.getElementById("newFolderModal").style.display = "none";
+}
+
+function createNewFolder() {
+  const newFolderName = document.getElementById("newFolderName").value;
+  const errorDiv = document.getElementById("folderNameError");
+  let errorMessage = "";
+  let errorMessageState = false;
+  const currentPathOrigin = document.getElementById("current-path").textContent;
+  const currentPath = currentPathOrigin.replace("Aktueller Pfad: ", "");
+
+  // Log Meldung
+  console.log("Neuer Ordnername:", newFolderName);
+  console.log("_", currentPath, "_");
+
+  // Führe eine umfangreichen Check aus.
+  // Ordnername leer?
+  if (newFolderName === "") {
+    errorMessage = "Der Ordnername darf nicht leer sein.";
+    errorMessageState = true;
+  }
+
+  if (errorMessageState) {
+    errorDiv.style.display = "block";
+    errorDiv.innerHTML = errorMessage;
+    return;
+  } else {
+    // ÄNDERUNG: Fehlermeldung verstecken vor dem Fetch
+    errorDiv.style.display = "none";
+    fetchNewFolder(newFolderName, currentPath);
+  }
+
+  // ENTFERNT: Das Leeren passiert jetzt nur bei Erfolg in fetchNewFolder
+  // document.getElementById("newFolderName").value = "";
+}
+
+function fetchNewFolder(newFolderName, currentPath) {
+  fetch(url_new_folder, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      new_folder_name: newFolderName,
+      current_path: currentPath,
+    }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      console.log(data);
+      if (data.success) {
+        // Modal schließen
+        hideNewFolderModal();
+        // Input-Feld leeren
+        document.getElementById("newFolderName").value = "";
+        // Erfolgsmeldung anzeigen
+        showSuccessMessage(data.message);
+
+        // NEU: Verwende die bestehende loadPage() Funktion
+        setTimeout(() => {
+          loadPage(url_files).then(() => {
+            initFileBrowser();
+          });
+        }, 500);
+      } else {
+        // Fehlermeldung im Modal anzeigen
+        const errorDiv = document.getElementById("folderNameError");
+        errorDiv.style.display = "block";
+        errorDiv.innerHTML = data.message;
+      }
+    })
+    .catch((error) => {
+      console.error("Fehler:", error);
+      const errorDiv = document.getElementById("folderNameError");
+      errorDiv.style.display = "block";
+      errorDiv.innerHTML = "Ein Fehler ist aufgetreten.";
+    });
+}
+
+function showSuccessMessage(message) {
+  // Erfolgsmeldung erstellen oder anzeigen
+  let successDiv = document.getElementById("successMessage");
+
+  if (!successDiv) {
+    // Erstelle die Erfolgsmeldung einmalig
+    successDiv = document.createElement("div");
+    successDiv.id = "successMessage";
+    successDiv.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: #28a745;
+      color: white;
+      padding: 15px;
+      border-radius: 5px;
+      z-index: 2000;
+      display: none;
+    `;
+    document.body.appendChild(successDiv);
+  }
+
+  // Meldung setzen und anzeigen
+  successDiv.innerHTML = message;
+  successDiv.style.display = "block";
+
+  // Nach 3 Sekunden wieder verstecken
+  setTimeout(() => {
+    successDiv.style.display = "none";
+  }, 3000);
 }

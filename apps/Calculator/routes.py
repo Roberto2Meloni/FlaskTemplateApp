@@ -1,6 +1,6 @@
 from flask import render_template, current_app as app, request, jsonify
 from flask_login import current_user
-from . import blueprint
+from . import blueprint, app_logger
 from app.config import Config
 from app.decorators import admin_required, enabled_required
 from app import db
@@ -16,7 +16,7 @@ from .models import CalculatorCalcWay
 
 
 config = Config()
-
+app_logger.info("Starte Routing für APP-CALCULATOR")
 print("Calculator Version 0.0.0")
 
 
@@ -78,3 +78,6 @@ def show_saved_calc():
     return jsonify(
         {"success": True, "calculations": calc_list, "count": len(calc_list)}
     )
+
+
+app_logger.info("Starte Routing für APP-CALCULATOR")

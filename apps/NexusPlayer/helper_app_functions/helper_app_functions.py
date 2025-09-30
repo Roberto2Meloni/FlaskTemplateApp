@@ -1,6 +1,71 @@
 import os
 import json
 
+# Definition der Pfade und Ordner mapping
+root_path = os.getcwd()
+protected_content_path = os.path.join(
+    root_path,
+    "app",
+    "imported_apps",
+    "develop_release",
+    "NexusPlayer",
+    "protected_content",
+)
+path_NexusPlayer_app_content_device = os.path.join(
+    protected_content_path,
+    "NexusPlayer_app_content_device",
+)
+path_NexusPlayer_app_content_images = os.path.join(
+    protected_content_path,
+    "NexusPlayer_app_content_images",
+)
+path_NexusPlayer_app_content_log = os.path.join(
+    protected_content_path,
+    "NexusPlayer_app_content_log",
+)
+path_NexusPlayer_app_content_offline = os.path.join(
+    protected_content_path,
+    "NexusPlayer_app_content_offline",
+)
+path_NexusPlayer_app_content_playlist = os.path.join(
+    protected_content_path,
+    "NexusPlayer_app_content_playlist",
+)
+path_NexusPlayer_app_content_temp = os.path.join(
+    protected_content_path,
+    "NexusPlayer_app_content_temp",
+)
+path_NexusPlayer_app_content_template = os.path.join(
+    protected_content_path,
+    "NexusPlayer_app_content_template",
+)
+path_NexusPlayer_app_content_webpages = os.path.join(
+    protected_content_path,
+    "NexusPlayer_app_content_webpages",
+)
+
+
+map_folder = {
+    "/Bilder": path_NexusPlayer_app_content_images,
+    "/Log": path_NexusPlayer_app_content_log,
+    "/Geräte": path_NexusPlayer_app_content_device,
+    "/Offline": path_NexusPlayer_app_content_offline,
+    "/Playlists": path_NexusPlayer_app_content_playlist,
+    "/Temp": path_NexusPlayer_app_content_temp,
+    "/Templates": path_NexusPlayer_app_content_template,
+    "/Webseiten": path_NexusPlayer_app_content_webpages,
+}
+
+
+def create_all_protected_content_folders():
+    """
+    Erstellt alle Ordner im protected_content_path
+    """
+    for folder in map_folder:
+        folder_path = map_folder[folder]
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+
 
 def get_directory_structure(path):
     """
@@ -138,3 +203,6 @@ def get_both():
     # print(30 * "-")
 
     return full_architecture, simpel_architecture
+
+
+create_all_protected_content_folders()
