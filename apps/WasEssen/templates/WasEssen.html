@@ -1,9 +1,50 @@
-{% extends "layouts/web_app_layouts/WasEssen_web_app_base.html" %} {%
-block app_styles %}
+{% extends "layouts/web_app_layouts/WasEssen_web_app_base.html" %} {% block
+app_styles %}
 <link
   rel="stylesheet"
   href="{{ url_for('WasEssen.static', filename='css/WasEssen.css') }}"
 />
-{% endblock %} {% block content %} {% if current_user|has_admin_rights %}
-<h4>Du bist Admin</h4>
-{% endif %} {% endblock %}
+{% endblock %} {% block content %}
+<div class="page-container">
+  <!-- Header -->
+  <div class="header">
+    <h1>🍽️ Was essen wir heute?</h1>
+    <p class="subtitle">Dreh am Rad und lass das Schicksal entscheiden!</p>
+  </div>
+
+  <!-- Haupt-Bereich: Rad + Ergebnis nebeneinander -->
+  <div class="main-content">
+    <!-- Glücksrad Container -->
+    <div class="wheel-container">
+      <!-- Pfeil der nach unten zeigt -->
+      <div class="arrow"></div>
+
+      <!-- Das Rad selbst -->
+      <div class="wheel" id="wheel">
+        <!-- Canvas = Zeichenfläche für das Rad -->
+        <canvas id="wheelCanvas"></canvas>
+
+        <!-- Knopf in der Mitte -->
+        <div class="center-button" id="spinButton">
+          <div class="button-text">DREHEN</div>
+          <div class="button-emoji">🎲</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ergebnis-Anzeige (rechts vom Rad) -->
+    <div class="result-display" id="result" style="display: none">
+      <div class="result-emoji" id="resultEmoji">🍕</div>
+      <div class="result-name" id="resultName">Pizza Margherita</div>
+    </div>
+  </div>
+</div>
+
+<!-- Daten vom Backend an JavaScript übergeben -->
+<script>
+  // Python-Daten (FOODS aus routes.py) in JavaScript verfügbar machen
+  window.FOODS_DATA = {{ FOODS | tojson }};
+  console.log('🍕 Backend-Daten geladen:', window.FOODS_DATA.length, 'Gerichte');
+</script>
+
+{% endblock %}
