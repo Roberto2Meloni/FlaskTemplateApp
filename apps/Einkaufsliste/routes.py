@@ -620,7 +620,7 @@ def request_join_group(group_id):
 
     if group is None:
         flash("Diese Gruppe existiert nicht!", "warning")
-        return redirect(url_for("einkauf.group"))
+        return redirect(url_for("Einkaufsliste.group"))
 
     # Prüfe ob der Benutzer Mitglied ist
     member_entry = (
@@ -636,14 +636,14 @@ def request_join_group(group_id):
 
     if not group.group_visible and not user_in_group:
         flash("Diese Gruppe existiert nicht!", "warning")
-        return redirect(url_for("einkauf.group"))
+        return redirect(url_for("Einkaufsliste.group"))
 
     if request.method == "POST":
         flash(
             "Deine Anfrage wurde erfolgreich an den Gruppen-Besitzer gesendet! Diese Funktion ist noch nicht implementiert!",
             "success",
         )
-        return redirect(url_for("einkauf.group"))
+        return redirect(url_for("Einkaufsliste.group"))
 
     return render_template(
         "request_join_group.html",
@@ -663,7 +663,7 @@ def join_or_leave_group(group_id):
 
     if group is None:
         flash("Diese Gruppe existiert nicht!", "warning")
-        return redirect(url_for("einkauf.group"))
+        return redirect(url_for("Einkaufsliste.group"))
 
     # Prüfe ob der Benutzer Mitglied ist
     member_entry = (
@@ -679,11 +679,11 @@ def join_or_leave_group(group_id):
 
     if not group.group_public and not user_in_group:
         flash("Es muss eine Anfrage an den Gruppen-Owner gesendet werden!", "warning")
-        return redirect(url_for("einkauf.request_join_group", group_id=group_id))
+        return redirect(url_for("Einkaufsliste.request_join_group", group_id=group_id))
 
     if not group.group_visible and not user_in_group:
         flash("Diese Gruppe existiert nicht!", "warning")
-        return redirect(url_for("einkauf.group"))
+        return redirect(url_for("Einkaufsliste.group"))
 
     if request.method == "POST":
         if not user_in_group:
@@ -711,7 +711,7 @@ def join_or_leave_group(group_id):
                 "success",
             )
 
-        return redirect(url_for("einkauf.group"))
+        return redirect(url_for("Einkaufsliste.group"))
 
     return render_template(
         "join_or_leave_group.html",
@@ -728,28 +728,27 @@ def join_or_leave_group(group_id):
 def modify_group(group_id):
     app_logger.debug("modify_group wurde angesurft")
     new_registration = User.query.filter(User.user_enable.is_(None)).count()
-    # Hier fehlt noch die Filterung nach Gruppen, bei welchen visibal = true ist, allerdings sollen die Eigene Gruppen angezeigt werden
+
     group = EinkaufslisteGroup.query.get(group_id)
+
+    # 7. Gruppe existiert nicht
+    if group is None:
+        flash("Diese Gruppe existiert nicht!", "warning")
+        return redirect(url_for("Einkaufsliste.group"))
+
     form = ModifyGroup(obj=group)
     form.group_members.choices = [
         (user.id, user.username)
         for user in User.query.filter(User.id != current_user.id).all()
     ]
 
-    # 7. Gruppe existiert nicht
-    # --> Gruppe nicht gefunden
-    if group is None:
-        flash("Diese Gruppe existiert nicht!", "warning")
-        return redirect(url_for("einkauf.group"))
-
-    # Setzen der Auswahlmöglichkeiten und der Standardwerte für die Gruppenmitglieder
-    form.group_members.data = [user.id for user in group.group_members]
+    # NUR bei GET-Request die Standardwerte setzen!
+    if request.method == "GET":
+        form.group_members.data = [user.id for user in group.group_members]
 
     if current_user.id != group.group_owner and not check_if_user_has_admin_rights(
         app, current_user.id
     ):
-        # Erstellen Sie eine Subquery, die prüft, ob eine Mitgliedschaft existiert
-        # Prüfe ob der Benutzer Mitglied ist
         member_entry = (
             db.session.query(group_membership)
             .filter(
@@ -761,36 +760,32 @@ def modify_group(group_id):
 
         user_in_group = member_entry is not None
 
-        # Szenarion um abzudeken
-        # 1. User ist Mitglied der Gruppe, die Gruppe ist öffentlich
-        # Benutzer kann die Gruppe verlassen
-        # 2. User ist nicht Mitglied der Gruppe, aber die Gruppe ist öffentlich
-        # Benutzer kann die Gruppe beitreten (ohne Admin zu fragen)
         if group.group_public:
-            return redirect(url_for("einkauf.join_or_leave_group", group_id=group_id))
+            return redirect(
+                url_for("Einkaufsliste.join_or_leave_group", group_id=group_id)
+            )
 
-        # 3. User ist Mitglied der Gruppe, aber die Gruppe ist nicht öffentlich
-        # Benutzer kann die Gruppe verlassen
         if not group.group_public and user_in_group:
-            return redirect(url_for("einkauf.join_or_leave_group", group_id=group_id))
+            return redirect(
+                url_for("Einkaufsliste.join_or_leave_group", group_id=group_id)
+            )
 
-        # 4. User ist nicht Mitglied der Gruppe, aber die Gruppe ist nicht öffentlich
-        # Benutzer kann Anfrage an Admin stellen, der er in die Gruppe beitreten kann
         if not group.group_public and not user_in_group:
             flash(
                 "Es muss eine Anfrage an den Gruppen-Owner gesendet werden!", "warning"
             )
-            return redirect(url_for("einkauf.request_join_group", group_id=group_id))
-        # 5. User ist Mitglied der Gruppe, aber die Gruppe ist nicht sichtbar
-        # Benutzer kann die Gruppe verlassen
-        if not group.group_visible and user_in_group:
-            return redirect(url_for("einkauf.join_or_leave_group", group_id=group_id))
+            return redirect(
+                url_for("Einkaufsliste.request_join_group", group_id=group_id)
+            )
 
-        # 6. User ist nicht Mitglied der Gruppe, aber die Gruppe ist nicht sichtbar
-        # Bei Anfrage an die Seite, kommt die Meldung --> Gruppe nicht gefunden
+        if not group.group_visible and user_in_group:
+            return redirect(
+                url_for("Einkaufsliste.join_or_leave_group", group_id=group_id)
+            )
+
         if not group.group_visible and not user_in_group:
             flash("Diese Gruppe existiert nicht!", "warning")
-            return redirect(url_for("einkauf.group"))
+            return redirect(url_for("Einkaufsliste.group"))
 
     if form.validate_on_submit():
         if EinkaufslisteGroup.query.filter(
@@ -798,7 +793,7 @@ def modify_group(group_id):
             EinkaufslisteGroup.group_id != group_id,
         ).first():
             flash("Dieser Gruppenname existiert bereits!", "warning")
-            return redirect(url_for("modify_group", group_id=group_id))
+            return redirect(url_for("Einkaufsliste.modify_group", group_id=group_id))
 
         group.group_name = form.group_name.data
         group.group_public = form.group_public.data
@@ -832,7 +827,10 @@ def modify_group(group_id):
                 "error",
             )
 
-        return redirect(url_for("Einkaufsliste.group"))
+        return redirect(
+            url_for("Einkaufsliste.group")
+        )  # Korrigiert: einkauf statt Einkaufsliste
+
     return render_template(
         "modify_group.html",
         user=current_user,
@@ -843,4 +841,4 @@ def modify_group(group_id):
     )
 
 
-app_logger.info("Starte Routing für APP-EINKAUFSLISTE")
+app_logger.info("Ende Routing für APP-EINKAUFSLISTE")
