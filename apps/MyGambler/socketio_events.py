@@ -5,11 +5,10 @@ from flask import request
 import secrets, string
 
 # Globale Variable
-# global_room_id = "".join(
-#     secrets.choice(string.ascii_letters + string.digits) for _ in range(16)
-# )
+global_room_id = "".join(
+    secrets.choice(string.ascii_letters + string.digits) for _ in range(16)
+)
 
-# print("Die Globale Room ID ist:", global_room_id)
 
 # ===== CHAT-SPEZIFISCHE EVENTS (ohne Konflikt mit __init__.py) =====
 # Die bestehenden Events (connect, disconnect, ping) bleiben in __init__.py

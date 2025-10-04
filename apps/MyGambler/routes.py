@@ -5,7 +5,6 @@ from app.config import Config
 from app.decorators import admin_required, enabled_required
 from app import db
 
-
 # for Debuging
 from icecream import ic
 
@@ -13,17 +12,18 @@ from icecream import ic
 # from app.admin.models import User@
 # from app.helper_functions.helper_db_file import check_if_user_has_admin_rights
 # from . import socketio_events
-# from . import api
 
 config = Config()
-app_logger.info("Starte App-Template_app_v000 Route Initialization")
-print("Template_app_v000 Version 0.0.0")
+app_logger.info("Starte App-MyGambler Route Initialization")
+print("MyGambler Version 0.0.0")
 
 
-@blueprint.route("/Template_app_v000_index", methods=["GET"])
+@blueprint.route("/MyGambler", methods=["GET"])
 @enabled_required
-def Template_app_v000_index():
-    return render_template("Template_app_v000.html", user=current_user, config=config)
+def MyGambler():
+    return render_template(
+        "MyGambler.html", user=current_user, config=config
+    )
 
 
 app_logger.info("Starte Ende Route Initialization")

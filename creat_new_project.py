@@ -1,30 +1,27 @@
 import os
 import shutil
+import re
 from datetime import datetime
+from typing import List, Tuple
 
 
-def get_current_date_formatted():
+def get_current_date_formatted() -> str:
     """Gibt das heutige Datum im Format dd.mm.yyyy zurück"""
     today = datetime.now()
-    day = today.day
-    month = today.month
-    year = today.year
-
-    return f"{day:02d}.{month:02d}.{year}"
+    return f"{today.day:02d}.{today.month:02d}.{today.year}"
 
 
-def replace_template_content(app_path, app_name):
+def replace_template_content(app_path: str, app_name: str) -> None:
     """Ersetzt Template-Einträge in Dateinamen und Dateiinhalten"""
-    template_strings = [
-        "Template_app_v000_index",  # Längerer String zuerst
-        "Template_app_v000",  # Kürzerer String danach
+
+    # Template-Strings mit ihren Ersetzungen definieren
+    template_replacements = [
+        ("Template_app_v000_index", f"{app_name}_index"),  # Mit _index Suffix
+        ("Template_app_v000", app_name),  # Ohne Suffix
     ]
 
-    # Aktuelles Datum für README
     current_date = get_current_date_formatted()
-
-    # Liste für umzubenennende Dateien/Ordner
-    items_to_rename = []
+    items_to_rename: List[Tuple[str, str, str]] = []
 
     # Rekursiv durch alle Dateien und Ordner gehen
     for root, dirs, files in os.walk(app_path):
@@ -33,26 +30,74 @@ def replace_template_content(app_path, app_name):
             file_path = os.path.join(root, file)
 
             # Dateiinhalt ersetzen (nur bei Textdateien)
+            content_changed = False
             try:
-                # Versuche als Textdatei zu öffnen
                 with open(file_path, "r", encoding="utf-8") as f:
                     content = f.read()
 
-                content_changed = False
-
                 # Template-Strings ersetzen (längeren zuerst!)
-                for template_string in template_strings:
-                    if template_string in content:
-                        content = content.replace(template_string, app_name)
+                for template_str, replacement in template_replacements:
+                    if template_str in content:
+                        content = content.replace(template_str, replacement)
+                        content_changed = True
+
+                # Spezielle Ersetzung für HTML-Referenzen in render_template()
+                # Template_app_v000_index.html → AppName.html (ohne _index)
+                html_template_pattern = "Template_app_v000_index.html"
+                html_replacement = f"{app_name}.html"
+                if html_template_pattern in content:
+                    content = content.replace(html_template_pattern, html_replacement)
+                    content_changed = True
+
+                # Auch Template_app_v000.html → AppName.html
+                html_template_pattern2 = "Template_app_v000.html"
+                if html_template_pattern2 in content:
+                    content = content.replace(html_template_pattern2, html_replacement)
+                    content_changed = True
+
+                # Blueprint und AppLogger Anpassungen (nur in Python-Dateien)
+                if file.endswith(".py"):
+                    # Blueprint name und url_prefix anpassen
+                    # Blueprint("Test05", ... ) → Blueprint("AppName", ... )
+                    blueprint_pattern = r'Blueprint\(\s*"Template_app_v000"'
+                    if re.search(blueprint_pattern, content):
+                        content = re.sub(
+                            blueprint_pattern, f'Blueprint(\n    "{app_name}"', content
+                        )
+                        content_changed = True
+
+                    # url_prefix="/Template_app_v000" → url_prefix="/AppName"
+                    url_prefix_pattern = r'url_prefix="/Template_app_v000"'
+                    if re.search(url_prefix_pattern, content):
+                        content = re.sub(
+                            url_prefix_pattern, f'url_prefix="/{app_name}"', content
+                        )
+                        content_changed = True
+
+                    # static_url_path="/Template_app_v000_static" → static_url_path="/AppName_static"
+                    static_url_pattern = r'static_url_path="/Template_app_v000_static"'
+                    if re.search(static_url_pattern, content):
+                        content = re.sub(
+                            static_url_pattern,
+                            f'static_url_path="/{app_name}_static"',
+                            content,
+                        )
+                        content_changed = True
+
+                    # AppLogger("APP-TEMPLATE_APP_V000") → AppLogger("APP-APPNAME")
+                    # App-Name in Großbuchstaben für Logger
+                    app_logger_pattern = r'AppLogger\("APP-TEMPLATE_APP_V000"\)'
+                    if re.search(app_logger_pattern, content):
+                        content = re.sub(
+                            app_logger_pattern,
+                            f'AppLogger("APP-{app_name.upper()}")',
+                            content,
+                        )
                         content_changed = True
 
                 # Datumsfelder im README ersetzen
-                if file.lower() == "readme.md" or "readme" in file.lower():
-                    import re
-
-                    # Created: Datum ersetzen
+                if "readme" in file.lower():
                     if "Created:" in content:
-                        # Erkennt sowohl dd.mm.yyyy als auch dd.mmm.yyyy Format
                         content = re.sub(
                             r"Created:\s*\d{1,2}\.\d{1,2}\.\d{4}",
                             f"Created: {current_date}",
@@ -64,11 +109,8 @@ def replace_template_content(app_path, app_name):
                             content,
                         )
                         content_changed = True
-                        print(f"📅 'Created:' Datum aktualisiert auf: {current_date}")
 
-                    # Last Update: Datum ersetzen
                     if "Last Update:" in content:
-                        # Erkennt sowohl dd.mm.yyyy als auch dd.mmm.yyyy Format
                         content = re.sub(
                             r"Last Update:\s*\d{1,2}\.\d{1,2}\.\d{4}",
                             f"Last Update: {current_date}",
@@ -80,9 +122,6 @@ def replace_template_content(app_path, app_name):
                             content,
                         )
                         content_changed = True
-                        print(
-                            f"📅 'Last Update:' Datum aktualisiert auf: {current_date}"
-                        )
 
                 # Datei nur schreiben wenn sich etwas geändert hat
                 if content_changed:
@@ -91,14 +130,24 @@ def replace_template_content(app_path, app_name):
                     print(f"📝 Inhalt aktualisiert: {file}")
 
             except (UnicodeDecodeError, PermissionError):
-                # Binärdatei oder Datei ohne Leserechte - überspringen
                 pass
 
-            # Dateiname prüfen für Umbenennung (beide Template-Strings)
+            # Dateiname prüfen für Umbenennung
             new_filename = file
-            for template_string in template_strings:
-                if template_string in new_filename:
-                    new_filename = new_filename.replace(template_string, app_name)
+
+            # Spezielle Behandlung für HTML-Dateien: kein _index Suffix
+            if file.lower().endswith(".html"):
+                if "Template_app_v000_index" in new_filename:
+                    new_filename = new_filename.replace(
+                        "Template_app_v000_index", app_name
+                    )
+                elif "Template_app_v000" in new_filename:
+                    new_filename = new_filename.replace("Template_app_v000", app_name)
+            else:
+                # Für alle anderen Dateien: normale Ersetzungsregeln
+                for template_str, replacement in template_replacements:
+                    if template_str in new_filename:
+                        new_filename = new_filename.replace(template_str, replacement)
 
             # Wenn sich der Dateiname geändert hat, zur Umbenennung hinzufügen
             if new_filename != file:
@@ -106,14 +155,13 @@ def replace_template_content(app_path, app_name):
                 new_path = os.path.join(root, new_filename)
                 items_to_rename.append((old_path, new_path, "file"))
 
-        # Ordnernamen prüfen für Umbenennung (beide Template-Strings)
+        # Ordnernamen prüfen für Umbenennung
         for dir_name in dirs:
             new_dirname = dir_name
-            for template_string in template_strings:
-                if template_string in new_dirname:
-                    new_dirname = new_dirname.replace(template_string, app_name)
+            for template_str, replacement in template_replacements:
+                if template_str in new_dirname:
+                    new_dirname = new_dirname.replace(template_str, replacement)
 
-            # Wenn sich der Ordnername geändert hat, zur Umbenennung hinzufügen
             if new_dirname != dir_name:
                 old_path = os.path.join(root, dir_name)
                 new_path = os.path.join(root, new_dirname)
@@ -125,14 +173,102 @@ def replace_template_content(app_path, app_name):
         try:
             os.rename(old_path, new_path)
             icon = "📁" if item_type == "dir" else "📄"
-            print(
-                f"{icon} Umbenannt: {os.path.basename(old_path)} → {os.path.basename(new_path)}"
-            )
+            old_name = os.path.basename(old_path)
+            new_name = os.path.basename(new_path)
+            print(f"{icon} Umbenannt: {old_name} → {new_name}")
         except Exception as e:
             print(f"⚠️  Fehler beim Umbenennen von {old_path}: {e}")
 
 
-def create_new_flask_app():
+def modify_route(app_name: str) -> bool:
+    """
+    Fügt die neue App-Route zur routes.py Datei hinzu.
+
+    Ersetzt die Template-Route durch die neue App-Route:
+    - Route: /Template_app_v000_index → /AppName_index
+    - Funktion: Template_app_v000_index() → AppName_index()
+    - HTML: Template_app_v000.html → AppName.html (OHNE _index)
+
+    Args:
+        app_name: Name der neuen App
+
+    Returns:
+        bool: True wenn erfolgreich, False bei Fehler
+    """
+    route_file = os.path.join(os.getcwd(), "routes.py")
+
+    if not os.path.exists(route_file):
+        print(f"⚠️  Warnung: routes.py nicht gefunden unter {route_file}")
+        return False
+
+    try:
+        # Datei einlesen
+        with open(route_file, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        original_content = content
+
+        # 1. Route-Pfad ersetzen: /Template_app_v000_index → /AppName_index
+        content = content.replace(
+            '@blueprint.route("/Template_app_v000_index"',
+            f'@blueprint.route("/{app_name}_index"',
+        )
+
+        # 2. Funktionsname ersetzen: def Template_app_v000_index() → def AppName_index()
+        content = content.replace(
+            "def Template_app_v000_index():", f"def {app_name}_index():"
+        )
+
+        # 3. HTML-Template-Referenz ersetzen: Template_app_v000.html → AppName.html
+        content = re.sub(
+            r'"Template_app_v000(_index)?\.html"', f'"{app_name}.html"', content
+        )
+
+        # Prüfen ob Änderungen vorgenommen wurden
+        if content != original_content:
+            # Datei speichern
+            with open(route_file, "w", encoding="utf-8") as f:
+                f.write(content)
+            print(f"✅ routes.py wurde aktualisiert")
+            print(f"   Route: /{app_name}_index")
+            print(f"   Funktion: {app_name}_index()")
+            print(f"   Template: {app_name}.html")
+            return True
+        else:
+            print(f"ℹ️  Keine Template-Route in routes.py gefunden")
+            return False
+
+    except Exception as e:
+        print(f"❌ Fehler beim Modifizieren von routes.py: {e}")
+        return False
+
+
+def validate_app_name(app_name: str) -> Tuple[bool, str]:
+    """
+    Validiert den App-Namen.
+
+    Returns:
+        Tuple[bool, str]: (ist_gültig, fehlermeldung)
+    """
+    if not app_name:
+        return False, "Der App-Name darf nicht leer sein!"
+
+    if not app_name[0].isupper():
+        return False, "Der App-Name muss mit einem Großbuchstaben beginnen!"
+
+    if " " in app_name:
+        return False, "Der App-Name darf keine Leerzeichen enthalten!"
+
+    if not app_name.replace("_", "").isalnum():
+        return (
+            False,
+            "Der App-Name darf nur Buchstaben, Zahlen und Unterstriche enthalten!",
+        )
+
+    return True, ""
+
+
+def create_new_flask_app() -> None:
     """Erstellt eine neue Flask App basierend auf dem Template"""
 
     # Root-Pfad ermitteln
@@ -142,60 +278,71 @@ def create_new_flask_app():
 
     # Überprüfen ob der apps Ordner existiert
     if not os.path.exists(apps_path):
-        print(f"Fehler: Der Ordner '{apps_path}' existiert nicht!")
+        print(f"❌ Fehler: Der Ordner '{apps_path}' existiert nicht!")
         return
 
     # Überprüfen ob der Template-Ordner existiert
     if not os.path.exists(template_path):
-        print(f"Fehler: Der Template-Ordner '{template_path}' existiert nicht!")
+        print(f"❌ Fehler: Der Template-Ordner '{template_path}' existiert nicht!")
         return
 
     while True:
         # Benutzer nach dem App-Namen fragen
-        app_name = input("Wie soll die neue App heissen? ").strip()
+        app_name = input("\nWie soll die neue App heissen? ").strip()
 
-        # Überprüfen ob der Name leer ist
-        if not app_name:
-            print("Der App-Name darf nicht leer sein!")
-            continue
-
-        # Überprüfen ob der erste Buchstabe ein Großbuchstabe ist
-        if not app_name[0].isupper():
-            print("Der App-Name muss mit einem Großbuchstaben beginnen!")
+        # Name validieren
+        is_valid, error_message = validate_app_name(app_name)
+        if not is_valid:
+            print(f"❌ {error_message}")
             continue
 
         # Überprüfen ob bereits eine App mit diesem Namen existiert
         new_app_path = os.path.join(apps_path, app_name)
         if os.path.exists(new_app_path):
-            print(f"Eine App mit dem Namen '{app_name}' existiert bereits!")
+            print(f"⚠️  Eine App mit dem Namen '{app_name}' existiert bereits!")
             overwrite = input("Möchten Sie sie überschreiben? (j/n): ").strip().lower()
             if overwrite not in ["j", "ja", "y", "yes"]:
                 continue
             else:
-                # Existierenden Ordner löschen
-                shutil.rmtree(new_app_path)
+                try:
+                    shutil.rmtree(new_app_path)
+                    print(f"🗑️  Alte App wurde gelöscht.")
+                except Exception as e:
+                    print(f"❌ Fehler beim Löschen der alten App: {e}")
+                    return
 
         break
 
     try:
         # Template-Ordner kopieren
+        print(f"\n📋 Kopiere Template...")
         shutil.copytree(template_path, new_app_path)
-        print(f"📁 Template wurde kopiert...")
+        print(f"✓ Template wurde kopiert")
 
         # Template-Inhalte anpassen
+        print(f"\n🔄 Passe Template-Inhalte an...")
         replace_template_content(new_app_path, app_name)
 
+        # routes.py modifizieren
+        print(f"\n🔧 Aktualisiere routes.py...")
+        modify_route(app_name)
+
         current_date = get_current_date_formatted()
+        print(f"\n{'=' * 50}")
         print(f"✅ Neue Flask App '{app_name}' wurde erfolgreich erstellt!")
         print(f"📅 Alle Datumswerte wurden auf: {current_date} aktualisiert")
-        print(f"Pfad: {new_app_path}")
+        print(f"📂 Pfad: {new_app_path}")
+        print(f"{'=' * 50}")
 
     except Exception as e:
-        print(f"❌ Fehler beim Erstellen der App: {e}")
+        print(f"\n❌ Fehler beim Erstellen der App: {e}")
+        import traceback
+
+        traceback.print_exc()
 
 
 if __name__ == "__main__":
     print("=" * 50)
-    print("Flask App Template Generator")
+    print("🚀 Flask App Template Generator")
     print("=" * 50)
     create_new_flask_app()
