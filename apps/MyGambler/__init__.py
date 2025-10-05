@@ -10,5 +10,5 @@ blueprint = Blueprint(
     static_url_path="/MyGambler_static",
 )
 
-app_logger = AppLogger("APP-TEMPLATE_APP_V000")
+app_logger = AppLogger("APP-MYGAMBLER")
 app_logger.info("Starte App-MyGambler initiierung")

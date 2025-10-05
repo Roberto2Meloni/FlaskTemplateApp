@@ -13,16 +13,41 @@ from icecream import ic
 # from app.helper_functions.helper_db_file import check_if_user_has_admin_rights
 # from . import socketio_events
 
+# Aktung die Dateien der Templates müssen immer den Prefix der App haben
+# MyGambler_alles_in_kelin_name_der_seite.html
+
+
 config = Config()
 app_logger.info("Starte App-MyGambler Route Initialization")
 print("MyGambler Version 0.0.0")
 
 
-@blueprint.route("/MyGambler", methods=["GET"])
+@blueprint.route("/MyGambler_index", methods=["GET"])
 @enabled_required
-def MyGambler():
+def MyGambler_index():
+    return render_template("MyGambler.html", user=current_user, config=config)
+
+
+@blueprint.route("/dashboard", methods=["GET"])
+@enabled_required
+def dashboard():
+    return render_template("MyGambler_dashboard.html", user=current_user, config=config)
+
+
+@blueprint.route("/slot_maschine", methods=["GET"])
+@enabled_required
+def slot_maschine():
+    print("slot_maschine")
     return render_template(
-        "MyGambler.html", user=current_user, config=config
+        "MyGambler_slot_maschine.html", user=current_user, config=config
+    )
+
+
+@blueprint.route("/app_settings", methods=["GET"])
+@admin_required
+def app_settings():
+    return render_template(
+        "MyGambler_app_settings.html", user=current_user, config=config
     )
 
 

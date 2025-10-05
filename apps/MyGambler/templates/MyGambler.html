@@ -1,9 +1,6 @@
-{% extends "layouts/web_app_layouts/MyGambler_web_app_base.html" %} {%
-block app_styles %}
-<link
-  rel="stylesheet"
-  href="{{ url_for('MyGambler.static', filename='css/MyGambler.css') }}"
-/>
-{% endblock %} {% block content %} {% if current_user|has_admin_rights %}
-<h4>Du bist Admin</h4>
-{% endif %} {% endblock %}
+{% extends "layouts/web_app_layouts/MyGambler_web_app_base.html" %} {% block
+main_content %}
+<!-- Dein spezifischer App-Content -->
+<!-- <h1>Dashboard NexusPlayer</h1> -->
+<p>Hier ist das Dashboard/index</p>
+{% endblock %}

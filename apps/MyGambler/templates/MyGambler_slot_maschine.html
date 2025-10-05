@@ -1,0 +1,83 @@
+<!-- app-content ist übergeordner! -->
+<div class="slot_machin">
+  <div class="slot_machin_area">
+    <!-- TOP DISPLAY (wie bei echten Slot Machines) -->
+    <div class="slot_machin_top_display">
+      <div class="jackpot_display">
+        <span class="jackpot_label">💰 JACKPOT</span>
+        <span class="jackpot_amount">9999</span>
+      </div>
+    </div>
+
+    <div class="slot_machin_area_legend">
+      <h4>📊 Gewinn-Tabelle</h4>
+      <div class="legend_items">
+        <div class="legend_item">
+          <span class="legend_symbols">💎 💎 💎</span>
+          <span class="legend_payout">100x</span>
+        </div>
+        <div class="legend_item">
+          <span class="legend_symbols">⭐ ⭐ ⭐</span>
+          <span class="legend_payout">50x</span>
+        </div>
+        <div class="legend_item">
+          <span class="legend_symbols">🍒 🍒 🍒</span>
+          <span class="legend_payout">20x</span>
+        </div>
+        <div class="legend_item">
+          <span class="legend_symbols">🍋 🍋 🍋</span>
+          <span class="legend_payout">15x</span>
+        </div>
+        <div class="legend_item">
+          <span class="legend_symbols">7️⃣ 7️⃣ 7️⃣</span>
+          <span class="legend_payout">10x</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="slot_machin_area_slot_area">
+      <div class="reels_container">
+        <div class="reel" id="reel1">
+          <div class="reel_symbol">🍒</div>
+          <div class="reel_symbol">🍋</div>
+          <div class="reel_symbol">7️⃣</div>
+        </div>
+        <div class="reel" id="reel2">
+          <div class="reel_symbol">⭐</div>
+          <div class="reel_symbol">🍒</div>
+          <div class="reel_symbol">🍋</div>
+        </div>
+        <div class="reel" id="reel3">
+          <div class="reel_symbol">💎</div>
+          <div class="reel_symbol">7️⃣</div>
+          <div class="reel_symbol">⭐</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slot_machin_area_other">
+      <div class="slot_machin_area_other_state">
+        <div id="credits">
+          <div class="state_label">💰 Credits</div>
+          <div class="state_value">100</div>
+        </div>
+        <div id="winn">
+          <div class="state_label">🎉 Gewinn</div>
+          <div class="state_value">0</div>
+        </div>
+        <div id="bet">
+          <div class="state_label">🎯 Einsatz</div>
+          <div class="state_value">5</div>
+        </div>
+      </div>
+      <div class="slot_machin_area_other_button">
+        <button class="btn btn-warning" onclick="reduceBet()">
+          ➖ Weniger
+        </button>
+        <button class="btn btn-success" onclick="spin()">🎰 SPIN</button>
+        <button class="btn btn-warning" onclick="increaseBet()">➕ Mehr</button>
+        <button class="btn btn-danger" onclick="payOut()">💸 Auszahlen</button>
+      </div>
+    </div>
+  </div>
+</div>
