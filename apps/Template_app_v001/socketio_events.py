@@ -3,6 +3,9 @@ from flask_socketio import emit, join_room, leave_room
 from flask_login import current_user
 from flask import request
 import secrets, string
+from . import app_logger
+
+app_logger.info("Starte App-Template_app_v001 SocketIO Events")
 
 # Globale Variable
 # global_room_id = "".join(
@@ -97,3 +100,5 @@ import secrets, string
 
 # print("✅ Chat-spezifische Socket.IO Events registriert")
 # print(f"🌍 Globale Room ID: {global_room_id}")
+
+app_logger.info("Ende App-Template_app_v001 SocketIO Events")

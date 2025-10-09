@@ -26,4 +26,12 @@ def Template_app_v001_index():
     return render_template("Template_app_v001.html", user=current_user, config=config)
 
 
+@blueprint.route("/app_settings", methods=["GET"])
+@enabled_required
+def app_settings():
+    return render_template(
+        "Template_app_v001_app_settings.html", user=current_user, config=config
+    )
+
+
 app_logger.info("Starte Ende Route Initialization")
