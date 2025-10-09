@@ -16,8 +16,8 @@ def replace_template_content(app_path: str, app_name: str) -> None:
 
     # Template-Strings mit ihren Ersetzungen definieren
     template_replacements = [
-        ("Template_app_v000_index", f"{app_name}_index"),  # Mit _index Suffix
-        ("Template_app_v000", app_name),  # Ohne Suffix
+        ("Template_app_v001_index", f"{app_name}_index"),  # Mit _index Suffix
+        ("Template_app_v001", app_name),  # Ohne Suffix
     ]
 
     current_date = get_current_date_formatted()
@@ -42,15 +42,15 @@ def replace_template_content(app_path: str, app_name: str) -> None:
                         content_changed = True
 
                 # Spezielle Ersetzung für HTML-Referenzen in render_template()
-                # Template_app_v000_index.html → AppName.html (ohne _index)
-                html_template_pattern = "Template_app_v000_index.html"
+                # Template_app_v001_index.html → AppName.html (ohne _index)
+                html_template_pattern = "Template_app_v001_index.html"
                 html_replacement = f"{app_name}.html"
                 if html_template_pattern in content:
                     content = content.replace(html_template_pattern, html_replacement)
                     content_changed = True
 
-                # Auch Template_app_v000.html → AppName.html
-                html_template_pattern2 = "Template_app_v000.html"
+                # Auch Template_app_v001.html → AppName.html
+                html_template_pattern2 = "Template_app_v001.html"
                 if html_template_pattern2 in content:
                     content = content.replace(html_template_pattern2, html_replacement)
                     content_changed = True
@@ -59,23 +59,23 @@ def replace_template_content(app_path: str, app_name: str) -> None:
                 if file.endswith(".py"):
                     # Blueprint name und url_prefix anpassen
                     # Blueprint("Test05", ... ) → Blueprint("AppName", ... )
-                    blueprint_pattern = r'Blueprint\(\s*"Template_app_v000"'
+                    blueprint_pattern = r'Blueprint\(\s*"Template_app_v001"'
                     if re.search(blueprint_pattern, content):
                         content = re.sub(
                             blueprint_pattern, f'Blueprint(\n    "{app_name}"', content
                         )
                         content_changed = True
 
-                    # url_prefix="/Template_app_v000" → url_prefix="/AppName"
-                    url_prefix_pattern = r'url_prefix="/Template_app_v000"'
+                    # url_prefix="/1" → url_prefix="/AppName"
+                    url_prefix_pattern = r'url_prefix="/Template_app_v001"'
                     if re.search(url_prefix_pattern, content):
                         content = re.sub(
                             url_prefix_pattern, f'url_prefix="/{app_name}"', content
                         )
                         content_changed = True
 
-                    # static_url_path="/Template_app_v000_static" → static_url_path="/AppName_static"
-                    static_url_pattern = r'static_url_path="/Template_app_v000_static"'
+                    # static_url_path="/Template_app_v001_static" → static_url_path="/AppName_static"
+                    static_url_pattern = r'static_url_path="/Template_app_v001_static"'
                     if re.search(static_url_pattern, content):
                         content = re.sub(
                             static_url_pattern,
@@ -84,9 +84,9 @@ def replace_template_content(app_path: str, app_name: str) -> None:
                         )
                         content_changed = True
 
-                    # AppLogger("APP-TEMPLATE_APP_V000") → AppLogger("APP-APPNAME")
+                    # AppLogger("APP-Template_app_v001") → AppLogger("APP-APPNAME")
                     # App-Name in Großbuchstaben für Logger
-                    app_logger_pattern = r'AppLogger\("APP-TEMPLATE_APP_V000"\)'
+                    app_logger_pattern = r'AppLogger\("APP-Template_app_v001"\)'
                     if re.search(app_logger_pattern, content):
                         content = re.sub(
                             app_logger_pattern,
@@ -137,12 +137,12 @@ def replace_template_content(app_path: str, app_name: str) -> None:
 
             # Spezielle Behandlung für HTML-Dateien: kein _index Suffix
             if file.lower().endswith(".html"):
-                if "Template_app_v000_index" in new_filename:
+                if "Template_app_v001_index" in new_filename:
                     new_filename = new_filename.replace(
-                        "Template_app_v000_index", app_name
+                        "Template_app_v001_index", app_name
                     )
-                elif "Template_app_v000" in new_filename:
-                    new_filename = new_filename.replace("Template_app_v000", app_name)
+                elif "Template_app_v001" in new_filename:
+                    new_filename = new_filename.replace("Template_app_v001", app_name)
             else:
                 # Für alle anderen Dateien: normale Ersetzungsregeln
                 for template_str, replacement in template_replacements:
@@ -185,9 +185,9 @@ def modify_route(app_name: str) -> bool:
     Fügt die neue App-Route zur routes.py Datei hinzu.
 
     Ersetzt die Template-Route durch die neue App-Route:
-    - Route: /Template_app_v000_index → /AppName_index
-    - Funktion: Template_app_v000_index() → AppName_index()
-    - HTML: Template_app_v000.html → AppName.html (OHNE _index)
+    - Route: /Template_app_v001_index → /AppName_index
+    - Funktion: Template_app_v001_index() → AppName_index()
+    - HTML: Template_app_v001.html → AppName.html (OHNE _index)
 
     Args:
         app_name: Name der neuen App
@@ -208,20 +208,20 @@ def modify_route(app_name: str) -> bool:
 
         original_content = content
 
-        # 1. Route-Pfad ersetzen: /Template_app_v000_index → /AppName_index
+        # 1. Route-Pfad ersetzen: /Template_app_v001_index → /AppName_index
         content = content.replace(
-            '@blueprint.route("/Template_app_v000_index"',
+            '@blueprint.route("/Template_app_v001_index"',
             f'@blueprint.route("/{app_name}_index"',
         )
 
-        # 2. Funktionsname ersetzen: def Template_app_v000_index() → def AppName_index()
+        # 2. Funktionsname ersetzen: def Template_app_v001_index() → def AppName_index()
         content = content.replace(
-            "def Template_app_v000_index():", f"def {app_name}_index():"
+            "def Template_app_v001_index():", f"def {app_name}_index():"
         )
 
-        # 3. HTML-Template-Referenz ersetzen: Template_app_v000.html → AppName.html
+        # 3. HTML-Template-Referenz ersetzen: Template_app_v001.html → AppName.html
         content = re.sub(
-            r'"Template_app_v000(_index)?\.html"', f'"{app_name}.html"', content
+            r'"Template_app_v001(_index)?\.html"', f'"{app_name}.html"', content
         )
 
         # Prüfen ob Änderungen vorgenommen wurden
@@ -274,7 +274,7 @@ def create_new_flask_app() -> None:
     # Root-Pfad ermitteln
     root_path = os.getcwd()
     apps_path = os.path.join(root_path, "apps")
-    template_path = os.path.join(apps_path, "template_app_v000")
+    template_path = os.path.join(apps_path, "Template_app_v001")
 
     # Überprüfen ob der apps Ordner existiert
     if not os.path.exists(apps_path):

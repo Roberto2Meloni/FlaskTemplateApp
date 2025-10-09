@@ -2,7 +2,7 @@
 
 ## App Information
 
-Name: Template_app_v000
+Name: Template_app_v001
 
 Author: Karatekti_123
 
@@ -10,7 +10,7 @@ Created: 28.07.2024
 
 Last Update: 11.07.2025
 
-Last Version: 0.0.0
+Last Version: 0.0.1
 
 System Requirements: 1.3
 

@@ -16,14 +16,14 @@ from icecream import ic
 # from . import api
 
 config = Config()
-app_logger.info("Starte App-Template_app_v000 Route Initialization")
-print("Template_app_v000 Version 0.0.0")
+app_logger.info("Starte App-Template_app_v001 Route Initialization")
+print("Template_app_v001 Version 0.0.0")
 
 
-@blueprint.route("/Template_app_v000_index", methods=["GET"])
+@blueprint.route("/Template_app_v001_index", methods=["GET"])
 @enabled_required
-def Template_app_v000_index():
-    return render_template("Template_app_v000.html", user=current_user, config=config)
+def Template_app_v001_index():
+    return render_template("Template_app_v001.html", user=current_user, config=config)
 
 
 app_logger.info("Starte Ende Route Initialization")
