@@ -2,6 +2,12 @@
     margin: 0;
     padding: 0;
     --color-sidbar-background: #1e1e1e;
+    --color-sidbar-background-hover: #ffffff;
+    /* ← FIX: Nur ein # */
+    --color-sidbar-admin-background: #fcfcfc;
+    --color-active-background: #3498db;
+    --color-text-light: #ffffff;
+    --color-text-dark: #333333;
 }
 
 .main-content {
@@ -17,14 +23,18 @@
     transition: width 0.3s ease;
 }
 
+.navigation-admin {
+    background: var(--color-sidbar-admin-background);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    width: 250px;
+    transition: width 0.3s ease;
+}
+
 .navigation.collapsed {
     width: 70px;
 }
-
-/* .app-content {
-    width: 100%;
-    transition: margin-left 0.3s ease;
-} */
 
 .sidbear_header {
     display: flex;
@@ -33,23 +43,21 @@
     padding: 15px;
 }
 
+/* Hamburger Menu - Normal Sidebar */
 .hamburger-menu {
     background: none;
     border: none;
-    color: white;
+    color: var(--color-text-light);
     font-size: 20px;
     cursor: pointer;
     margin-right: 15px;
     padding: 5px;
     border-radius: 3px;
-}
-
-.hamburger-menu:hover {
-    background: rgba(255, 255, 255, 0.1);
+    transition: background 0.2s ease;
 }
 
 .sidebar_title {
-    color: white;
+    color: var(--color-text-light);
     margin: 0;
     font-weight: bold;
     white-space: nowrap;
@@ -75,19 +83,34 @@ ul {
     list-style: none;
 }
 
+/* Links - Normal Sidebar */
 .list a {
     display: flex;
     flex-direction: row;
     align-items: center;
     padding: 15px;
     text-decoration: none;
-    color: white;
-    transition: background-color 0.2s ease;
+    color: var(--color-text-light);
+    transition: background-color 0.2s ease, color 0.2s ease;
     white-space: nowrap;
 }
 
+/* Hover-Effekt - Weißer Hintergrund, schwarzer Text */
+.list a:hover {
+    background: var(--color-sidbar-background-hover);
+    color: var(--color-text-dark);
+}
+
+/* Aktiver Link - deutlich sichtbar mit blauem Hintergrund */
 .list.active a {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--color-active-background);
+    color: var(--color-text-light);
+}
+
+/* Aktiver Link behält seine Farbe beim Hover */
+.list.active a:hover {
+    background: var(--color-active-background);
+    color: var(--color-text-light);
 }
 
 .icon {
@@ -111,16 +134,65 @@ ul {
     position: relative;
 }
 
+/* Tooltip bei Collapsed - Weißer Hintergrund, schwarzer Text */
 .navigation.collapsed .list:hover::after {
     content: attr(data-tooltip);
     position: absolute;
     left: 70px;
     top: 50%;
     transform: translateY(-50%);
-    color: white;
+    background: var(--color-sidbar-background-hover);
+    /* Weiß */
+    color: var(--color-text-dark);
+    /* Schwarzer Text auf weißem Hintergrund */
     padding: 5px 10px;
     border-radius: 4px;
     font-size: 14px;
     white-space: nowrap;
     z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+
+/* ========================================
+   ADMIN SIDEBAR - Heller Hintergrund
+   ======================================== */
+
+/* Hamburger Menu - Admin */
+.navigation-admin .hamburger-menu {
+    color: var(--color-text-dark);
+}
+
+/* Sidebar Title - Admin */
+.navigation-admin .sidebar_title {
+    color: var(--color-text-dark);
+}
+
+/* Links - Admin Sidebar (dunkler Text auf hellem Hintergrund) */
+.navigation-admin .list a {
+    color: var(--color-text-dark);
+}
+
+/* Hover-Effekt - Admin Sidebar (noch hellerer Hintergrund) */
+.navigation-admin .list a:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* Aktiver Link - Admin (blauer Hintergrund, weißer Text) */
+.navigation-admin .list.active a {
+    background: var(--color-active-background);
+    color: var(--color-text-light);
+}
+
+/* Aktiver Link behält seine Farbe beim Hover - Admin */
+.navigation-admin .list.active a:hover {
+    background: var(--color-active-background);
+    color: var(--color-text-light);
+}
+
+/* Tooltip bei Collapsed Admin Sidebar */
+.navigation-admin.collapsed .list:hover::after {
+    background: var(--color-sidbar-admin-background);
+    color: var(--color-text-dark);
+    border: 1px solid #ddd;
 }

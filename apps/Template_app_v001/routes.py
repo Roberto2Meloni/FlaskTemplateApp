@@ -1,6 +1,6 @@
 from flask import render_template, current_app as app, request, jsonify
 from flask_login import current_user
-from . import blueprint, app_logger
+from . import api_routes, blueprint, app_logger, content_routes, socketio_events
 from app.config import Config
 from app.decorators import admin_required, enabled_required
 from app import db
@@ -26,11 +26,46 @@ def Template_app_v001_index():
     return render_template("Template_app_v001.html", user=current_user, config=config)
 
 
-@blueprint.route("/app_settings", methods=["GET"])
+@blueprint.route("/dashboard", methods=["GET"])
 @enabled_required
+def dashboard():
+    return render_template(
+        "Template_app_v001.html", user=current_user, config=config, content="dashboard"
+    )
+
+
+@blueprint.route("/page_01", methods=["GET"])
+@enabled_required
+def page_01():
+    return render_template(
+        "Template_app_v001.html", user=current_user, config=config, content="page_01"
+    )
+
+
+@blueprint.route("/page_02", methods=["GET"])
+@enabled_required
+def page_02():
+    return render_template(
+        "Template_app_v001.html", user=current_user, config=config, content="page_02"
+    )
+
+
+@blueprint.route("/page_03", methods=["GET"])
+@enabled_required
+def page_03():
+    return render_template(
+        "Template_app_v001.html", user=current_user, config=config, content="page_03"
+    )
+
+
+@blueprint.route("/app_settings", methods=["GET"])
+@admin_required
 def app_settings():
     return render_template(
-        "Template_app_v001_app_settings.html", user=current_user, config=config
+        "Template_app_v001.html",
+        user=current_user,
+        config=config,
+        content="app_settings",
     )
 
 

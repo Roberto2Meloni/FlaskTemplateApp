@@ -1,1 +1,1 @@
-consol.log("Template_app_v001.js loaded");
+console.log("Template_app_v001.js loaded");
