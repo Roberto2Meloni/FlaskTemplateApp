@@ -5,6 +5,12 @@ from app.config import Config
 from app.decorators import admin_required, enabled_required
 from app import db
 
+# - Dynamisches Seiten laden
+# - Hole App Konfiguration
+# - Logs anzeige
+# - Vereinheitlichung Sockets, um diese anzuzeigen
+# - Vereinheitlichung Tastk um diese anziegen zu lassen
+
 
 # for Debuging
 from icecream import ic
