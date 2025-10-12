@@ -68,11 +68,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // FUNKTION: Aktive Links im Admin setzen
   // ========================================
   function setAdminActiveLinks() {
-    console.log("\n--- setAdminActiveLinks() (Admin-Bereich) ---");
-
     const currentURL = window.location.pathname;
-    console.log("Aktuelle URL:", currentURL);
-
     const mainNavLinks = document.querySelectorAll("#navigation .nav-link");
     const mainLinksInfo = [];
 
@@ -158,14 +154,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // Markiere Link als "bereits behandelt"
       if (link.dataset.listenerInstalled === "true") {
-        console.log(`  ⊘ ${linkText} - bereits installiert, überspringe`);
         return;
       }
 
       link.dataset.listenerInstalled = "true";
 
       link.addEventListener("click", function (event) {
-        console.log(`\n🖱️ Admin-Klick: ${linkText}`);
+        // console.log(`\n🖱️ Admin-Klick: ${linkText}`);
 
         if (
           event.ctrlKey ||
@@ -173,12 +168,12 @@ document.addEventListener("DOMContentLoaded", function () {
           event.shiftKey ||
           event.button !== 0
         ) {
-          console.log("  → Spezialklick, Browser übernimmt");
+          // console.log("  → Spezialklick, Browser übernimmt");
           return;
         }
 
         event.preventDefault();
-        console.log("  ✓ preventDefault() - Admin-Seite lädt NICHT neu");
+        // console.log("  ✓ preventDefault() - Admin-Seite lädt NICHT neu");
 
         const url = this.getAttribute("href");
         const page = this.dataset.page;
@@ -240,8 +235,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // FUNKTION: Dynamisches Laden (Admin)
   // ========================================
   async function loadAdminContentDynamically(url, page) {
-    console.log(`\n→ Lade Admin-Content dynamisch: ${page}`);
-
+    // console.log(`\n→ Lade Admin-Content dynamisch: ${page}`);
     const contentArea = document.getElementById("admin-content-area");
 
     if (!contentArea) {
@@ -276,7 +270,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       });
 
-      console.log(`✓ Admin-Content ${page} geladen`);
+      // console.log(`✓ Admin-Content ${page} geladen`);
     } catch (error) {
       console.error("Fehler beim Laden:", error);
       window.location.href = url;
@@ -287,10 +281,10 @@ document.addEventListener("DOMContentLoaded", function () {
   // BEIM LADEN: Aktiven Link setzen
   // ========================================
   if (!window.location.pathname.includes("/app_settings")) {
-    console.log("→ Normale Seite erkannt");
+    // console.log("→ Normale Seite erkannt");
     setActiveLinkByURL();
   } else {
-    console.log("→ Admin-Bereich erkannt");
+    // console.log("→ Admin-Bereich erkannt");
     setAdminActiveLinks();
     // WICHTIG: Event Listeners für Admin installieren
     installAdminEventListeners();
@@ -332,14 +326,14 @@ document.addEventListener("DOMContentLoaded", function () {
   // Zurück/Vor Button Support
   // ========================================
   window.addEventListener("popstate", function (event) {
-    console.log("\n← Zurück/Vor Button");
+    // console.log("\n← Zurück/Vor Button");
 
     if (event.state && event.state.page && event.state.url) {
       if (event.state.isAdmin) {
-        console.log("  → Admin-Seite wird geladen");
+        // console.log("  → Admin-Seite wird geladen");
         loadAdminContentDynamically(event.state.url, event.state.page);
       } else {
-        console.log("  → Normale Seite wird geladen");
+        // console.log("  → Normale Seite wird geladen");
         loadContentDynamically(event.state.url, event.state.page);
       }
     } else {

@@ -1,16 +1,17 @@
 <div class="admin-layout">
-  <!-- Sidebar -->
   {% include
   "layouts/web_app_layouts/Template_app_v001_app_settings_sidbar.html" %}
 
-  <!-- WICHTIG: Admin Content Area mit ID! -->
   <div class="admin-content" id="admin-content-area">
-    {% if settings == 'config' %} {% include
-    'admin/Template_app_v001_admin_config.html' %} {% elif settings == 'sockets'
-    %} {% include 'admin/Template_app_v001_admin_sockets.html' %} {% elif
-    settings == 'tasks' %} {% include 'admin/Template_app_v001_admin_task.html'
-    %} {% elif settings == 'logs' %} {% include
-    'admin/Template_app_v001_admin_logs.html' %} {% else %} {% include
-    'admin/Template_app_v001_admin_config.html' %} {% endif %}
+    {% if settings == 'app_info' %} {% include
+    'admin/Template_app_v001_admin_info.html' %} {% elif settings == 'config' %}
+    {% include 'admin/Template_app_v001_admin_config.html' %} {% elif settings
+    == 'sockets' %} {% include 'admin/Template_app_v001_admin_sockets.html' %}
+    {% elif settings == 'tasks' %} {% include
+    'admin/Template_app_v001_admin_task.html' %} {% elif settings == 'logs' %}
+    {% include 'admin/Template_app_v001_admin_logs.html' %} {% elif settings ==
+    'backup_and_restore' %} {% include
+    'admin/Template_app_v001_admin_backup_restore.html' %} {% else %} {% include
+    'admin/Template_app_v001_admin_info.html' %} {% endif %}
   </div>
 </div>

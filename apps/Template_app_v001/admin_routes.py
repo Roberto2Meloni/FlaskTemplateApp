@@ -3,6 +3,7 @@ from app.decorators import admin_required, enabled_required
 from flask_login import current_user
 from app.config import Config
 from flask import render_template, request
+from .helper_app_functions.helper_basic_app import get_app_info, get_app_logs
 
 app_logger.info("Starte App-Template_app_v001 admin_routes")
 config = Config()
@@ -25,24 +26,29 @@ def is_ajax_request():
 @admin_required
 def app_settings():
     # Admin-Hauptseite lädt IMMER komplett (mit beiden Sidebars)
+    app_infos = get_app_info()
+
     return render_template(
         "Template_app_v001.html",
         user=current_user,
         config=config,
         content="app_settings",
-        settings="config",
+        settings="app_info",
+        app_infos=app_infos,
     )
 
 
 @blueprint.route("/app_settings/config", methods=["GET"])
 @admin_required
 def app_settings_config():
+    app_infos = get_app_info()
     # Bei AJAX: Nur das Admin-Content-Fragment
     if is_ajax_request():
         return render_template(
             "admin/Template_app_v001_admin_config.html",
             user=current_user,
             config=config,
+            app_infos=app_infos,
         )
 
     # Normal: Komplette Seite mit Admin-Layout
@@ -52,17 +58,20 @@ def app_settings_config():
         config=config,
         content="app_settings",
         settings="config",
+        app_infos=app_infos,
     )
 
 
 @blueprint.route("/app_settings/sockets", methods=["GET"])
 @admin_required
 def app_settings_sockets():
+    app_infos = get_app_info()
     if is_ajax_request():
         return render_template(
             "admin/Template_app_v001_admin_sockets.html",
             user=current_user,
             config=config,
+            app_infos=app_infos,
         )
 
     return render_template(
@@ -71,15 +80,20 @@ def app_settings_sockets():
         config=config,
         content="app_settings",
         settings="sockets",
+        app_infos=app_infos,
     )
 
 
 @blueprint.route("/app_settings/tasks", methods=["GET"])
 @admin_required
 def app_settings_tasks():
+    app_infos = get_app_info()
     if is_ajax_request():
         return render_template(
-            "admin/Template_app_v001_admin_task.html", user=current_user, config=config
+            "admin/Template_app_v001_admin_task.html",
+            user=current_user,
+            config=config,
+            app_infos=app_infos,
         )
 
     return render_template(
@@ -88,15 +102,22 @@ def app_settings_tasks():
         config=config,
         content="app_settings",
         settings="tasks",
+        app_infos=app_infos,
     )
 
 
 @blueprint.route("/app_settings/logs", methods=["GET"])
 @admin_required
 def app_settings_logs():
+    app_infos = get_app_info()
+    app_logs = get_app_logs()
     if is_ajax_request():
         return render_template(
-            "admin/Template_app_v001_admin_logs.html", user=current_user, config=config
+            "admin/Template_app_v001_admin_logs.html",
+            user=current_user,
+            config=config,
+            app_infos=app_infos,
+            app_logs=app_logs,
         )
 
     return render_template(
@@ -105,6 +126,54 @@ def app_settings_logs():
         config=config,
         content="app_settings",
         settings="logs",
+        app_infos=app_infos,
+        app_logs=app_logs,
+    )
+
+
+@blueprint.route("/app_settings/backup_and_restore", methods=["GET"])
+@admin_required
+def app_settings_backup_and_restore():
+    app_infos = get_app_info()
+
+    if is_ajax_request():
+        return render_template(
+            "admin/Template_app_v001_admin_backup_and_restore.html",
+            user=current_user,
+            config=config,
+            app_infos=app_infos,
+        )
+
+    return render_template(
+        "Template_app_v001.html",
+        user=current_user,
+        config=config,
+        content="app_settings",
+        settings="logs",
+        app_infos=app_infos,
+    )
+
+
+@blueprint.route("/app_settings/app_info", methods=["GET"])
+@admin_required
+def app_info():
+    app_infos = get_app_info()
+
+    if is_ajax_request():
+        return render_template(
+            "admin/Template_app_v001_admin_info.html",
+            user=current_user,
+            config=config,
+            app_infos=app_infos,
+        )
+
+    return render_template(
+        "Template_app_v001.html",
+        user=current_user,
+        config=config,
+        content="app_settings",
+        settings="app_info",
+        app_infos=app_infos,
     )
 
 

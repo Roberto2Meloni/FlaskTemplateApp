@@ -3,10 +3,21 @@
     <div class="upper_items">
       <li class="list active admin-list">
         <a
+          href="{{ url_for('Template_app_v001.app_info') }}"
+          class="nav-link-admin"
+          data-page="app_info"
+        >
+          <span class="icon">
+            <i class="bi bi-info-circle-fill"></i>
+          </span>
+          <div class="list_element">App Info</div>
+        </a>
+      </li>
+      <li class="list admin-list">
+        <a
           href="{{ url_for('Template_app_v001.app_settings_config') }}"
           class="nav-link-admin"
           data-page="config"
-          data-api-url="{{ url_for('Template_app_v001.app_settings_config') }}"
         >
           <span class="icon">
             <i class="sidebar-icon bi bi-sliders"></i>
@@ -19,7 +30,6 @@
           href="{{ url_for('Template_app_v001.app_settings_sockets') }}"
           class="nav-link-admin"
           data-page="sockets"
-          data-api-url="{{ url_for('Template_app_v001.app_settings_sockets') }}"
         >
           <span class="icon">
             <i class="bi bi-plug-fill"></i>
@@ -32,7 +42,6 @@
           href="{{ url_for('Template_app_v001.app_settings_tasks') }}"
           class="nav-link-admin"
           data-page="tasks"
-          data-api-url="{{ url_for('Template_app_v001.app_settings_tasks') }}"
         >
           <span class="icon">
             <i class="bi bi-list-task"></i>
@@ -45,12 +54,23 @@
           href="{{ url_for('Template_app_v001.app_settings_logs') }}"
           class="nav-link-admin"
           data-page="logs"
-          data-api-url="{{ url_for('Template_app_v001.app_settings_logs') }}"
         >
           <span class="icon">
             <i class="bi bi-file-text-fill"></i>
           </span>
           <div class="list_element">Logs</div>
+        </a>
+      </li>
+      <li class="list">
+        <a
+          href="{{ url_for('Template_app_v001.app_settings_backup_and_restore') }}"
+          class="nav-link-admin"
+          data-page="backup_and_restore"
+        >
+          <span class="icon">
+            <i class="bi bi-cloud-download"></i>
+          </span>
+          <div class="list_element">Backup & Restore</div>
         </a>
       </li>
     </div>
