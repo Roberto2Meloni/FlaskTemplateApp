@@ -113,18 +113,18 @@ def get_file_hirarchy_full():
         "protected_content",
     )
 
-    print(f"Root Path: {root_path}")
-    print(f"Protected Content Path: {nexus_protected_content}")
+    # print(f"Root Path: {root_path}")
+    # print(f"Protected Content Path: {nexus_protected_content}")
 
     # Überprüfen ob der Pfad existiert
     if not os.path.exists(nexus_protected_content):
         error_result = {"error": f"Path does not exist: {nexus_protected_content}"}
-        print(json.dumps(error_result, indent=2))
+        # print(json.dumps(error_result, indent=2))
         return error_result
 
     # Hauptordner auflisten
     main_folders = os.listdir(nexus_protected_content)
-    print(f"Main Folders: {main_folders}")
+    # print(f"Main Folders: {main_folders}")
 
     # Struktur für jeden Hauptordner erstellen
     complete_structure = {}
@@ -136,9 +136,9 @@ def get_file_hirarchy_full():
 
     # JSON ausgeben
     json_output = json.dumps(complete_structure, indent=2, ensure_ascii=False)
-    print("\n=== COMPLETE DIRECTORY STRUCTURE AS JSON ===")
-    print(json_output)
-    print("=== END OF JSON OUTPUT ===\n")
+    # print("\n=== COMPLETE DIRECTORY STRUCTURE AS JSON ===")
+    # print(json_output)
+    # print("=== END OF JSON OUTPUT ===\n")
 
     return complete_structure
 
@@ -173,7 +173,7 @@ def get_file_hirarchy_simple():
 
     if not os.path.exists(nexus_protected_content):
         error_result = {"error": f"Path does not exist: {nexus_protected_content}"}
-        print(json.dumps(error_result, indent=2))
+        # print(json.dumps(error_result, indent=2))
         return error_result
 
     main_folders = os.listdir(nexus_protected_content)
@@ -185,9 +185,9 @@ def get_file_hirarchy_simple():
             complete_structure[folder] = get_directory_names_only(folder_path)
 
     json_output = json.dumps(complete_structure, indent=2, ensure_ascii=False)
-    print("\n=== DIRECTORY STRUCTURE (FOLDERS ONLY) AS JSON ===")
-    print(json_output)
-    print("=== END OF JSON OUTPUT ===\n")
+    # print("\n=== DIRECTORY STRUCTURE (FOLDERS ONLY) AS JSON ===")
+    # print(json_output)
+    # print("=== END OF JSON OUTPUT ===\n")
 
     return complete_structure
 

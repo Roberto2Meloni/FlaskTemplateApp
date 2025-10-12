@@ -5,7 +5,7 @@ from app.config import Config
 from flask import render_template, request
 from .helper_app_functions.helper_admin_app import get_app_info, get_app_logs
 
-app_logger.info("Starte App-Template_app_v001 admin_routes")
+app_logger.info("Starte App-NexusPlayer admin_routes")
 config = Config()
 
 
@@ -29,7 +29,7 @@ def app_settings():
     app_infos = get_app_info()
 
     return render_template(
-        "Template_app_v001.html",
+        "NexusPlayer.html",
         user=current_user,
         config=config,
         content="app_settings",
@@ -45,7 +45,7 @@ def app_settings_config():
     # Bei AJAX: Nur das Admin-Content-Fragment
     if is_ajax_request():
         return render_template(
-            "admin/Template_app_v001_admin_config.html",
+            "admin/NexusPlayer_admin_config.html",
             user=current_user,
             config=config,
             app_infos=app_infos,
@@ -53,7 +53,7 @@ def app_settings_config():
 
     # Normal: Komplette Seite mit Admin-Layout
     return render_template(
-        "Template_app_v001.html",
+        "NexusPlayer.html",
         user=current_user,
         config=config,
         content="app_settings",
@@ -68,14 +68,14 @@ def app_settings_sockets():
     app_infos = get_app_info()
     if is_ajax_request():
         return render_template(
-            "admin/Template_app_v001_admin_sockets.html",
+            "admin/NexusPlayer_admin_sockets.html",
             user=current_user,
             config=config,
             app_infos=app_infos,
         )
 
     return render_template(
-        "Template_app_v001.html",
+        "NexusPlayer.html",
         user=current_user,
         config=config,
         content="app_settings",
@@ -90,14 +90,14 @@ def app_settings_tasks():
     app_infos = get_app_info()
     if is_ajax_request():
         return render_template(
-            "admin/Template_app_v001_admin_task.html",
+            "admin/NexusPlayer_admin_task.html",
             user=current_user,
             config=config,
             app_infos=app_infos,
         )
 
     return render_template(
-        "Template_app_v001.html",
+        "NexusPlayer.html",
         user=current_user,
         config=config,
         content="app_settings",
@@ -113,7 +113,7 @@ def app_settings_logs():
     app_logs = get_app_logs()
     if is_ajax_request():
         return render_template(
-            "admin/Template_app_v001_admin_logs.html",
+            "admin/NexusPlayer_admin_logs.html",
             user=current_user,
             config=config,
             app_infos=app_infos,
@@ -121,7 +121,7 @@ def app_settings_logs():
         )
 
     return render_template(
-        "Template_app_v001.html",
+        "NexusPlayer.html",
         user=current_user,
         config=config,
         content="app_settings",
@@ -138,14 +138,14 @@ def app_settings_backup_and_restore():
 
     if is_ajax_request():
         return render_template(
-            "admin/Template_app_v001_admin_backup_and_restore.html",
+            "admin/NexusPlayer_admin_backup_and_restore.html",
             user=current_user,
             config=config,
             app_infos=app_infos,
         )
 
     return render_template(
-        "Template_app_v001.html",
+        "NexusPlayer.html",
         user=current_user,
         config=config,
         content="app_settings",
@@ -161,14 +161,14 @@ def app_info():
 
     if is_ajax_request():
         return render_template(
-            "admin/Template_app_v001_admin_info.html",
+            "admin/NexusPlayer_admin_info.html",
             user=current_user,
             config=config,
             app_infos=app_infos,
         )
 
     return render_template(
-        "Template_app_v001.html",
+        "NexusPlayer.html",
         user=current_user,
         config=config,
         content="app_settings",
@@ -177,4 +177,4 @@ def app_info():
     )
 
 
-app_logger.info("Ende App-Template_app_v001 admin_routes")
+app_logger.info("Ende App-NexusPlayer admin_routes")

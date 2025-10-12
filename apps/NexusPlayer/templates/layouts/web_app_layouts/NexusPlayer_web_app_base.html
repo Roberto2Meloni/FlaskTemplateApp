@@ -9,6 +9,14 @@
   rel="stylesheet"
   href="{{ url_for('NexusPlayer.static', filename='css/NexusPlayer.css') }}"
 />
+<link
+  rel="stylesheet"
+  href="{{ url_for('NexusPlayer.static', filename='css/NexusPlayer_admin.css') }}"
+/>
+<link
+  rel="stylesheet"
+  href="{{ url_for('NexusPlayer.static', filename='css/NexusPlayer_VerticalSidbar.css') }}"
+/>
 {% endblock %} {% block navigation %}
 <!-- Entferne Standard Navigation -->
 {% endblock %} {% block footer %}
@@ -17,7 +25,7 @@
 <!-- Main Content Area -->
 <div class="main-content">
   <!-- Sidebar -->
-  {% include "layouts/web_app_layouts/NexusPlayer_sidebar.html" %}
+  {% include "layouts/web_app_layouts/NexusPlayer_sidebar_vertical.html" %}
 
   <!-- App Content -->
   <div class="app-content">
@@ -32,14 +40,15 @@
 <!-- Hier findest du die Seiten -->
 <script>
   // Hier sind die verschiedene Seiten dokumentiert
-  const url_dashboard = "{{ url_for('NexusPlayer.nexus_dashboard') }}";
-  const url_files = "{{ url_for('NexusPlayer.nexus_files') }}";
-  const url_playlists = "{{ url_for('NexusPlayer.nexus_playlists') }}";
-  const url_devices = "{{ url_for('NexusPlayer.nexus_devices') }}";
-  const url_admin = "{{ url_for('NexusPlayer.nexus_admin') }}";
+  const url_dashboard = "{{ url_for('NexusPlayer.dashboard') }}";
+  const url_files = "{{ url_for('NexusPlayer.files') }}";
+  const url_playlists = "{{ url_for('NexusPlayer.playlists') }}";
+  const url_devices = "{{ url_for('NexusPlayer.devices') }}";
+  const url_admin = "{{ url_for('NexusPlayer.app_settings') }}";
   const url_new_folder = "{{ url_for('NexusPlayer.create_new_folder') }}";
 </script>
 
 <script src="{{ url_for('NexusPlayer.static', filename='js/NexusPlayer.js') }}"></script>
+<script src="{{ url_for('NexusPlayer.static', filename='js/NexusPlayer_sidebar_vertical.js') }}"></script>
 
 {% endblock %} {% block specific_javascripts %} {% endblock %}

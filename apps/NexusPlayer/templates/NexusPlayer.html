@@ -2,5 +2,10 @@
 main_content %}
 <!-- Dein spezifischer App-Content -->
 <!-- <h1>Dashboard NexusPlayer</h1> -->
-<p>Hier kommt dein Digital Signage Content</p>
-{% endblock %}
+{% if content == 'dashboard' %} {% include 'content/NexusPlayer_dashboard.html'
+%} {% elif content == 'files' %} {% include 'content/NexusPlayer_files.html' %}
+{% elif content == 'playlists' %} {% include
+'content/NexusPlayer_playlists.html' %} {% elif content == 'devices' %} {%
+include 'content/NexusPlayer_devices.html' %} {% elif content == 'app_settings'
+%} {% include 'admin/NexusPlayer_app_settings.html' %} {% else %} {% include
+'content/NexusPlayer_dashboard.html' %} {% endif %} {% endblock %}
