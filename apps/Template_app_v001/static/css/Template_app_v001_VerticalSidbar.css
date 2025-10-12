@@ -196,3 +196,14 @@ ul {
     color: var(--color-text-dark);
     border: 1px solid #ddd;
 }
+
+.admin-layout {
+    display: flex;
+    /* Sidebar und Content nebeneinander */
+}
+
+.admin-content {
+    flex: 1;
+    /* Content nimmt restlichen Platz */
+    padding: 20px;
+}

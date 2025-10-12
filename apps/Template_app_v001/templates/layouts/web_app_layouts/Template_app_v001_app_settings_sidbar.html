@@ -2,32 +2,52 @@
   <ul>
     <div class="upper_items">
       <li class="list active admin-list">
-        <a href="#"
-          ><span class="icon">
+        <a
+          href="{{ url_for('Template_app_v001.app_settings_config') }}"
+          class="nav-link-admin"
+          data-page="config"
+          data-api-url="{{ url_for('Template_app_v001.app_settings_config') }}"
+        >
+          <span class="icon">
             <i class="sidebar-icon bi bi-sliders"></i>
           </span>
           <div class="list_element">App Konfiguration</div>
         </a>
       </li>
       <li class="list">
-        <a href="#"
-          ><span class="icon">
+        <a
+          href="{{ url_for('Template_app_v001.app_settings_sockets') }}"
+          class="nav-link-admin"
+          data-page="sockets"
+          data-api-url="{{ url_for('Template_app_v001.app_settings_sockets') }}"
+        >
+          <span class="icon">
             <i class="bi bi-plug-fill"></i>
           </span>
           <div class="list_element">Sockets</div>
         </a>
       </li>
       <li class="list">
-        <a href="#"
-          ><span class="icon">
+        <a
+          href="{{ url_for('Template_app_v001.app_settings_tasks') }}"
+          class="nav-link-admin"
+          data-page="tasks"
+          data-api-url="{{ url_for('Template_app_v001.app_settings_tasks') }}"
+        >
+          <span class="icon">
             <i class="bi bi-list-task"></i>
           </span>
           <div class="list_element">Task</div>
         </a>
       </li>
       <li class="list">
-        <a href="#"
-          ><span class="icon">
+        <a
+          href="{{ url_for('Template_app_v001.app_settings_logs') }}"
+          class="nav-link-admin"
+          data-page="logs"
+          data-api-url="{{ url_for('Template_app_v001.app_settings_logs') }}"
+        >
+          <span class="icon">
             <i class="bi bi-file-text-fill"></i>
           </span>
           <div class="list_element">Logs</div>
