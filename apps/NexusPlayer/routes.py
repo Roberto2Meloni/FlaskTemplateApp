@@ -71,6 +71,8 @@ def files():
             user=current_user,
             config=config,
             content="files",
+            full_architecture=full_architecture,
+            simpel_architecture=simpel_architecture,
         )
 
     return render_template(

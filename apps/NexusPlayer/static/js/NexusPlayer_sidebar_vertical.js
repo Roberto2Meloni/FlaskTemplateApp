@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-  console.log("=== Template_app_v001 JavaScript gestartet ===");
+  console.log("=== Sidbar Vertiacl Js loading ===");
 
   // ========================================
   // HAMBURGER MENU
@@ -14,6 +14,30 @@ document.addEventListener("DOMContentLoaded", function () {
         ? (icon.className = "bi bi-chevron-right")
         : (icon.className = "bi bi-list");
     });
+  }
+
+  const pageInitializers = {
+    files: initFileBrowser,
+    // dashboard: initDashboard,
+    // Weitere Seiten hier hinzufügen...
+  };
+
+  function initializeCurrentPage() {
+    const currentURL = window.location.pathname;
+
+    // Finde heraus, welche Seite aktiv ist
+    for (const [pageName, initFunction] of Object.entries(pageInitializers)) {
+      if (currentURL.includes(`/${pageName}`)) {
+        console.log(`→ Initialisiere Seite: ${pageName}`);
+        if (typeof initFunction === "function") {
+          // Optional: Mit setTimeout verzögern
+          setTimeout(() => {
+            initFunction();
+          }, 300);
+        }
+        break;
+      }
+    }
   }
 
   // ========================================
@@ -187,6 +211,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  function setInitFileBrowser() {}
   // ========================================
   // FUNKTION: Dynamisches Laden (Normal)
   // ========================================
@@ -225,6 +250,12 @@ document.addEventListener("DOMContentLoaded", function () {
       });
 
       console.log(`✓ ${page} geladen`);
+
+      if (pageInitializers[page]) {
+        setTimeout(() => {
+          pageInitializers[page]();
+        }, 100);
+      }
     } catch (error) {
       console.error("Fehler beim Laden:", error);
       window.location.href = url;
@@ -269,6 +300,12 @@ document.addEventListener("DOMContentLoaded", function () {
           parentLi.classList.remove("active");
         }
       });
+      // ⭐ WICHTIG: Nach dem Laden die Seite initialisieren
+      if (pageInitializers[page]) {
+        setTimeout(() => {
+          pageInitializers[page]();
+        }, 100);
+      }
 
       // console.log(`✓ Admin-Content ${page} geladen`);
     } catch (error) {

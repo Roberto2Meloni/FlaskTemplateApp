@@ -51,7 +51,10 @@
   </div>
   <div class="file-view">
     <div class="file-three">
-      <p style="display: none">{{ simpel_architecture|tojson }}</p>
+      <p style="display: none">
+        {% if simpel_architecture is defined %} {{ simpel_architecture|tojson }}
+        {% else %} {} {% endif %}
+      </p>
     </div>
     <div class="file-details">
       <div class="file-details-buttons">
@@ -70,7 +73,11 @@
         ></button>
       </div>
       <div class="file-details-view">
-        <p style="display: none">{{ full_architecture|tojson }}</p>
+        {{ full_architecture }}
+        <p style="display: none">
+          {% if full_architecture is defined %} {{ full_architecture|tojson }}
+          {% else %} {} {% endif %}
+        </p>
       </div>
     </div>
   </div>
