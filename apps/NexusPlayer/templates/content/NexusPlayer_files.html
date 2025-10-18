@@ -1,3 +1,43 @@
+<!-- Modal für Löschbestätigung -->
+<div id="deleteModal" class="modal" style="display: none">
+  <div class="modal-content">
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <h3>Datei löschen</h3>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="modal-body">
+      <p>
+        Möchten Sie die Datei <strong id="deleteFileName"></strong> wirklich
+        löschen?
+      </p>
+      <div
+        id="deleteError"
+        style="color: red; margin-top: 5px; display: none"
+      ></div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer">
+      <button
+        type="button"
+        class="btn btn-danger"
+        id="confirmDeleteBtn"
+        onclick="confirmDelete()"
+      >
+        Löschen
+      </button>
+      <button
+        type="button"
+        class="btn btn-secondary"
+        onclick="hideDeleteModal()"
+      >
+        Abbrechen
+      </button>
+    </div>
+  </div>
+</div>
 <!-- Modal für neuen Ordner -->
 <div id="newFolderModal" class="modal" style="display: none">
   <div class="modal-content">
@@ -45,9 +85,74 @@
   </div>
 </div>
 
+<!-- Modal für neue Dateien -->
+<!-- Modal für Datei-Upload -->
+<div id="addFileModal" class="modal" style="display: none">
+  <div class="modal-content">
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <h3>Bild hochladen</h3>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="modal-body">
+      <p id="uploadModalPath"></p>
+      <label for="fileInput">Bild auswählen:</label>
+      <input
+        type="file"
+        id="fileInput"
+        accept="image/*"
+        onchange="handleFileSelect(event)"
+      />
+      <div id="filePreview" style="margin-top: 10px"></div>
+      <div
+        id="uploadError"
+        style="color: red; margin-top: 5px; display: none"
+      ></div>
+      <div id="uploadProgress" style="display: none; margin-top: 10px">
+        <progress
+          id="progressBar"
+          value="0"
+          max="100"
+          style="width: 100%"
+        ></progress>
+        <p id="progressText">0%</p>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer">
+      <button
+        type="button"
+        class="btn btn-success"
+        id="uploadFileBtn"
+        onclick="uploadFile('{{ url_for('NexusPlayer.upload_image') }}')"
+        disabled
+      >
+        Hochladen
+      </button>
+      <button
+        type="button"
+        class="btn btn-danger"
+        id="cancelUploadBtn"
+        onclick="hideAddFileModal()"
+      >
+        Abbrechen
+      </button>
+    </div>
+  </div>
+</div>
+
 <div class="file-wraper">
   <div class="file-header">
     <h4 id="current-path">Aktueller Pfad: /</h4>
+  </div>
+  <!-- Versteckte Elemente für JSON-Daten -->
+  <div id="simple-architecture-data" style="display: none">
+    {{ simpel_architecture|tojson }}
+  </div>
+  <div id="full-architecture-data" style="display: none">
+    {{ full_architecture|tojson }}
   </div>
   <div class="file-view">
     <div class="file-three">
@@ -62,15 +167,29 @@
           type="button"
           class="btn btn-warning"
           disabled
+          id="newFolderButton"
           onclick="showNewFolderModal()"
         >
           Neuer Ordner
         </button>
         <button
           type="button"
+          class="btn btn-success"
+          id="addFileButton"
+          disabled
+          onclick="showAddFileModal()"
+        >
+          Datei hinzufügen
+        </button>
+        <button
+          type="button"
           class="btn btn-danger"
+          id="deleteButton"
+          disabled
           onclick="showDeleteModal()"
-        ></button>
+        >
+          Löschen
+        </button>
       </div>
       <div class="file-details-view">
         {{ full_architecture }}

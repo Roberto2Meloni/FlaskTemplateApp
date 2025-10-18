@@ -1,5 +1,7 @@
 import os
 import json
+import imghdr
+import re
 
 # Definition der Pfade und Ordner mapping
 root_path = os.getcwd()
@@ -15,9 +17,9 @@ path_NexusPlayer_app_content_device = os.path.join(
     protected_content_path,
     "NexusPlayer_app_content_device",
 )
-path_NexusPlayer_app_content_images = os.path.join(
+path_NexusPlayer_app_content_content = os.path.join(
     protected_content_path,
-    "NexusPlayer_app_content_images",
+    "NexusPlayer_app_content_content",
 )
 path_NexusPlayer_app_content_log = os.path.join(
     protected_content_path,
@@ -39,21 +41,16 @@ path_NexusPlayer_app_content_template = os.path.join(
     protected_content_path,
     "NexusPlayer_app_content_template",
 )
-path_NexusPlayer_app_content_webpages = os.path.join(
-    protected_content_path,
-    "NexusPlayer_app_content_webpages",
-)
 
 
 map_folder = {
-    "/Bilder": path_NexusPlayer_app_content_images,
+    "/Inhalte": path_NexusPlayer_app_content_content,
     "/Log": path_NexusPlayer_app_content_log,
     "/Geräte": path_NexusPlayer_app_content_device,
     "/Offline": path_NexusPlayer_app_content_offline,
     "/Playlists": path_NexusPlayer_app_content_playlist,
     "/Temp": path_NexusPlayer_app_content_temp,
     "/Templates": path_NexusPlayer_app_content_template,
-    "/Webseiten": path_NexusPlayer_app_content_webpages,
 }
 
 
@@ -203,6 +200,93 @@ def get_both():
     # print(30 * "-")
 
     return full_architecture, simpel_architecture
+
+
+def is_valid_image(dateipfad):
+    """
+    Prüft, ob die Datei ein gültiges Bild ist.
+
+    Args:
+        dateipfad (str): Pfad zur zu prüfenden Datei
+
+    Returns:
+        bool: True, wenn es sich um ein gültiges Bild handelt, sonst False
+    """
+    try:
+        # Verwende imghdr, um den Bildtyp anhand des Dateiinhalts zu erkennen
+        bildtyp = imghdr.what(dateipfad)
+
+        # Liste der erlaubten Bildformate
+        erlaubte_formate = ["png", "jpg", "jpeg", "gif", "bmp", "webp"]
+
+        return bildtyp in erlaubte_formate
+    except Exception as e:
+        print(f"Fehler bei der Bildprüfung: {e}")
+        return False
+
+
+def real_path(path):
+    """
+    Konvertiert den Frontend-Pfad in einen vollständigen OS-Pfad.
+
+    Args:
+        path (str): Eingabepfad (z.B. '/Bilder/aaa')
+
+    Returns:
+        str: Vollständiger OS-Pfad
+    """
+    # Entferne führende und nachfolgende Schrägstriche
+    path = path.strip("/")
+
+    # Teile den Pfad in Ordner auf
+    folders = path.split("/")
+
+    # Ersten Ordner extrahieren (Hauptordner)
+    first_folder = f"/{folders[0]}"
+
+    # Basispfad aus map_folder holen
+    basis_pfad = map_folder.get(first_folder)
+
+    if not basis_pfad:
+        raise ValueError(f"Ungültiger Zielordner: {first_folder}")
+
+    # Restliche Ordner anhängen
+    restliche_ordner = folders[1:] if len(folders) > 1 else []
+    vollstaendiger_pfad = os.path.join(basis_pfad, *restliche_ordner)
+
+    return vollstaendiger_pfad
+
+
+def generate_unique_filename(ziel_ordner, original_filename):
+    """
+    Generiert einen eindeutigen Dateinamen im Zielordner.
+    Args:
+        ziel_ordner (str): Zielordner
+        original_filename (str): Ursprünglicher Dateiname
+    Returns:
+        str: Eindeutiger Dateiname
+    """
+    # Stelle sicher, dass der Zielordner existiert
+    os.makedirs(ziel_ordner, exist_ok=True)
+
+    # Entferne ungültige Zeichen aus dem Dateinamen
+    name, ext = os.path.splitext(original_filename)
+    name = re.sub(r'[<>:"/\\|?*]', "_", name)
+
+    # Initialer Dateiname
+    neuer_dateiname = f"{name}{ext}"
+    full_path = os.path.join(ziel_ordner, neuer_dateiname)
+
+    # Zähler für eindeutige Dateinamen
+    counter = 1
+
+    # Generiere eindeutigen Dateinamen
+    while os.path.exists(full_path):
+        neuer_dateiname = f"{name}_{counter}{ext}"
+        full_path = os.path.join(ziel_ordner, neuer_dateiname)
+        counter += 1
+
+    return neuer_dateiname
 
 
 create_all_protected_content_folders()
