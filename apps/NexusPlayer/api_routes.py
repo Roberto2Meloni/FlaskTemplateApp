@@ -1,8 +1,10 @@
+from datetime import datetime
 import mimetypes
 import os
 import base64
 import uuid
 import shutil
+import imghdr
 from werkzeug.utils import secure_filename
 from . import blueprint, app_logger
 from app.decorators import admin_required, enabled_required
@@ -15,6 +17,10 @@ from .helper_app_functions.helper_app_functions import (
     real_path,
     generate_unique_filename,
 )
+from .models import NexusPlayerFiles
+from app import db
+from sqlalchemy.exc import SQLAlchemyError
+
 
 app_logger.info("Starte App-Template_app_v001 API")
 config = Config()
@@ -33,9 +39,6 @@ def create_new_folder():
     path_parts = current_path_origin.strip("/").split("/")
     root_folder = f"/{path_parts[0]}" if path_parts[0] else "/"
 
-    print(f"Path parts: {path_parts}")
-    print(f"Root folder: '{root_folder}'")
-
     if root_folder in map_folder:
         real_root_path = map_folder[root_folder]
         print(f"Real root path: '{real_root_path}'")
@@ -47,9 +50,9 @@ def create_new_folder():
             print(f"Sub path: '{sub_path}'")
         else:
             full_target_path = real_root_path
-            print("Kein Sub-Pfad")
+        #     print("Kein Sub-Pfad")
 
-        print(f"Full target path: '{full_target_path}'")
+        # print(f"Full target path: '{full_target_path}'")
 
         if os.path.exists(full_target_path):
             new_folder_full_path = os.path.join(full_target_path, new_folder_name)
@@ -135,33 +138,127 @@ def upload_image():
             # Temporäre Datei löschen
             os.remove(temp_path)
 
-            return (
-                jsonify(
-                    {
-                        "status": "success",
-                        "message": "Bild erfolgreich hochgeladen",
-                        "filename": unique_filename,
-                    }
-                ),
-                200,
-            )
+            # ==========================================
+            # NEU: Datei in Datenbank eintragen
+            # ==========================================
+            try:
+                # Hole Datei-Metadaten
+                file_stats = os.stat(ziel_dateipfad)
+
+                # Bestimme den Bildtyp
+                image_type = imghdr.what(ziel_dateipfad)
+                if not image_type:
+                    # Fallback auf Dateiendung
+                    image_type = unique_filename.rsplit(".", 1)[-1].lower()
+
+                # Berechne relativen Pfad zum Inhaltsverzeichnis
+                content_path = map_folder.get("/Inhalte")
+                relative_path = os.path.relpath(ziel_dateipfad, content_path)
+
+                # Prüfe, ob Datei bereits existiert (Sicherheitscheck)
+                existing_file = NexusPlayerFiles.query.filter_by(
+                    name=unique_filename, path=relative_path
+                ).first()
+
+                if existing_file:
+                    # Aktualisiere existierenden Eintrag
+                    existing_file.size = file_stats.st_size
+                    existing_file.last_modified = datetime.fromtimestamp(
+                        file_stats.st_mtime
+                    )
+                    existing_file.last_modified_by = (
+                        current_user.id if current_user.is_authenticated else "System"
+                    )
+                    existing_file.type = image_type
+
+                    app_logger.info(f"Datei in DB aktualisiert: {unique_filename}")
+                    db_action = "updated"
+                else:
+                    # Erstelle neuen Datenbank-Eintrag
+                    new_file = NexusPlayerFiles(
+                        file_uuid=str(uuid.uuid4()),
+                        name=unique_filename,
+                        path=relative_path,
+                        type=image_type,
+                        size=file_stats.st_size,
+                        last_modified=datetime.fromtimestamp(file_stats.st_mtime),
+                        created_at=datetime.now(),
+                        created_by=(
+                            current_user.id if current_user.is_authenticated else 1
+                        ),
+                        last_modified_by=(
+                            current_user.id
+                            if current_user.is_authenticated
+                            else "System"
+                        ),
+                    )
+
+                    db.session.add(new_file)
+                    app_logger.info(f"Neue Datei in DB erstellt: {unique_filename}")
+                    db_action = "created"
+
+                # Commit der DB-Änderungen
+                db.session.commit()
+
+                return (
+                    jsonify(
+                        {
+                            "status": "success",
+                            "message": "Bild erfolgreich hochgeladen",
+                            "filename": unique_filename,
+                            "db_action": db_action,
+                            "file_uuid": (
+                                existing_file.file_uuid
+                                if existing_file
+                                else new_file.file_uuid
+                            ),
+                        }
+                    ),
+                    200,
+                )
+
+            except SQLAlchemyError as db_error:
+                # Rollback bei DB-Fehler
+                db.session.rollback()
+                app_logger.error(
+                    f"DB-Fehler beim Upload von {unique_filename}: {str(db_error)}"
+                )
+
+                # Datei wurde hochgeladen, aber DB-Eintrag fehlgeschlagen
+                return (
+                    jsonify(
+                        {
+                            "status": "warning",
+                            "message": "Bild hochgeladen, aber Datenbank-Eintrag fehlgeschlagen",
+                            "filename": unique_filename,
+                            "db_error": str(db_error),
+                        }
+                    ),
+                    201,  # 201 Created, aber mit Warnung
+                )
 
         except Exception as e:
             # Fehler beim Speichern oder Verarbeiten des Bildes
-            print(f"Fehler beim Bildupload: {e}")
+            app_logger.error(f"Fehler beim Bildupload: {e}")
 
             # Temporäre Datei löschen, falls vorhanden
             if os.path.exists(temp_path):
                 os.remove(temp_path)
 
+            # Zieldatei löschen, falls erstellt wurde
+            if os.path.exists(ziel_dateipfad):
+                os.remove(ziel_dateipfad)
+
             return (
-                jsonify({"status": "error", "message": "Fehler beim Bildupload"}),
+                jsonify(
+                    {"status": "error", "message": f"Fehler beim Bildupload: {str(e)}"}
+                ),
                 500,
             )
 
     except Exception as e:
         # Allgemeiner Fehler
-        print(f"Unerwarteter Fehler: {e}")
+        app_logger.error(f"Unerwarteter Fehler beim Upload: {e}")
         return (
             jsonify(
                 {
@@ -182,15 +279,49 @@ def show_image():
         frontend_path = data.get("current_path")
         image_name = data.get("filename")
 
-        print(data)
+        app_logger.debug(f"show_image request data: {data}")
 
         # Backends Pfad ermitteln
         backend_path = real_path(frontend_path)
-        print(f"Backend-Pfad: {backend_path}")
+        app_logger.debug(f"Backend-Pfad: {backend_path}")
 
         # Überprüfen, ob die Datei existiert
         if not os.path.exists(backend_path):
             return jsonify({"status": "error", "message": "Bild nicht gefunden"}), 404
+
+        # ==========================================
+        # NEU: Datei-Informationen aus DB holen
+        # ==========================================
+        content_path = map_folder.get("/Inhalte")
+        relative_path = os.path.relpath(backend_path, content_path)
+
+        # Suche Datei in der Datenbank
+        db_file = NexusPlayerFiles.query.filter_by(
+            name=image_name, path=relative_path
+        ).first()
+
+        # DB-Informationen vorbereiten
+        db_info = None
+        if db_file:
+            db_info = {
+                "file_uuid": db_file.file_uuid,
+                "db_id": db_file.id,
+                "type": db_file.type,
+                "size": db_file.size,
+                "created_at": (
+                    db_file.created_at.isoformat() if db_file.created_at else None
+                ),
+                "created_by": db_file.created_by,
+                "last_modified": (
+                    db_file.last_modified.isoformat() if db_file.last_modified else None
+                ),
+                "last_modified_by": db_file.last_modified_by,
+            }
+            app_logger.debug(f"DB-Eintrag gefunden für {image_name}")
+        else:
+            app_logger.warning(
+                f"Kein DB-Eintrag gefunden für {image_name} (Pfad: {relative_path})"
+            )
 
         # Bild in Base64 kodieren
         with open(backend_path, "rb") as image_file:
@@ -198,21 +329,41 @@ def show_image():
 
         mime_type = mimetypes.guess_type(backend_path)[0] or "image/jpeg"
 
-        # Zusätzliche Bildinformationen sammeln
+        # Dateisystem-Informationen
+        file_stats = os.stat(backend_path)
+
+        # Kombinierte Bildinformationen
         image_info = {
             "status": "success",
             "filename": image_name,
             "path": frontend_path,
+            "relative_path": relative_path,
             "image": f"data:{mime_type};base64,{base64_image}",
-            "size": os.path.getsize(backend_path),
-            "last_modified": os.path.getmtime(backend_path),
+            "mime_type": mime_type,
+            # Dateisystem-Informationen
+            "file_system": {
+                "size": file_stats.st_size,
+                "last_modified": file_stats.st_mtime,
+                "created": file_stats.st_ctime,
+            },
+            # Datenbank-Informationen
+            "database": db_info,
+            # Status-Flag
+            "in_database": db_info is not None,
         }
+
         return jsonify(image_info), 200
 
     except Exception as e:
-        print(f"Fehler beim Laden des Bildes: {e}")
+        app_logger.error(f"Fehler beim Laden des Bildes: {e}")
         return (
-            jsonify({"status": "error", "message": "Fehler beim Laden des Bildes"}),
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "Fehler beim Laden des Bildes",
+                    "error_detail": str(e),
+                }
+            ),
             500,
         )
 

@@ -1,3 +1,6 @@
 {
-  "app_name": "NexusPlayer"
+    "app_name": "NexusPlayer",
+    "tasks_intervall": {
+        "check_file_system": 50
+    }
 }

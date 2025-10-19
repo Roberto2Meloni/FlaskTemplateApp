@@ -289,4 +289,38 @@ def generate_unique_filename(ziel_ordner, original_filename):
     return neuer_dateiname
 
 
+def get_all_playlists_json():
+    all_playlists_json = []
+
+    # Durchlaufe alle Dateien im Playlist-Ordner
+    for filename in os.listdir(path_NexusPlayer_app_content_playlist):
+        # Nur JSON-Dateien berücksichtigen
+        if filename.endswith(".json"):
+            # Vollständiger Pfad zur Datei
+            file_path = os.path.join(path_NexusPlayer_app_content_playlist, filename)
+
+            try:
+                # JSON-Datei öffnen und laden
+                with open(file_path, "r", encoding="utf-8") as file:
+                    playlist_data = json.load(file)
+
+                # Playlist-Name (ohne .json) hinzufügen
+                playlist_name = filename[:-5]
+
+                # Dictionary mit Name und Daten erstellen
+                playlist_entry = {"name": playlist_name, "data": playlist_data}
+
+                # Zur Gesamtliste hinzufügen
+                all_playlists_json.append(playlist_entry)
+
+            except json.JSONDecodeError:
+                # Fehlerbehandlung für ungültige JSON-Dateien
+                print(f"Fehler beim Laden der Playlist: {filename}")
+            except Exception as e:
+                # Allgemeine Fehlerbehandlung
+                print(f"Unerwarteter Fehler bei Datei {filename}: {e}")
+
+    return all_playlists_json
+
+
 create_all_protected_content_folders()

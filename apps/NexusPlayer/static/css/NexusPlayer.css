@@ -174,3 +174,103 @@
 .sub-container>div[title] {
     cursor: help;
 }
+
+/* Playlist Styles */
+.playlist-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 100vh;
+    gap: 10px;
+    padding: 10px;
+    box-sizing: border-box;
+    background-color: #f4f4f4;
+}
+
+.selection-wrapper {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    flex: 1;
+    overflow: hidden;
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.selection-header {
+    background-color: #f8f9fa;
+    padding: 10px 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.selection-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    color: #333;
+    font-weight: 600;
+}
+
+.selection-playlist-elements,
+.selection-content-elements,
+.selection-browser-elements {
+    padding: 10px;
+    overflow-y: auto;
+}
+
+.selection-playlist-element,
+.selection-content-element,
+.selection-browser-element {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.selection-playlist-element:hover,
+.selection-content-element:hover,
+.selection-browser-element:hover {
+    background-color: #f0f0f0;
+}
+
+.selection-playlist-element {
+    display: flex;
+    flex-direction: column;
+}
+
+.selection-playlist-element-name {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.playlist-count {
+    color: #6c757d;
+    font-size: 0.8rem;
+}
+
+/* Scrollbar Styling */
+.selection-playlist-elements::-webkit-scrollbar,
+.selection-content-elements::-webkit-scrollbar,
+.selection-browser-elements::-webkit-scrollbar {
+    width: 8px;
+}
+
+.selection-playlist-elements::-webkit-scrollbar-track,
+.selection-content-elements::-webkit-scrollbar-track,
+.selection-browser-elements::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.selection-playlist-elements::-webkit-scrollbar-thumb,
+.selection-content-elements::-webkit-scrollbar-thumb,
+.selection-browser-elements::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.selection-playlist-elements::-webkit-scrollbar-thumb:hover,
+.selection-content-elements::-webkit-scrollbar-thumb:hover,
+.selection-browser-elements::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
