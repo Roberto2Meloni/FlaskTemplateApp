@@ -6,6 +6,7 @@ from . import (
     app_logger,
     socketio_events,
     admin_routes,
+    tasks,
 )
 from app.config import Config
 from app.decorators import admin_required, enabled_required

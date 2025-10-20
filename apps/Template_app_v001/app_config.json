@@ -1,3 +1,6 @@
 {
-  "app_name": "Template_app_v001"
+    "app_name": "Template_app_v001",
+    "tasks_intervall": {
+        "app_test_hello_wold": 100
+    }
 }
