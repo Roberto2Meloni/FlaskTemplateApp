@@ -10,12 +10,13 @@ from . import (
 )
 from app.config import Config
 from app.decorators import admin_required, enabled_required
+from .app_config import AppConfig
 
-# from app import db
 
 config = Config()
-app_logger.info("Starte App-Template_app_v001 Route Initialization")
-print("Template_app_v001 Version 0.0.0")
+app_config = AppConfig()
+app_logger.info(f"Starte App-{app_config.app_name} Route Initialization")
+print(f"App-{app_config.app_name} Version 0.0.0")
 
 
 def is_ajax_request():
@@ -88,4 +89,4 @@ def page_03():
     )
 
 
-app_logger.info("Ende Route Initialization")
+app_logger.info(f"Ende App-{app_config.app_name} Route Initialization")

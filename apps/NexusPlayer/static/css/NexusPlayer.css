@@ -175,6 +175,149 @@
     cursor: help;
 }
 
+
+/* In NexusPlayer.css */
+
+.file-details-container {
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #fff;
+    border-radius: 8px;
+}
+
+.file-details-title {
+    font-size: 1.3em;
+    color: #333;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.file-preview {
+    margin: 20px 0;
+    text-align: center;
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.file-info-section {
+    margin: 25px 0;
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+}
+
+.file-info-section h5 {
+    margin: 0 0 15px 0;
+    color: #495057;
+    font-size: 1.1em;
+    font-weight: 600;
+}
+
+.info-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.info-table tr {
+    border-bottom: 1px solid #dee2e6;
+}
+
+.info-table tr:last-child {
+    border-bottom: none;
+}
+
+.info-table td {
+    padding: 10px 5px;
+    font-size: 0.95em;
+}
+
+.info-table td:first-child {
+    width: 45%;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.info-table td:last-child {
+    color: #212529;
+    word-break: break-word;
+}
+
+.info-table code {
+    background: #e9ecef;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    color: #d63384;
+    font-family: 'Courier New', monospace;
+}
+
+.badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-weight: 600;
+}
+
+.badge-success {
+    background: #28a745;
+    color: white;
+}
+
+.badge-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.sync-warning {
+    margin-top: 15px;
+    padding: 12px;
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 6px;
+    color: #856404;
+    font-size: 0.9em;
+}
+
+.sync-warning small {
+    display: block;
+    margin-top: 8px;
+    color: #6c757d;
+    font-size: 0.85em;
+}
+
+.error-message {
+    margin-top: 15px;
+    padding: 12px;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 6px;
+    color: #721c24;
+}
+
+.system-user {
+    color: #007bff;
+    font-weight: 600;
+}
+
+.user-id {
+    color: #6c757d;
+}
+
+.username {
+    color: #28a745;
+    font-weight: 500;
+}
+
+.deleted-user {
+    color: #6c757d;
+    font-style: italic;
+    text-decoration: line-through;
+}
+
 /* Playlist Styles */
 .playlist-container {
     display: flex;

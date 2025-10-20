@@ -4,9 +4,11 @@ from flask_login import current_user
 from app.config import Config
 from flask import render_template, request
 from .helper_app_functions.helper_admin_app import get_app_info, get_app_logs
+from .app_config import AppConfig
 
 app_logger.info("Starte App-NexusPlayer admin_routes")
 config = Config()
+app_config = AppConfig()
 
 
 def is_ajax_request():
@@ -35,6 +37,7 @@ def app_settings():
         content="app_settings",
         settings="app_info",
         app_infos=app_infos,
+        app_config=app_config,
     )
 
 
@@ -49,6 +52,7 @@ def app_settings_config():
             user=current_user,
             config=config,
             app_infos=app_infos,
+            app_config=app_config,
         )
 
     # Normal: Komplette Seite mit Admin-Layout
@@ -59,6 +63,7 @@ def app_settings_config():
         content="app_settings",
         settings="config",
         app_infos=app_infos,
+        app_config=app_config,
     )
 
 
@@ -72,6 +77,7 @@ def app_settings_sockets():
             user=current_user,
             config=config,
             app_infos=app_infos,
+            app_config=app_config,
         )
 
     return render_template(
@@ -81,6 +87,7 @@ def app_settings_sockets():
         content="app_settings",
         settings="sockets",
         app_infos=app_infos,
+        app_config=app_config,
     )
 
 
@@ -94,6 +101,7 @@ def app_settings_tasks():
             user=current_user,
             config=config,
             app_infos=app_infos,
+            app_config=app_config,
         )
 
     return render_template(
@@ -103,6 +111,7 @@ def app_settings_tasks():
         content="app_settings",
         settings="tasks",
         app_infos=app_infos,
+        app_config=app_config,
     )
 
 
@@ -118,6 +127,7 @@ def app_settings_logs():
             config=config,
             app_infos=app_infos,
             app_logs=app_logs,
+            app_config=app_config,
         )
 
     return render_template(
@@ -128,6 +138,7 @@ def app_settings_logs():
         settings="logs",
         app_infos=app_infos,
         app_logs=app_logs,
+        app_config=app_config,
     )
 
 
@@ -142,6 +153,7 @@ def app_settings_backup_and_restore():
             user=current_user,
             config=config,
             app_infos=app_infos,
+            app_config=app_config,
         )
 
     return render_template(
@@ -151,6 +163,7 @@ def app_settings_backup_and_restore():
         content="app_settings",
         settings="logs",
         app_infos=app_infos,
+        app_config=app_config,
     )
 
 
@@ -165,6 +178,7 @@ def app_info():
             user=current_user,
             config=config,
             app_infos=app_infos,
+            app_config=app_config,
         )
 
     return render_template(
@@ -174,6 +188,7 @@ def app_info():
         content="app_settings",
         settings="app_info",
         app_infos=app_infos,
+        app_config=app_config,
     )
 
 

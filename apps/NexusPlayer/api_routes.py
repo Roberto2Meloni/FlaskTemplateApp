@@ -20,10 +20,12 @@ from .helper_app_functions.helper_app_functions import (
 from .models import NexusPlayerFiles
 from app import db
 from sqlalchemy.exc import SQLAlchemyError
+from .app_config import AppConfig
 
 
-app_logger.info("Starte App-Template_app_v001 API")
 config = Config()
+app_config = AppConfig()
+app_logger.info(f"Starte App-{app_config.app_name} API")
 
 
 @blueprint.route("/create_new_folder", methods=["POST"])
@@ -303,20 +305,15 @@ def show_image():
         # DB-Informationen vorbereiten
         db_info = None
         if db_file:
-            db_info = {
-                "file_uuid": db_file.file_uuid,
-                "db_id": db_file.id,
-                "type": db_file.type,
-                "size": db_file.size,
-                "created_at": (
-                    db_file.created_at.isoformat() if db_file.created_at else None
-                ),
-                "created_by": db_file.created_by,
-                "last_modified": (
-                    db_file.last_modified.isoformat() if db_file.last_modified else None
-                ),
-                "last_modified_by": db_file.last_modified_by,
-            }
+            # Verwende to_dict() Methode
+            db_info = db_file.to_dict()
+
+            # Konvertiere Datetime-Objekte zu ISO-Strings für JSON
+            if db_info.get("created_at"):
+                db_info["created_at"] = db_info["created_at"].isoformat()
+            if db_info.get("last_modified"):
+                db_info["last_modified"] = db_info["last_modified"].isoformat()
+
             app_logger.debug(f"DB-Eintrag gefunden für {image_name}")
         else:
             app_logger.warning(
@@ -374,37 +371,159 @@ def delete_image():
     try:
         # JSON-Daten aus der Anfrage extrahieren
         data = request.get_json()
+
+        # Debug: Zeige was empfangen wurde
+        app_logger.debug(f"Delete request data: {data}")
+
         frontend_path = data.get("current_path")
         image_name = data.get("filename")
 
-        print(data)
+        # Validierung
+        if not frontend_path:
+            return jsonify({"status": "error", "message": "Kein Pfad angegeben"}), 400
+
+        # Extrahiere Dateinamen aus Pfad, falls nicht direkt angegeben
+        if not image_name:
+            image_name = os.path.basename(frontend_path)
+            app_logger.debug(f"Dateiname aus Pfad extrahiert: {image_name}")
+
+        if not image_name:
+            return (
+                jsonify(
+                    {
+                        "status": "error",
+                        "message": "Kein Dateiname angegeben oder im Pfad gefunden",
+                    }
+                ),
+                400,
+            )
+
+        app_logger.debug(f"Lösche Bild: {image_name}")
 
         # Backends Pfad ermitteln
         backend_path = real_path(frontend_path)
-        print(f"Backend-Pfad: {backend_path}")
+        app_logger.debug(f"Backend-Pfad: {backend_path}")
 
         # Überprüfen, ob die Datei existiert
         if not os.path.exists(backend_path):
-            return jsonify({"status": "error", "message": "Bild nicht gefunden"}), 404
+            return (
+                jsonify(
+                    {
+                        "status": "error",
+                        "message": f"Bild '{image_name}' nicht gefunden",
+                    }
+                ),
+                404,
+            )
 
-        # Löschen
+        # Berechne relativen Pfad für DB-Lookup
+        content_path = map_folder.get("/Inhalte")
+        relative_path = os.path.relpath(backend_path, content_path)
+
+        app_logger.debug(f"Suche DB-Eintrag: name={image_name}, path={relative_path}")
+
+        # Suche DB-Eintrag
+        db_file = NexusPlayerFiles.query.filter_by(
+            name=image_name, path=relative_path
+        ).first()
+
+        if db_file:
+            app_logger.debug(
+                f"DB-Eintrag gefunden: ID={db_file.id}, UUID={db_file.file_uuid}"
+            )
+        else:
+            app_logger.debug(
+                f"Kein DB-Eintrag gefunden für name={image_name}, path={relative_path}"
+            )
+
+        # Lösche Datei aus Dateisystem
         try:
             os.remove(backend_path)
-            message = f"Bild {image_name} gelöscht"
-            status = "success"
-        except Exception as e:
-            app_logger.error(f"Fehler beim Löschen des Bildes: {e}")
-            message = f"Fehler beim Löschen des Bildes: {e}"
-            status = "error"
-        finally:
-            return jsonify({"status": status, "message": message}), 200
+            app_logger.info(f"Datei aus Dateisystem gelöscht: {image_name}")
+            file_deleted = True
+        except OSError as e:
+            app_logger.error(f"Fehler beim Löschen der Datei aus dem Dateisystem: {e}")
+            file_deleted = False
+            error_message = str(e)
+
+        # Lösche DB-Eintrag (falls vorhanden)
+        db_deleted = False
+        db_error = None
+
+        if db_file:
+            try:
+                db.session.delete(db_file)
+                db.session.commit()
+                app_logger.info(f"DB-Eintrag gelöscht: {image_name} (ID: {db_file.id})")
+                db_deleted = True
+            except SQLAlchemyError as db_err:
+                db.session.rollback()
+                app_logger.error(f"Fehler beim Löschen des DB-Eintrags: {db_err}")
+                db_error = str(db_err)
+        else:
+            app_logger.warning(
+                f"Kein DB-Eintrag gefunden für {image_name} (Pfad: {relative_path})"
+            )
+
+        # Bestimme Response-Status
+        if file_deleted and (db_deleted or not db_file):
+            # Erfolg: Datei gelöscht und DB aktualisiert (oder kein DB-Eintrag vorhanden)
+            return (
+                jsonify(
+                    {
+                        "status": "success",
+                        "message": f"Bild '{image_name}' erfolgreich gelöscht",
+                        "file_deleted": True,
+                        "db_deleted": db_deleted,
+                        "had_db_entry": db_file is not None,
+                    }
+                ),
+                200,
+            )
+
+        elif file_deleted and not db_deleted:
+            # Teilweiser Erfolg: Datei gelöscht, aber DB-Fehler
+            return (
+                jsonify(
+                    {
+                        "status": "warning",
+                        "message": f"Datei '{image_name}' gelöscht, aber DB-Eintrag konnte nicht entfernt werden",
+                        "file_deleted": True,
+                        "db_deleted": False,
+                        "db_error": db_error,
+                    }
+                ),
+                200,
+            )
+
+        else:
+            # Fehler: Datei konnte nicht gelöscht werden
+            return (
+                jsonify(
+                    {
+                        "status": "error",
+                        "message": f"Fehler beim Löschen von '{image_name}': {error_message}",
+                        "file_deleted": False,
+                        "db_deleted": False,
+                    }
+                ),
+                500,
+            )
 
     except Exception as e:
-        print(f"Fehler beim Laden des Bildes: {e}")
+        app_logger.error(f"Unerwarteter Fehler beim Löschen des Bildes: {e}")
+        import traceback
+
+        app_logger.error(traceback.format_exc())
         return (
-            jsonify({"status": "error", "message": "Fehler beim Laden des Bildes"}),
+            jsonify(
+                {
+                    "status": "error",
+                    "message": f"Unerwarteter Fehler beim Löschen: {str(e)}",
+                }
+            ),
             500,
         )
 
 
-app_logger.info("Ende App-Template_app_v001 API")
+app_logger.info(f"Ende App-{app_config.app_name} API")

@@ -23,8 +23,8 @@ from icecream import ic
 config = Config()
 app_config = AppConfig()
 
-app_logger.info("Starte App-NexusPlayer Route Initialization")
-print("NexusPlayer Version 0.0.0")
+app_logger.info(f"Starte App-{app_config.app_name} Route Initialization")
+print(f"App-{app_config.app_name} Version 0.0.0")
 
 
 def is_ajax_request():
@@ -39,7 +39,11 @@ def is_ajax_request():
 @enabled_required
 def NexusPlayer_index():
     return render_template(
-        "NexusPlayer.html", user=current_user, config=config, content="dashboard"
+        "NexusPlayer.html",
+        user=current_user,
+        config=config,
+        content="dashboard",
+        app_config=app_config,
     )
 
 
@@ -54,6 +58,7 @@ def dashboard():
             user=current_user,
             config=config,
             content="dashboard",
+            app_config=app_config,
         )
 
     return render_template(
@@ -61,6 +66,7 @@ def dashboard():
         user=current_user,
         config=config,
         content="dashboard",
+        app_config=app_config,
     )
 
 
@@ -80,6 +86,7 @@ def files():
             content="files",
             full_architecture=full_architecture,
             simpel_architecture=simpel_architecture,
+            app_config=app_config,
         )
 
     return render_template(
@@ -89,6 +96,7 @@ def files():
         full_architecture=full_architecture,
         simpel_architecture=simpel_architecture,
         content="files",
+        app_config=app_config,
     )
 
 
@@ -104,6 +112,7 @@ def playlists():
             config=config,
             content="playlists",
             all_playlists_json=all_playlists_json,
+            app_config=app_config,
         )
 
     return render_template(
@@ -112,6 +121,7 @@ def playlists():
         config=config,
         content="playlists",
         all_playlists_json=all_playlists_json,
+        app_config=app_config,
     )
 
 
@@ -121,11 +131,17 @@ def devices():
 
     if is_ajax_request():
         return render_template(
-            "content/Template_app_v001_dashboard.html", user=current_user, config=config
+            "content/Template_app_v001_dashboard.html",
+            user=current_user,
+            config=config,
+            app_config=app_config,
         )
     return render_template(
-        "content/NexusPlayer_Devices.html", user=current_user, config=config
+        "content/NexusPlayer_Devices.html",
+        user=current_user,
+        config=config,
+        app_config=app_config,
     )
 
 
-app_logger.info("Ende App-NexusPlayer Route Initialization")
+app_logger.info(f"Ende App-{app_config.app_name} Route Initialization")

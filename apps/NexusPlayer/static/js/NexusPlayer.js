@@ -11,11 +11,11 @@ const folderNameMapping = {
 };
 
 function formatFileSize(bytes) {
-  if (bytes === 0) return "0 B";
+  if (bytes === 0) return "0 Bytes";
   const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB"];
+  const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
 }
 
 function createFolderElement(name, content) {
@@ -163,16 +163,135 @@ function showFileDetails(name, fileInfo) {
       .then((data) => {
         if (data.status === "success") {
           let detailsHtml = `
-          <strong>Datei: ${name}</strong><br><br>
-          <img src="${
-            data.image
-          }" style="max-width: 100%; max-height: 300px; object-fit: contain;"><br><br>
-          Größe: ${formatFileSize(data.size)}<br>
-          Typ: Bild<br>
-          Zuletzt geändert: ${new Date(
-            data.last_modified * 1000
-          ).toLocaleString()}
-        `;
+            <div class="file-details-container">
+              <h4 class="file-details-title">📄 ${name}</h4>
+              
+              <!-- Bildvorschau -->
+              <div class="file-preview">
+                <img src="${data.image}" 
+                     alt="${name}"
+                     style="max-width: 100%; max-height: 300px; object-fit: contain; 
+                            border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+              </div>
+              
+              <!-- Dateisystem-Informationen -->
+              <div class="file-info-section">
+                <h5>📁 Dateisystem</h5>
+                <table class="info-table">
+                  <tr>
+                    <td><strong>Größe:</strong></td>
+                    <td>${formatFileSize(data.file_system.size)}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>MIME-Typ:</strong></td>
+                    <td>${data.mime_type}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Pfad:</strong></td>
+                    <td><code>${data.relative_path}</code></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Zuletzt geändert:</strong></td>
+                    <td>${formatDateTime(
+                      data.file_system.last_modified * 1000
+                    )}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Erstellt:</strong></td>
+                    <td>${formatDateTime(data.file_system.created * 1000)}</td>
+                  </tr>
+                </table>
+              </div>
+          `;
+
+          // Datenbank-Informationen (falls vorhanden)
+          if (data.in_database && data.database) {
+            const db = data.database;
+            detailsHtml += `
+              <div class="file-info-section">
+                <h5>💾 Datenbank</h5>
+                <table class="info-table">
+                  <tr>
+                    <td><strong>Status:</strong></td>
+                    <td><span class="badge badge-success">✓ In Datenbank</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>UUID:</strong></td>
+                    <td><code>${db.file_uuid}</code></td>
+                  </tr>
+                  <tr>
+                    <td><strong>DB-ID:</strong></td>
+                    <td>${db.id}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Typ:</strong></td>
+                    <td>${db.type}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Name:</strong></td>
+                    <td>${db.name}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Pfad:</strong></td>
+                    <td><code>${db.path}</code></td>
+                  </tr>
+                  <tr>
+                    <td><strong>DB-Größe:</strong></td>
+                    <td>${formatFileSize(db.size)}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Erstellt am:</strong></td>
+                    <td>${formatDateTime(db.created_at)}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Erstellt von:</strong></td>
+                    <td>${formatUserInfo(db.created_by)}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Zuletzt geändert:</strong></td>
+                    <td>${formatDateTime(db.last_modified)}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Geändert von:</strong></td>
+                    <td>${formatUserInfo(db.last_modified_by)}</td>
+                  </tr>
+                </table>
+            `;
+
+            // Sync-Status prüfen
+            const sizeMatch = data.file_system.size === db.size;
+            if (!sizeMatch) {
+              const sizeDiff = data.file_system.size - db.size;
+              detailsHtml += `
+                <div class="sync-warning">
+                  <strong>⚠️ Warnung:</strong> Dateigröße stimmt nicht mit DB überein!<br>
+                  <small>
+                    Filesystem: ${formatFileSize(data.file_system.size)} | 
+                    DB: ${formatFileSize(db.size)} | 
+                    Differenz: ${sizeDiff > 0 ? "+" : ""}${formatFileSize(
+                Math.abs(sizeDiff)
+              )}
+                  </small>
+                </div>
+              `;
+            }
+
+            detailsHtml += `</div>`;
+          } else {
+            // Datei nicht in Datenbank
+            detailsHtml += `
+              <div class="file-info-section">
+                <h5>💾 Datenbank</h5>
+                <div class="sync-warning">
+                  <span class="badge badge-warning">⚠ Nicht in Datenbank</span><br>
+                  <small>Diese Datei wurde noch nicht synchronisiert. Die nächste automatische Synchronisation fügt sie zur Datenbank hinzu.</small>
+                </div>
+              </div>
+            `;
+          }
+
+          detailsHtml += `</div>`; // Schließe file-details-container
+
           detailsDiv.innerHTML = detailsHtml;
         } else {
           throw new Error(data.message);
@@ -181,22 +300,53 @@ function showFileDetails(name, fileInfo) {
       .catch((error) => {
         console.error("Fehler bei Bildvorschau:", error);
         detailsDiv.innerHTML = `
-        <strong>Datei: ${name}</strong><br><br>
-        Größe: ${formatFileSize(fileInfo.size || 0)}<br>
-        Typ: ${fileInfo.type || "Unbekannt"}<br>
-        <p style="color: red;">Vorschau nicht verfügbar</p>
-      `;
+          <div class="file-details-container">
+            <h4 class="file-details-title">📄 ${name}</h4>
+            <div class="file-info-section">
+              <table class="info-table">
+                <tr>
+                  <td><strong>Größe:</strong></td>
+                  <td>${formatFileSize(fileInfo.size || 0)}</td>
+                </tr>
+                <tr>
+                  <td><strong>Typ:</strong></td>
+                  <td>${fileInfo.type || "Unbekannt"}</td>
+                </tr>
+              </table>
+            </div>
+            <div class="error-message">
+              <p>❌ Vorschau nicht verfügbar</p>
+              <small>${error.message}</small>
+            </div>
+          </div>
+        `;
       });
   } else {
     // Normale Dateidetails für Nicht-Bild-Dateien
     let detailsHtml = `
-      <strong>Datei: ${name}</strong><br><br>
-      Größe: ${formatFileSize(fileInfo.size || 0)}<br>
-      Typ: ${fileInfo.type || "Unbekannt"}
+      <div class="file-details-container">
+        <h4 class="file-details-title">📄 ${name}</h4>
+        <div class="file-info-section">
+          <table class="info-table">
+            <tr>
+              <td><strong>Größe:</strong></td>
+              <td>${formatFileSize(fileInfo.size || 0)}</td>
+            </tr>
+            <tr>
+              <td><strong>Typ:</strong></td>
+              <td>${fileInfo.type || "Unbekannt"}</td>
+            </tr>
+          </table>
+        </div>
+        <p style="color: #666; font-style: italic; margin-top: 15px;">
+          ℹ️ Vorschau nur für Bilddateien verfügbar
+        </p>
+      </div>
     `;
     detailsDiv.innerHTML = detailsHtml;
   }
 }
+
 function initFileBrowser() {
   console.log("hole die Json's");
   const fileThreeDiv = document.querySelector(".file-three");
@@ -922,4 +1072,50 @@ function reopenCurrentPath(path) {
       }
     }
   });
+}
+
+// Hilfsfunktion: Formatiere Datum/Zeit
+function formatDateTime(timestamp) {
+  if (!timestamp) return "Unbekannt";
+
+  // Wenn timestamp ein ISO-String ist (von DB)
+  const date =
+    typeof timestamp === "string" ? new Date(timestamp) : new Date(timestamp);
+
+  if (isNaN(date.getTime())) return "Ungültiges Datum";
+
+  return date.toLocaleString("de-DE", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
+// Hilfsfunktion: Formatiere User-Informationen
+function formatUserInfo(userInfo) {
+  if (!userInfo && userInfo !== 0) return "Unbekannt";
+
+  // Wenn es eine User-ID (Zahl) ist
+  if (typeof userInfo === "number") {
+    if (userInfo === 0) {
+      return '<span class="system-user">🤖 System</span>';
+    }
+    return `<span class="user-id">👤 User ID: ${userInfo}</span>`;
+  }
+
+  // Wenn es ein String ist (z.B. "System", "admin")
+  if (userInfo === "System") {
+    return '<span class="system-user">🤖 System</span>';
+  }
+
+  // Wenn es "Gelöschter Benutzer" enthält
+  if (String(userInfo).includes("Gelöschter Benutzer")) {
+    return `<span class="deleted-user" title="Dieser Benutzer wurde entfernt">${userInfo}</span>`;
+  }
+
+  // Normaler Username
+  return `<span class="username">👤 ${userInfo}</span>`;
 }
