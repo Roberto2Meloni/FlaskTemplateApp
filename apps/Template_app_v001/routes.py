@@ -31,7 +31,11 @@ def is_ajax_request():
 @enabled_required
 def Template_app_v001_index():
     return render_template(
-        "Template_app_v001.html", user=current_user, config=config, content="dashboard"
+        "Template_app_v001.html",
+        user=current_user,
+        config=config,
+        content="dashboard",
+        app_config=app_config,
     )
 
 
@@ -41,12 +45,19 @@ def dashboard():
     # Bei AJAX: Nur Content
     if is_ajax_request():
         return render_template(
-            "content/Template_app_v001_dashboard.html", user=current_user, config=config
+            "content/Template_app_v001_dashboard.html",
+            user=current_user,
+            config=config,
+            app_config=app_config,
         )
 
     # Normal: Komplette Seite
     return render_template(
-        "Template_app_v001.html", user=current_user, config=config, content="dashboard"
+        "Template_app_v001.html",
+        user=current_user,
+        config=config,
+        content="dashboard",
+        app_config=app_config,
     )
 
 
@@ -55,11 +66,18 @@ def dashboard():
 def page_01():
     if is_ajax_request():
         return render_template(
-            "content/Template_app_v001_page_01.html", user=current_user, config=config
+            "content/Template_app_v001_page_01.html",
+            user=current_user,
+            config=config,
+            app_config=app_config,
         )
 
     return render_template(
-        "Template_app_v001.html", user=current_user, config=config, content="page_01"
+        "Template_app_v001.html",
+        user=current_user,
+        config=config,
+        content="page_01",
+        app_config=app_config,
     )
 
 
@@ -68,11 +86,18 @@ def page_01():
 def page_02():
     if is_ajax_request():
         return render_template(
-            "content/Template_app_v001_page_02.html", user=current_user, config=config
+            "content/Template_app_v001_page_02.html",
+            user=current_user,
+            config=config,
+            app_config=app_config,
         )
 
     return render_template(
-        "Template_app_v001.html", user=current_user, config=config, content="page_02"
+        "Template_app_v001.html",
+        user=current_user,
+        config=config,
+        content="page_02",
+        app_config=app_config,
     )
 
 
@@ -81,11 +106,18 @@ def page_02():
 def page_03():
     if is_ajax_request():
         return render_template(
-            "content/Template_app_v001_page_03.html", user=current_user, config=config
+            "content/Template_app_v001_page_03.html",
+            user=current_user,
+            config=config,
+            app_config=app_config,
         )
 
     return render_template(
-        "Template_app_v001.html", user=current_user, config=config, content="page_03"
+        "Template_app_v001.html",
+        user=current_user,
+        config=config,
+        content="page_03",
+        app_config=app_config,
     )
 
 
