@@ -1,6 +1,7 @@
 import re
 import os
 from .. import logger_name
+from flask import request
 
 root__path = os.getcwd()
 app_path = os.path.join(
@@ -100,3 +101,32 @@ def get_app_logs():
     except Exception as e:
         print(f"ERROR beim Lesen der Log-Datei: {e}")
         return ""
+
+
+def convert_value(value, original_value):
+    """
+    Konvertiert einen String-Wert in den korrekten Typ basierend auf dem Original
+    """
+    if original_value is None:
+        return value
+
+    original_type = type(original_value)
+
+    try:
+        if original_type == int:
+            return int(value)
+        elif original_type == float:
+            return float(value)
+        elif original_type == bool:
+            return value.lower() in ("true", "1", "yes", "on")
+        else:
+            return value
+    except (ValueError, AttributeError):
+        return value
+
+
+def is_ajax_request():
+    """
+    Prüft ob der Request von fetch/JavaScript kommt
+    """
+    return request.headers.get("X-Requested-With") == "XMLHttpRequest"

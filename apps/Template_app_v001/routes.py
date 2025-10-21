@@ -4,8 +4,9 @@ from . import (
     api_routes,
     blueprint,
     app_logger,
-    socketio_events,
     admin_routes,
+    admin_api_routes,
+    socketio_events,
     tasks,
 )
 from app.config import Config

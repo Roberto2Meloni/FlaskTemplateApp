@@ -1,104 +1,188 @@
 from app import socketio
-from flask_socketio import emit, join_room, leave_room
+from flask_socketio import emit
 from flask_login import current_user
 from flask import request
-import secrets, string
+from datetime import datetime
 from . import app_logger
+from .app_config import AppConfig
+from app.socketio_manager import get_socketio_manager
 
 app_logger.info("Starte App-Template_app_v001 SocketIO Events")
 
-# Globale Variable
-# global_room_id = "".join(
-#     secrets.choice(string.ascii_letters + string.digits) for _ in range(16)
-# )
+app_config = AppConfig()
 
-# print("Die Globale Room ID ist:", global_room_id)
+# ========================================
+# SOCKET TRACKING
+# ========================================
 
-# ===== CHAT-SPEZIFISCHE EVENTS (ohne Konflikt mit __init__.py) =====
-# Die bestehenden Events (connect, disconnect, ping) bleiben in __init__.py
-# Hier definieren wir nur NEUE Events für den Chat
+# Globales Dictionary für alle aktiven Socket-Verbindungen dieser App
+active_sockets = {}
 
 
-# @socketio.on("BasicChat_do_the_harlemshake")
-# def handle_BasicChat_do_the_harlemshake(data):
-#     name = data.get("name", "Unbekannt")
-#     is_admin = data.get("isAdmin", False)
-
-#     print(
-#         f"Harlemshake Befehl von {name}. Admin Status: {is_admin}, senden wir dies an alle"
-#     )
-
-#     emit(
-#         "BasicChat_do_the_harlemshake_reply",
-#         {"sender": name, "isAdmin": is_admin},
-#         broadcast=True,
-#     )
-
-
-# @socketio.on("BasicChat_send_message")
-# def handle_BasicChat_send_message(data):
-#     """
-#     Behandelt das Senden von Chat-Nachrichten
-#     Dies ist ein NEUER Event - kein Konflikt mit __init__.py
-#     """
-#     print(f"💬 Chat: Nachricht empfangen: {data}")
-
-#     if not data or "message" not in data:
-#         print("❌ Chat: Ungültige Nachricht")
-#         return
-
-#     message = data["message"].strip()
-#     if not message:
-#         return
-
-#     # Benutzer-Info ermitteln
-#     if current_user.is_authenticated:
-#         username = current_user.username
-#         user_id = current_user.id
-#     else:
-#         username = f"Gast_{request.sid[:6]}"
-#         user_id = None
-
-#     print(f"💬 {username}: {message}")
-
-#     # Nachricht an ALLE Clients senden (auch an den Sender)
-#     emit(
-#         "new_message",
-#         {
-#             "message": message,
-#             "username": username,
-#             "user_id": user_id,
-#             "timestamp": data.get("timestamp", "jetzt"),
-#         },
-#         broadcast=True,
-#     )  # broadcast=True sendet an ALLE verbundenen Clients
+def track_socket_connection(sid, user_info):
+    """
+    Tracke Socket-Verbindung
+    Wird aufgerufen wenn ein Client sich mit der App verbindet
+    """
+    active_sockets[sid] = {
+        "sid": sid,
+        "user_id": user_info.get("user_id"),
+        "username": user_info.get("username"),
+        "connected_at": user_info.get("connected_at"),
+        "app_name": user_info.get("app_name", app_config.app_name),
+    }
+    app_logger.debug(f"Socket tracked: {sid} - {user_info.get('username')}")
 
 
-# @socketio.on("BasicChat_join_global_chat")
-# def handle_BasicChat_join_global_chat():
-#     """
-#     Benutzer tritt dem globalen Chat bei
-#     Dies ist ein NEUER Event - kein Konflikt
-#     """
-#     join_room(global_room_id)
-
-#     if current_user.is_authenticated:
-#         username = current_user.username
-#     else:
-#         username = f"Gast_{request.sid[:6]}"
-
-#     print(f"👤 {username} ist dem globalen Chat beigetreten")
-
-#     # Info an alle in der Room
-#     emit(
-#         "user_joined_chat",
-#         {"username": username, "room_id": global_room_id},
-#         room=global_room_id,
-#         include_self=False,
-#     )  # include_self=False sendet NICHT an sich selbst
+def remove_socket_connection(sid):
+    """
+    Entferne Socket aus Tracking
+    Wird beim Disconnect aufgerufen
+    """
+    if sid in active_sockets:
+        username = active_sockets[sid].get("username", "Unknown")
+        del active_sockets[sid]
+        app_logger.debug(f"Socket removed: {sid} - {username}")
 
 
-# print("✅ Chat-spezifische Socket.IO Events registriert")
-# print(f"🌍 Globale Room ID: {global_room_id}")
+def get_active_sockets():
+    """
+    Gibt alle aktiven Socket-Verbindungen zurück
+    """
+    return active_sockets.copy()
+
+
+def get_socket_count():
+    """
+    Gibt die Anzahl aktiver Sockets zurück
+    """
+    return len(active_sockets)
+
+
+# ========================================
+# DISCONNECT HOOK FÜR SOCKETIO MANAGER
+# ========================================
+
+
+def disconnect_hook_handler(request_sid, user_data):
+    """
+    Disconnect Hook für SocketIOManager
+    Wird automatisch aufgerufen wenn eine Verbindung getrennt wird
+    """
+    remove_socket_connection(request_sid)
+    app_logger.debug(f"Disconnect hook called for {request_sid}")
+
+
+# Registriere Disconnect Hook beim SocketIOManager
+try:
+    socket_manager = get_socketio_manager()
+    socket_manager.register_disconnect_hook(
+        app_name=app_config.app_name, hook_function=disconnect_hook_handler
+    )
+    app_logger.info(f"✅ Disconnect-Hook für {app_config.app_name} registriert")
+except RuntimeError:
+    app_logger.warning(
+        "⚠️ SocketIOManager noch nicht initialisiert - Hook wird später registriert"
+    )
+
+
+# ========================================
+# SOCKET EVENT HANDLER
+# ========================================
+
+
+def register_socket_events():
+    """
+    Registriert app-spezifische Socket-Events
+    """
+
+    @socketio.on("Template_app_v001_connect")
+    def handle_app_connect(data=None):
+        """
+        App-spezifisches Connect Event
+        Wird vom Client gesendet wenn er sich mit der App verbindet
+        """
+        sid = request.sid
+
+        user_info = {
+            "sid": sid,
+            "user_id": current_user.id if current_user.is_authenticated else None,
+            "username": (
+                current_user.username
+                if current_user.is_authenticated
+                else f"Guest_{sid[:6]}"
+            ),
+            "connected_at": datetime.now().isoformat(),
+            "app_name": app_config.app_name,
+        }
+
+        # Tracke die Verbindung
+        track_socket_connection(sid, user_info)
+
+        app_logger.info(
+            f"App-Socket verbunden: {user_info['username']} (SID: {sid}) "
+            f"[{get_socket_count()} aktive Verbindungen]"
+        )
+
+        # Sende Bestätigung an Client
+        emit(
+            "Template_app_v001_connected",
+            {
+                "sid": sid,
+                "username": user_info["username"],
+                "app": app_config.app_name,
+                "message": f"Verbunden mit {app_config.app_name}",
+                "active_connections": get_socket_count(),
+            },
+        )
+
+    @socketio.on("Template_app_v001_ping")
+    def handle_app_ping():
+        """
+        App-spezifischer Ping für Connection-Health-Check
+        """
+        emit(
+            "Template_app_v001_pong",
+            {
+                "timestamp": datetime.now().isoformat(),
+                "app": app_config.app_name,
+                "active_connections": get_socket_count(),
+            },
+        )
+
+    @socketio.on("Template_app_v001_disconnect")
+    def handle_app_disconnect():
+        """
+        App-spezifisches Disconnect Event
+        Optional: Explizites Disconnect vom Client
+        """
+        sid = request.sid
+        remove_socket_connection(sid)
+
+        app_logger.info(
+            f"App-Socket getrennt: {sid} " f"[{get_socket_count()} aktive Verbindungen]"
+        )
+
+    # ===== BEISPIEL: Weitere App-spezifische Events =====
+
+    # @socketio.on('Template_app_v001_custom_event')
+    # def handle_custom_event(data):
+    #     """
+    #     Beispiel für ein eigenes Socket-Event
+    #     """
+    #     app_logger.info(f"Custom Event empfangen: {data}")
+    #
+    #     # Verarbeite Event...
+    #
+    #     emit('Template_app_v001_custom_response', {
+    #         'status': 'ok',
+    #         'data': data
+    #     })
+
+    app_logger.info("✅ Template_app_v001 Socket-Events registriert")
+
+
+# Registriere Events beim Import
+register_socket_events()
 
 app_logger.info("Ende App-Template_app_v001 SocketIO Events")

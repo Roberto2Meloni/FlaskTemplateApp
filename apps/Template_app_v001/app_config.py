@@ -62,16 +62,58 @@ class AppConfig:
         """
         Lade die Konfiguration neu
         """
-        cls._load_config()
+        cls._config_data = None
+        instance = cls()
+        instance._load_config()
+
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Konvertiere die Konfiguration zu einem Dictionary für Template-Verwendung
+        :return: Dictionary mit allen Konfigurationswerten
+        """
+        return AppConfig._config_data.copy() if AppConfig._config_data else {}
+
+    def update_config(self, updates: Dict[str, Any], skip_app_name: bool = True):
+        """
+        Aktualisiere mehrere Konfigurationswerte auf einmal
+        :param updates: Dictionary mit zu aktualisierenden Werten
+        :param skip_app_name: Wenn True, wird app_name nicht überschrieben
+        """
+        if AppConfig._config_data is None:
+            self._load_config()
+
+        for key, value in updates.items():
+            if skip_app_name and key == "app_name":
+                continue
+            AppConfig._config_data[key] = value
+
+        self._save_config()
+
+    def set(self, key: str, value: Any):
+        """
+        Setze einen Konfigurationswert und speichere
+        :param key: Schlüssel in der Konfiguration
+        :param value: Neuer Wert
+        """
+        if AppConfig._config_data is None:
+            self._load_config()
+
+        # Verhindere Änderung des app_name
+        if key == "app_name":
+            print("Warnung: app_name kann nicht geändert werden")
+            return
+
+        AppConfig._config_data[key] = value
+        self._save_config()
 
     # Eigenschaften für häufig verwendete Konfigurationswerte
     @property
     def app_name(self):
-        return AppConfig._config_data["app_name"]
+        return AppConfig._config_data.get("app_name", self._app_name)
 
     @property
     def tasks_intervals(self):
-        return AppConfig._config_data["tasks_intervall"]
+        return AppConfig._config_data.get("tasks_intervall", {})
 
     def get(self, key: str, default: Any = None) -> Any:
         """
@@ -80,6 +122,9 @@ class AppConfig:
         :param default: Standardwert, wenn Schlüssel nicht existiert
         :return: Wert des Schlüssels oder Standardwert
         """
+        if AppConfig._config_data is None:
+            return default
+
         keys = key.split(".")
         value = AppConfig._config_data
         for k in keys:

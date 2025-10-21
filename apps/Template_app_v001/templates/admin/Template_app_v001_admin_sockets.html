@@ -1,1 +1,90 @@
-<h4>Hier sind die Sockets</h4>
+<div class="sockets-container">
+  <div class="sockets-header">
+    <div class="header-left">
+      <h4><i class="bi bi-plug-fill"></i> Socket Verbindungen</h4>
+      <p class="sockets-subtitle">
+        Aktive WebSocket-Verbindungen für {{ app_config.app_name }}
+      </p>
+    </div>
+    <div class="header-right">
+      <button id="refreshBtn" class="btn btn-secondary">
+        <i class="bi bi-arrow-clockwise"></i> Aktualisieren
+      </button>
+      <button id="disconnectAllBtn" class="btn btn-danger">
+        <i class="bi bi-x-circle"></i> Alle trennen
+      </button>
+    </div>
+  </div>
+
+  <div class="sockets-stats">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="bi bi-link-45deg"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value" id="totalConnections">
+          {{ active_sockets|length }}
+        </div>
+        <div class="stat-label">Aktive Verbindungen</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sockets-content">
+    {% if active_sockets %}
+    <div class="sockets-table-wrapper">
+      <table class="sockets-table" id="socketsTable">
+        <thead>
+          <tr>
+            <th><i class="bi bi-person"></i> Benutzer</th>
+            <th><i class="bi bi-fingerprint"></i> Socket ID</th>
+            <th><i class="bi bi-clock"></i> Verbunden seit</th>
+            <th><i class="bi bi-gear"></i> Aktionen</th>
+          </tr>
+        </thead>
+        <tbody id="socketsTableBody">
+          {% for sid, socket in active_sockets.items() %}
+          <tr data-sid="{{ sid }}">
+            <td>
+              <div class="user-info">
+                <i class="bi bi-person-circle user-icon"></i>
+                <span class="username">{{ socket.username }}</span>
+                {% if socket.user_id %}
+                <span class="user-badge authenticated">Auth</span>
+                {% else %}
+                <span class="user-badge guest">Gast</span>
+                {% endif %}
+              </div>
+            </td>
+            <td>
+              <code class="socket-id">{{ sid[:16] }}...</code>
+            </td>
+            <td>
+              <span class="timestamp">{{ socket.connected_at }}</span>
+            </td>
+            <td>
+              <button
+                class="btn-icon btn-disconnect"
+                data-sid="{{ sid }}"
+                title="Verbindung trennen"
+              >
+                <i class="bi bi-x-circle"></i>
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-plug"></i>
+      <h5>Keine aktiven Verbindungen</h5>
+      <p>Aktuell sind keine Socket-Verbindungen für diese App aktiv.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Status Messages -->
+  <div id="statusMessage" class="status-message" style="display: none"></div>
+</div>

@@ -1,1 +1,188 @@
-<h4>Hier sind die Configs</h4>
+<div class="config-container">
+  <div class="config-header">
+    <h4>App Konfiguration</h4>
+    <p class="config-subtitle">
+      Bearbeite die Einstellungen für {{ app_infos.get('Name',
+      'Template_app_v001') }}
+    </p>
+    <p class="config-subtitle">Die Integerwerte sind in Minuten programmiert</p>
+  </div>
+
+  <div class="config-content">
+    <!-- App Name (Read-only) -->
+    <div class="config-section">
+      <h5 class="section-title">
+        <i class="bi bi-info-circle"></i> Basis-Informationen
+      </h5>
+      <div class="config-item readonly">
+        <label for="app_name" class="config-label">
+          App Name
+          <span class="readonly-badge">Schreibgeschützt</span>
+        </label>
+        <input
+          type="text"
+          id="app_name"
+          class="config-input"
+          value="{{ app_config.app_name }}"
+          readonly
+          title="Der App-Name kann nicht geändert werden"
+        />
+      </div>
+    </div>
+
+    <!-- Editable Config Fields -->
+    <form
+      id="configForm"
+      method="POST"
+      action="{{ url_for('Template_app_v001.api_save_config') }}"
+    >
+      <input type="hidden" name="csrf_token" value="{{ config.SECRET_KEY }}" />
+
+      {% for key, value in app_config_dict.items() %} {% if key != 'app_name' %}
+      <div class="config-section">
+        <h5 class="section-title">
+          <i class="bi bi-gear"></i> {{ key|replace('_', ' ')|title }}
+        </h5>
+
+        {% if value is mapping %}
+        <!-- Nested object (like tasks_intervall) -->
+        {% for sub_key, sub_value in value.items() %}
+        <div class="config-item">
+          <label for="{{ key }}_{{ sub_key }}" class="config-label">
+            {{ sub_key|replace('_', ' ')|title }}
+            <span class="config-type-badge"
+              >{{ sub_value.__class__.__name__ }}</span
+            >
+          </label>
+
+          {% if sub_value is number %}
+          <input
+            type="number"
+            id="{{ key }}_{{ sub_key }}"
+            name="{{ key }}[{{ sub_key }}]"
+            class="config-input"
+            value="{{ sub_value }}"
+            {%
+            if
+            sub_value
+            is
+            integer
+            %}step="1"
+            {%
+            else
+            %}step="0.01"
+            {%
+            endif
+            %}
+          />
+          {% elif sub_value is sameas true or sub_value is sameas false %}
+          <div class="config-toggle">
+            <input
+              type="checkbox"
+              id="{{ key }}_{{ sub_key }}"
+              name="{{ key }}[{{ sub_key }}]"
+              class="config-checkbox"
+              {%
+              if
+              sub_value
+              %}checked{%
+              endif
+              %}
+              value="true"
+            />
+            <label for="{{ key }}_{{ sub_key }}" class="toggle-label">
+              <span class="toggle-switch"></span>
+            </label>
+          </div>
+          {% else %}
+          <input
+            type="text"
+            id="{{ key }}_{{ sub_key }}"
+            name="{{ key }}[{{ sub_key }}]"
+            class="config-input"
+            value="{{ sub_value }}"
+          />
+          {% endif %}
+
+          <small class="config-hint">Aktueller Wert: {{ sub_value }}</small>
+        </div>
+        {% endfor %} {% else %}
+        <!-- Simple value -->
+        <div class="config-item">
+          <label for="{{ key }}" class="config-label">
+            {{ key|replace('_', ' ')|title }}
+            <span class="config-type-badge"
+              >{{ value.__class__.__name__ }}</span
+            >
+          </label>
+
+          {% if value is number %}
+          <input
+            type="number"
+            id="{{ key }}"
+            name="{{ key }}"
+            class="config-input"
+            value="{{ value }}"
+            {%
+            if
+            value
+            is
+            integer
+            %}step="1"
+            {%
+            else
+            %}step="0.01"
+            {%
+            endif
+            %}
+          />
+          {% elif value is sameas true or value is sameas false %}
+          <div class="config-toggle">
+            <input
+              type="checkbox"
+              id="{{ key }}"
+              name="{{ key }}"
+              class="config-checkbox"
+              {%
+              if
+              value
+              %}checked{%
+              endif
+              %}
+              value="true"
+            />
+            <label for="{{ key }}" class="toggle-label">
+              <span class="toggle-switch"></span>
+            </label>
+          </div>
+          {% else %}
+          <input
+            type="text"
+            id="{{ key }}"
+            name="{{ key }}"
+            class="config-input"
+            value="{{ value }}"
+          />
+          {% endif %}
+
+          <small class="config-hint">Aktueller Wert: {{ value }}</small>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %} {% endfor %}
+
+      <!-- Action Buttons -->
+      <div class="config-actions">
+        <button type="button" id="resetBtn" class="btn btn-secondary">
+          <i class="bi bi-arrow-counterclockwise"></i> Zurücksetzen
+        </button>
+        <button type="submit" id="saveBtn" class="btn btn-primary">
+          <i class="bi bi-save"></i> Speichern
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Status Messages -->
+  <div id="statusMessage" class="status-message" style="display: none"></div>
+</div>

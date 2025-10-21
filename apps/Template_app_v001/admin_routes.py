@@ -3,32 +3,58 @@ from app.decorators import admin_required, enabled_required
 from flask_login import current_user
 from app.config import Config
 from flask import render_template, request
-from .helper_app_functions.helper_admin_app import get_app_info, get_app_logs
+from .helper_app_functions.helper_admin_app import (
+    get_app_info,
+    get_app_logs,
+    is_ajax_request,
+)
 from .app_config import AppConfig
+from app.socketio_manager import get_socketio_manager
 
+# Globale Variablen
 config = Config()
 app_config = AppConfig()
 app_logger.info(f"Starte App-{app_config.app_name} admin_routes")
 
-
-def is_ajax_request():
-    """
-    Prüft ob der Request von fetch/JavaScript kommt
-    """
-    return request.headers.get("X-Requested-With") == "XMLHttpRequest"
+# Import Socket-Funktionen aus socketio_events (für Views)
+from .socketio_events import get_active_sockets, get_socket_count
 
 
 # ========================================
-# VOLLSTÄNDIGE ADMIN-SEITEN
-# Diese laden das komplette Layout
+# ADMIN VIEW ROUTES (nur render_template, keine APIs)
 # ========================================
 
 
 @blueprint.route("/app_settings", methods=["GET"])
 @admin_required
 def app_settings():
-    # Admin-Hauptseite lädt IMMER komplett (mit beiden Sidebars)
+    """Admin-Hauptseite"""
     app_infos = get_app_info()
+    return render_template(
+        "Template_app_v001.html",
+        user=current_user,
+        config=config,
+        content="app_settings",
+        settings="app_info",
+        app_infos=app_infos,
+        app_config=app_config,
+    )
+
+
+@blueprint.route("/app_settings/app_info", methods=["GET"])
+@admin_required
+def app_info():
+    """App-Informationen"""
+    app_infos = get_app_info()
+
+    if is_ajax_request():
+        return render_template(
+            "admin/Template_app_v001_admin_info.html",
+            user=current_user,
+            config=config,
+            app_infos=app_infos,
+            app_config=app_config,
+        )
 
     return render_template(
         "Template_app_v001.html",
@@ -44,18 +70,20 @@ def app_settings():
 @blueprint.route("/app_settings/config", methods=["GET"])
 @admin_required
 def app_settings_config():
+    """App-Konfiguration bearbeiten"""
     app_infos = get_app_info()
-    # Bei AJAX: Nur das Admin-Content-Fragment
+    app_config_dict = app_config.to_dict()
+
     if is_ajax_request():
         return render_template(
             "admin/Template_app_v001_admin_config.html",
             user=current_user,
             config=config,
             app_infos=app_infos,
+            app_config_dict=app_config_dict,
             app_config=app_config,
         )
 
-    # Normal: Komplette Seite mit Admin-Layout
     return render_template(
         "Template_app_v001.html",
         user=current_user,
@@ -63,6 +91,7 @@ def app_settings_config():
         content="app_settings",
         settings="config",
         app_infos=app_infos,
+        app_config_dict=app_config_dict,
         app_config=app_config,
     )
 
@@ -70,7 +99,19 @@ def app_settings_config():
 @blueprint.route("/app_settings/sockets", methods=["GET"])
 @admin_required
 def app_settings_sockets():
+    """Socket-Verbindungen anzeigen"""
     app_infos = get_app_info()
+
+    # Hole Socket-Manager für zusätzliche Infos
+    try:
+        socket_manager = get_socketio_manager()
+        online_users_count = socket_manager.get_online_users_count()
+    except RuntimeError:
+        online_users_count = 0
+
+    # Hole aktive Sockets aus socketio_events
+    app_sockets = get_active_sockets()
+
     if is_ajax_request():
         return render_template(
             "admin/Template_app_v001_admin_sockets.html",
@@ -78,6 +119,8 @@ def app_settings_sockets():
             config=config,
             app_infos=app_infos,
             app_config=app_config,
+            active_sockets=app_sockets,
+            online_users_count=online_users_count,
         )
 
     return render_template(
@@ -88,13 +131,17 @@ def app_settings_sockets():
         settings="sockets",
         app_infos=app_infos,
         app_config=app_config,
+        active_sockets=app_sockets,
+        online_users_count=online_users_count,
     )
 
 
 @blueprint.route("/app_settings/tasks", methods=["GET"])
 @admin_required
 def app_settings_tasks():
+    """Task-Verwaltung"""
     app_infos = get_app_info()
+
     if is_ajax_request():
         return render_template(
             "admin/Template_app_v001_admin_task.html",
@@ -118,8 +165,10 @@ def app_settings_tasks():
 @blueprint.route("/app_settings/logs", methods=["GET"])
 @admin_required
 def app_settings_logs():
+    """App-Logs anzeigen"""
     app_infos = get_app_info()
     app_logs = get_app_logs()
+
     if is_ajax_request():
         return render_template(
             "admin/Template_app_v001_admin_logs.html",
@@ -145,6 +194,7 @@ def app_settings_logs():
 @blueprint.route("/app_settings/backup_and_restore", methods=["GET"])
 @admin_required
 def app_settings_backup_and_restore():
+    """Backup & Restore"""
     app_infos = get_app_info()
 
     if is_ajax_request():
@@ -161,35 +211,10 @@ def app_settings_backup_and_restore():
         user=current_user,
         config=config,
         content="app_settings",
-        settings="logs",
+        settings="backup_and_restore",
         app_infos=app_infos,
         app_config=app_config,
     )
 
 
-@blueprint.route("/app_settings/app_info", methods=["GET"])
-@admin_required
-def app_info():
-    app_infos = get_app_info()
-
-    if is_ajax_request():
-        return render_template(
-            "admin/Template_app_v001_admin_info.html",
-            user=current_user,
-            config=config,
-            app_infos=app_infos,
-            app_config=app_config,
-        )
-
-    return render_template(
-        "Template_app_v001.html",
-        user=current_user,
-        config=config,
-        content="app_settings",
-        settings="app_info",
-        app_infos=app_infos,
-        app_config=app_config,
-    )
-
-
-app_logger.info("Ende App-Template_app_v001 admin_routes")
+app_logger.info(f"Ende App-{app_config.app_name} admin_routes")
