@@ -18,7 +18,7 @@ from .socketio_events import active_sockets, remove_socket_connection
 # ========================================
 
 
-@blueprint.route("/api/sockets/list", methods=["GET"])
+@blueprint.route("/admin/api_get_sockets", methods=["GET"])
 @admin_required
 def api_get_sockets():
     """
@@ -54,7 +54,7 @@ def api_get_sockets():
         return jsonify({"success": False, "message": str(e)}), 500
 
 
-@blueprint.route("/api/sockets/disconnect/<sid>", methods=["POST"])
+@blueprint.route("/admin/api_disconnect_socket/<sid>", methods=["POST"])
 @admin_required
 def api_disconnect_socket(sid):
     """
@@ -87,7 +87,7 @@ def api_disconnect_socket(sid):
         return jsonify({"success": False, "message": str(e)}), 500
 
 
-@blueprint.route("/api/sockets/disconnect-all", methods=["POST"])
+@blueprint.route("/admin/api_disconnect_all_sockets", methods=["POST"])
 @admin_required
 def api_disconnect_all_sockets():
     """
@@ -131,7 +131,7 @@ def api_disconnect_all_sockets():
 # ========================================
 
 
-@blueprint.route("/api/config/save", methods=["POST"])
+@blueprint.route("/admin/api_save_config", methods=["POST"])
 @admin_required
 def api_save_config():
     """
