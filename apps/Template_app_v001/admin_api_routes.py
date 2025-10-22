@@ -24,6 +24,7 @@ def api_get_sockets():
     """
     API: Hole aktuelle Socket-Liste
     """
+    print("API: Hole aktuelle Socket-Liste")
     try:
         # Hole Socket-Manager Status
         try:
@@ -51,6 +52,7 @@ def api_get_sockets():
         )
     except Exception as e:
         app_logger.error(f"Fehler beim Abrufen der Sockets: {str(e)}")
+        print(f"Fehler beim Abrufen der Sockets: {str(e)}")
         return jsonify({"success": False, "message": str(e)}), 500
 
 

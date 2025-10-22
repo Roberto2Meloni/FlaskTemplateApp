@@ -1,9 +1,4 @@
-<div
-  class="sockets-container"
-  data-api-list="{{ url_for('Template_app_v001.api_get_sockets') }}"
-  data-api-disconnect="{{ url_for('Template_app_v001.api_disconnect_socket', sid='__SID__') }}"
-  data-api-disconnect-all="{{ url_for('Template_app_v001.api_disconnect_all_sockets') }}"
->
+<div class="sockets-container">
   <div class="sockets-header">
     <div class="header-left">
       <h4><i class="bi bi-plug-fill"></i> Socket Verbindungen</h4>
@@ -12,10 +7,19 @@
       </p>
     </div>
     <div class="header-right">
-      <button id="refreshBtn" class="btn btn-secondary">
+      <button
+        id="refreshBtn"
+        class="btn btn-secondary"
+        onclick="refreshSocketList('{{ url_for('Template_app_v001.api_get_sockets') }}')"
+      >
         <i class="bi bi-arrow-clockwise"></i> Aktualisieren
       </button>
-      <button id="disconnectAllBtn" class="btn btn-danger">
+
+      <button
+        id="disconnectAllBtn"
+        class="btn btn-danger"
+        onclick="disconnectAllSockets('{{ url_for('Template_app_v001.api_disconnect_all_sockets') }}')"
+      >
         <i class="bi bi-x-circle"></i> Alle trennen
       </button>
     </div>

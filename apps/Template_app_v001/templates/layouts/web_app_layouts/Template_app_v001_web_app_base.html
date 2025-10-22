@@ -78,11 +78,12 @@
     "{{ url_for('Template_app_v001.api_disconnect_all_sockets') }}";
 </script>
 
-<script src="{{ url_for('Template_app_v001.static', filename='js/Template_app_v001.js') }}"></script>
-<script src="{{ url_for('Template_app_v001.static', filename='js/Template_app_v001_sidebar_vertical.js') }}"></script>
-
 <!-- Socket.IO -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
 <script src="{{ url_for('Template_app_v001.static', filename='js/Template_app_v001_socketio.js') }}"></script>
+<script src="{{ url_for('Template_app_v001.static', filename='js/Template_app_v001_admin_sockets.js') }}"></script>
+
+<script src="{{ url_for('Template_app_v001.static', filename='js/Template_app_v001.js') }}"></script>
+<script src="{{ url_for('Template_app_v001.static', filename='js/Template_app_v001_sidebar_vertical.js') }}"></script>
 
 {% endblock %}

@@ -351,14 +351,23 @@ document.addEventListener("DOMContentLoaded", function () {
   const statusMessage = document.getElementById("statusMessage");
 
   // Store original values
-  const originalValues = {};
-  form.querySelectorAll("input:not([readonly])").forEach((input) => {
-    if (input.type === "checkbox") {
-      originalValues[input.id] = input.checked;
-    } else {
-      originalValues[input.id] = input.value;
-    }
-  });
+  if (resetBtn) {
+    resetBtn.addEventListener("click", function () {
+      Object.keys(originalValues).forEach((id) => {
+        const input = document.getElementById(id);
+        if (input) {
+          if (input.type === "checkbox") {
+            input.checked = originalValues[id];
+          } else {
+            input.value = originalValues[id];
+          }
+        }
+      });
+      showStatus("Änderungen zurückgesetzt", "success");
+    });
+  } else {
+    console.warn("⚠️ Reset-Button nicht gefunden");
+  }
 
   // Reset functionality
   resetBtn.addEventListener("click", function () {
@@ -447,14 +456,12 @@ document.addEventListener("DOMContentLoaded", function () {
       '<i class="bi bi-arrow-clockwise loading"></i> Lädt...';
 
     try {
-      const response = await fetch(
-        "{{ url_for('Template_app_v001.api_get_sockets') }}",
-        {
-          headers: {
-            "X-Requested-With": "XMLHttpRequest",
-          },
-        }
-      );
+      console.log("API: Hole aktuelle Socket-Liste");
+      const response = await fetch(url_api_get_sockets, {
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+        },
+      });
 
       const result = await response.json();
 
