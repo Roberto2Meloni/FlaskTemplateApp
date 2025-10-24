@@ -11,6 +11,7 @@ from .helper_app_functions.helper_admin_app import (
 from .app_config import AppConfig
 from app.socketio_manager import get_socketio_manager
 from .tasks import get_all_tasks
+from .helper_app_functions.helper_admin_app import get_log_statistics
 
 # Globale Variablen
 config = Config()
@@ -169,9 +170,23 @@ def app_settings_tasks():
 @blueprint.route("/app_settings/logs", methods=["GET"])
 @admin_required
 def app_settings_logs():
-    """App-Logs anzeigen"""
+    """
+    App-Logs anzeigen mit Filteroptionen
+    """
+    # Parameter aus Request
+    limit = request.args.get("limit", 500, type=int)
+    level_filter = request.args.get("level", None, type=str)
+    search_term = request.args.get("search", None, type=str)
+
+    # Begrenze Limit auf Maximum
+    if limit > 2000:
+        limit = 2000
+
     app_infos = get_app_info()
-    app_logs = get_app_logs()
+    app_logs = get_app_logs(
+        limit=limit, level_filter=level_filter, search_term=search_term
+    )
+    log_stats = get_log_statistics()
 
     if is_ajax_request():
         return render_template(
@@ -180,7 +195,11 @@ def app_settings_logs():
             config=config,
             app_infos=app_infos,
             app_logs=app_logs,
+            log_stats=log_stats,
             app_config=app_config,
+            current_limit=limit,
+            current_level=level_filter,
+            current_search=search_term,
         )
 
     return render_template(
@@ -191,7 +210,11 @@ def app_settings_logs():
         settings="logs",
         app_infos=app_infos,
         app_logs=app_logs,
+        log_stats=log_stats,
         app_config=app_config,
+        current_limit=limit,
+        current_level=level_filter,
+        current_search=search_term,
     )
 
 

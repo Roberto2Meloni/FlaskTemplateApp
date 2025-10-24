@@ -6,12 +6,13 @@ from flask_socketio import disconnect as socketio_disconnect
 from app.socketio_manager import get_socketio_manager
 from .app_config import AppConfig
 import threading
-
-app_config = AppConfig()
-app_logger.info(f"Starte App-{app_config.app_name} admin_api_routes")
+from .helper_app_functions.helper_admin_app import get_log_statistics
 
 # Import Socket-Management aus socketio_events
 from .socketio_events import active_sockets, remove_socket_connection
+
+app_config = AppConfig()
+app_logger.info(f"Starte App-{app_config.app_name} admin_api_routes")
 
 
 # ========================================
@@ -391,6 +392,157 @@ def api_save_config():
 
     except Exception as e:
         app_logger.error(f"Fehler beim Speichern der Config: {str(e)}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@blueprint.route("/admin/api_get_logs", methods=["GET"])
+@admin_required
+def api_get_logs():
+    """
+    API: Hole App-Logs mit Filtern
+    """
+    try:
+        # Parameter aus Request
+        limit = request.args.get("limit", 500, type=int)
+        level_filter = request.args.get("level", None, type=str)
+        search_term = request.args.get("search", None, type=str)
+
+        # Begrenze Limit
+        if limit > 2000:
+            limit = 2000
+
+        app_logs = get_app_logs(
+            limit=limit, level_filter=level_filter, search_term=search_term
+        )
+
+        return jsonify(
+            {
+                "success": True,
+                "logs": app_logs["logs"],
+                "total_lines": app_logs["total_lines"],
+                "filtered_lines": app_logs["filtered_lines"],
+                "file_size_mb": app_logs["file_size_mb"],
+                "has_more": app_logs["has_more"],
+                "count": len(app_logs["logs"]),
+            }
+        )
+
+    except Exception as e:
+        app_logger.error(f"Fehler beim Abrufen der Logs: {str(e)}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@blueprint.route("/admin/api_get_log_stats", methods=["GET"])
+@admin_required
+def api_get_log_stats():
+    """
+    API: Hole Log-Statistiken
+    """
+    try:
+        stats = get_log_statistics()
+
+        return jsonify({"success": True, "stats": stats})
+
+    except Exception as e:
+        app_logger.error(f"Fehler beim Abrufen der Log-Statistiken: {str(e)}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@blueprint.route("/admin/api_export_logs", methods=["POST"])
+@admin_required
+def api_export_logs():
+    """
+    API: Exportiere Logs als Datei
+    """
+    from flask import send_file
+    import io
+    from datetime import datetime
+
+    try:
+        # Parameter
+        limit = request.form.get("limit", 1000, type=int)
+        level_filter = request.form.get("level", None, type=str)
+        search_term = request.form.get("search", None, type=str)
+
+        # Hole Logs
+        app_logs = get_app_logs(
+            limit=limit, level_filter=level_filter, search_term=search_term
+        )
+
+        # Erstelle Text-Content
+        content = ""
+        for log in app_logs["logs"]:
+            content += f"{log['timestamp']} - {log['logger']} - {log['level']} - {log['message']}\n"
+
+        # Erstelle Datei im Speicher
+        file_buffer = io.BytesIO()
+        file_buffer.write(content.encode("utf-8"))
+        file_buffer.seek(0)
+
+        filename = f"app_logs_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+
+        app_logger.info(f"Logs exportiert von {current_user.username}: {filename}")
+
+        return send_file(
+            file_buffer,
+            mimetype="text/plain",
+            as_attachment=True,
+            download_name=filename,
+        )
+
+    except Exception as e:
+        app_logger.error(f"Fehler beim Exportieren der Logs: {str(e)}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@blueprint.route("/admin/api_clear_logs", methods=["POST"])
+@admin_required
+def api_clear_logs():
+    """
+    API: Lösche Log-Datei (VORSICHT!)
+    Erstellt Backup vor dem Löschen
+    """
+    import os
+    import shutil
+    from datetime import datetime
+
+    try:
+        root_path = os.getcwd()
+        log_path = os.path.join(root_path, "log")
+        log_file = os.path.join(log_path, "server_log.log")
+
+        if not os.path.exists(log_file):
+            return (
+                jsonify({"success": False, "message": "Log-Datei nicht gefunden"}),
+                404,
+            )
+
+        # Erstelle Backup
+        backup_file = os.path.join(
+            log_path,
+            f"server_log_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log",
+        )
+        shutil.copy2(log_file, backup_file)
+
+        # Lösche Original
+        with open(log_file, "w") as f:
+            f.write("")  # Leere Datei
+
+        app_logger.warning(
+            f"Log-Datei geleert von Admin {current_user.username}. "
+            f"Backup erstellt: {backup_file}"
+        )
+
+        return jsonify(
+            {
+                "success": True,
+                "message": "Log-Datei geleert. Backup erstellt.",
+                "backup": os.path.basename(backup_file),
+            }
+        )
+
+    except Exception as e:
+        app_logger.error(f"Fehler beim Löschen der Logs: {str(e)}")
         return jsonify({"success": False, "message": str(e)}), 500
 
 

@@ -1104,3 +1104,80 @@ window.TaskManagement = {
   stopAutoRefresh,
   showToast,
 };
+
+// Toast Notification
+function showLogToast(message, type = "info") {
+  const toast = document.getElementById("log-toast-notification");
+  toast.textContent = message;
+  toast.className = `toast-notification ${type}`;
+  toast.classList.add("show");
+
+  setTimeout(() => {
+    toast.classList.remove("show");
+  }, 3000);
+}
+
+// Filter anwenden
+function applyFilters() {
+  const level = document.getElementById("level-filter").value;
+  const limit = document.getElementById("limit-filter").value;
+  const search = document.getElementById("search-filter").value;
+
+  const params = new URLSearchParams();
+  if (level) params.append("level", level);
+  if (limit) params.append("limit", limit);
+  if (search) params.append("search", search);
+
+  window.location.href = `${window.location.pathname}?${params.toString()}`;
+}
+
+// Filter zurücksetzen
+function resetFilters() {
+  window.location.href = window.location.pathname;
+}
+
+// Schnellfilter
+function quickFilter(level) {
+  document.getElementById("level-filter").value = level;
+  applyFilters();
+}
+
+// Enter-Taste in Suchfeld
+document
+  .getElementById("search-filter")
+  ?.addEventListener("keypress", function (e) {
+    if (e.key === "Enter") {
+      applyFilters();
+    }
+  });
+
+// Download Logs
+function downloadLogs() {
+  showLogToast("Logs werden vorbereitet...", "info");
+
+  // Erstelle Text-Content aus sichtbaren Logs
+  const logRows = document.querySelectorAll(".log-row");
+  let content = "";
+
+  logRows.forEach((row) => {
+    const timestamp = row.querySelector(".log-timestamp").textContent;
+    const level = row.querySelector(".level-badge").textContent.trim();
+    const logger = row.querySelector(".log-logger").textContent;
+    const message = row.querySelector(".log-message").textContent;
+
+    content += `${timestamp} - ${logger} - ${level} - ${message}\n`;
+  });
+
+  // Download als Datei
+  const blob = new Blob([content], { type: "text/plain" });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `app_logs_${new Date().toISOString().slice(0, 10)}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+
+  showLogToast("Logs heruntergeladen!", "success");
+}

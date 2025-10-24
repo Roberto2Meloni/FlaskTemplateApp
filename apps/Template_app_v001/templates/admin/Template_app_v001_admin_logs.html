@@ -1,2 +1,157 @@
-<h4>Hier sind die Logs</h4>
-<pre>{{ app_logs }}</pre>
+<div class="log-viewer-container">
+  <!-- Header mit Statistiken -->
+  <div class="log-header">
+    <h2><i class="bi bi-file-text-fill"></i> App Logs</h2>
+    
+    <div class="log-stats">
+      <div class="stat-item">
+        <i class="bi bi-hdd-fill"></i>
+        <span class="stat-label">Dateigröße:</span>
+        <span class="stat-value">{{ log_stats.total_size_mb }} MB</span>
+      </div>
+      <div class="stat-item">
+        <i class="bi bi-list-ol"></i>
+        <span class="stat-label">Gefilterte Logs:</span>
+        <span class="stat-value">{{ app_logs.filtered_lines }}</span>
+      </div>
+      <div class="stat-item">
+        <i class="bi bi-clock-fill"></i>
+        <span class="stat-label">Letzte Änderung:</span>
+        <span class="stat-value">{{ log_stats.last_modified }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Controls -->
+  <div class="log-controls">
+    <div class="filter-row">
+      <!-- Log-Level Filter -->
+      <div class="filter-group">
+        <label for="level-filter">
+          <i class="bi bi-funnel"></i> Level:
+        </label>
+        <select id="level-filter" class="form-control">
+          <option value="">Alle Levels</option>
+          <option value="INFO" {% if current_level == 'INFO' %}selected{% endif %}>INFO ({{ log_stats.levels.INFO }})</option>
+          <option value="WARNING" {% if current_level == 'WARNING' %}selected{% endif %}>WARNING ({{ log_stats.levels.WARNING }})</option>
+          <option value="ERROR" {% if current_level == 'ERROR' %}selected{% endif %}>ERROR ({{ log_stats.levels.ERROR }})</option>
+          <option value="DEBUG" {% if current_level == 'DEBUG' %}selected{% endif %}>DEBUG ({{ log_stats.levels.DEBUG }})</option>
+          <option value="CRITICAL" {% if current_level == 'CRITICAL' %}selected{% endif %}>CRITICAL ({{ log_stats.levels.CRITICAL }})</option>
+        </select>
+      </div>
+
+      <!-- Limit Filter -->
+      <div class="filter-group">
+        <label for="limit-filter">
+          <i class="bi bi-card-list"></i> Anzahl:
+        </label>
+        <select id="limit-filter" class="form-control">
+          <option value="100" {% if current_limit == 100 %}selected{% endif %}>100 Zeilen</option>
+          <option value="500" {% if current_limit == 500 %}selected{% endif %}>500 Zeilen</option>
+          <option value="1000" {% if current_limit == 1000 %}selected{% endif %}>1000 Zeilen</option>
+          <option value="2000" {% if current_limit == 2000 %}selected{% endif %}>2000 Zeilen</option>
+        </select>
+      </div>
+
+      <!-- Suche -->
+      <div class="filter-group filter-search">
+        <label for="search-filter">
+          <i class="bi bi-search"></i> Suche:
+        </label>
+        <input 
+          type="text" 
+          id="search-filter" 
+          class="form-control" 
+          placeholder="Nach Text suchen..."
+          value="{{ current_search if current_search else '' }}"
+        />
+      </div>
+
+      <!-- Buttons -->
+      <div class="filter-actions">
+        <button class="btn btn-primary" onclick="applyFilters()">
+          <i class="bi bi-check-circle"></i> Filter anwenden
+        </button>
+        <button class="btn btn-secondary" onclick="resetFilters()">
+          <i class="bi bi-arrow-clockwise"></i> Zurücksetzen
+        </button>
+        <button class="btn btn-success" onclick="downloadLogs()">
+          <i class="bi bi-download"></i> Download
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick Filters -->
+    <div class="quick-filters">
+      <span class="quick-filter-label">Schnellfilter:</span>
+      <button class="btn-quick-filter" onclick="quickFilter('ERROR')">
+        <i class="bi bi-exclamation-triangle-fill"></i> Nur Errors
+      </button>
+      <button class="btn-quick-filter" onclick="quickFilter('WARNING')">
+        <i class="bi bi-exclamation-circle-fill"></i> Nur Warnings
+      </button>
+      <button class="btn-quick-filter" onclick="quickFilter('INFO')">
+        <i class="bi bi-info-circle-fill"></i> Nur Info
+      </button>
+    </div>
+  </div>
+
+  <!-- Log Display -->
+  <div class="log-display">
+    {% if app_logs.logs %}
+      {% if app_logs.has_more %}
+      <div class="log-warning">
+        <i class="bi bi-info-circle-fill"></i>
+        Es werden {{ current_limit }} von {{ app_logs.filtered_lines }} gefilterten Logs angezeigt.
+        Erhöhe das Limit oder verfeinere den Filter für mehr Ergebnisse.
+      </div>
+      {% endif %}
+
+      <div class="log-table-container">
+        <table class="log-table">
+          <thead>
+            <tr>
+              <th class="col-timestamp">Zeitstempel</th>
+              <th class="col-level">Level</th>
+              <th class="col-logger">Logger</th>
+              <th class="col-message">Nachricht</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in app_logs.logs %}
+            <tr class="log-row log-level-{{ log.level|lower }}">
+              <td class="log-timestamp">{{ log.timestamp }}</td>
+              <td class="log-level">
+                <span class="level-badge level-{{ log.level|lower }}">
+                  {% if log.level == 'ERROR' or log.level == 'CRITICAL' %}
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                  {% elif log.level == 'WARNING' %}
+                    <i class="bi bi-exclamation-circle-fill"></i>
+                  {% elif log.level == 'INFO' %}
+                    <i class="bi bi-info-circle-fill"></i>
+                  {% elif log.level == 'DEBUG' %}
+                    <i class="bi bi-bug-fill"></i>
+                  {% endif %}
+                  {{ log.level }}
+                </span>
+              </td>
+              <td class="log-logger">{{ log.logger }}</td>
+              <td class="log-message">{{ log.message }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="no-logs-message">
+        <i class="bi bi-inbox"></i>
+        <p>Keine Logs gefunden</p>
+        <small>Mit den aktuellen Filtereinstellungen wurden keine Logs gefunden.</small>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="log-toast-notification" class="toast-notification"></div>
+</div>
+
