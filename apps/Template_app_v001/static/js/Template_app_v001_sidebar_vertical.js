@@ -643,3 +643,464 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }, 30000);
 });
+
+function showToast(message, type = "info") {
+  const toast = document.getElementById("toast-notification");
+  toast.textContent = message;
+  toast.className = `toast-notification ${type}`;
+  toast.classList.add("show");
+
+  setTimeout(() => {
+    toast.classList.remove("show");
+  }, 3000);
+}
+
+// Task pausieren
+async function pauseTask(taskId) {
+  try {
+    const response = await fetch(
+      `/Template_app_v001/api/tasks/pause/${taskId}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (data.success) {
+      showToast(data.message, "success");
+
+      // UI Update
+      const row = document.querySelector(`tr[data-task-id="${taskId}"]`);
+      const statusCell = row.querySelector(".task-status");
+      statusCell.innerHTML = `
+                <span class="status-badge status-paused">
+                    <i class="bi bi-pause-circle-fill"></i> Pausiert
+                </span>
+            `;
+
+      // Button-Anzeige umschalten
+      row.querySelector(".btn-pause").style.display = "none";
+      row.querySelector(".btn-resume").style.display = "inline-block";
+    } else {
+      showToast(data.message, "error");
+    }
+  } catch (error) {
+    showToast("Fehler beim Pausieren des Tasks", "error");
+    console.error("Error:", error);
+  }
+}
+
+// Task fortsetzen
+async function resumeTask(taskId) {
+  try {
+    const response = await fetch(
+      `/Template_app_v001/api/tasks/resume/${taskId}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (data.success) {
+      showToast(data.message, "success");
+
+      // UI Update
+      const row = document.querySelector(`tr[data-task-id="${taskId}"]`);
+      const statusCell = row.querySelector(".task-status");
+      statusCell.innerHTML = `
+                <span class="status-badge status-active">
+                    <i class="bi bi-check-circle-fill"></i> Aktiv
+                </span>
+            `;
+
+      // Button-Anzeige umschalten
+      row.querySelector(".btn-pause").style.display = "inline-block";
+      row.querySelector(".btn-resume").style.display = "none";
+    } else {
+      showToast(data.message, "error");
+    }
+  } catch (error) {
+    showToast("Fehler beim Fortsetzen des Tasks", "error");
+    console.error("Error:", error);
+  }
+}
+
+// Task sofort ausführen
+async function runTask(taskId) {
+  try {
+    showToast("Task wird ausgeführt...", "info");
+
+    const response = await fetch(`/Template_app_v001/api/tasks/run/${taskId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      showToast(data.message, "success");
+    } else {
+      showToast(data.message, "error");
+    }
+  } catch (error) {
+    showToast("Fehler beim Ausführen des Tasks", "error");
+    console.error("Error:", error);
+  }
+}
+
+// Tasks aktualisieren
+async function refreshTasks() {
+  try {
+    showToast("Tasks werden aktualisiert...", "info");
+
+    const response = await fetch("/Template_app_v001/api/tasks/status");
+    const data = await response.json();
+
+    if (data.success) {
+      // Seite neu laden für vollständige Aktualisierung
+      window.location.reload();
+    } else {
+      showToast("Fehler beim Aktualisieren", "error");
+    }
+  } catch (error) {
+    showToast("Fehler beim Aktualisieren", "error");
+    console.error("Error:", error);
+  }
+}
+
+// Auto-Refresh alle 30 Sekunden
+setInterval(async () => {
+  try {
+    const response = await fetch("/Template_app_v001/api/tasks/status");
+    const data = await response.json();
+
+    if (data.success) {
+      // Aktualisiere Task-Count
+      document.getElementById("active-task-count").textContent =
+        data.tasks.length;
+
+      // Optional: Aktualisiere nächsten Lauf-Zeitpunkt
+      data.tasks.forEach((task) => {
+        const row = document.querySelector(`tr[data-task-id="${task.id}"]`);
+        if (row) {
+          row.querySelector(".task-next-run").textContent = task.next_run;
+        }
+      });
+    }
+  } catch (error) {
+    console.error("Auto-refresh error:", error);
+  }
+}, 30000);
+
+// Toast Notification System
+function showToast(message, type = "info") {
+  const toast = document.getElementById("toast-notification");
+  if (!toast) {
+    console.warn("Toast-Element nicht gefunden");
+    return;
+  }
+
+  toast.textContent = message;
+  toast.className = `toast-notification ${type}`;
+  toast.classList.add("show");
+
+  setTimeout(() => {
+    toast.classList.remove("show");
+  }, 3000);
+}
+
+// Task pausieren
+async function pauseTask(taskId) {
+  console.log(`Pausiere Task: ${taskId}`);
+
+  try {
+    const response = await fetch(url_api_pause_task + taskId, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      showToast(data.message, "success");
+
+      // UI Update
+      const row = document.querySelector(`tr[data-task-id="${taskId}"]`);
+      if (row) {
+        const statusCell = row.querySelector(".task-status");
+        if (statusCell) {
+          statusCell.innerHTML = `
+            <span class="status-badge status-paused">
+              <i class="bi bi-pause-circle-fill"></i> Pausiert
+            </span>
+          `;
+        }
+
+        // Button-Anzeige umschalten
+        const btnPause = row.querySelector(".btn-pause");
+        const btnResume = row.querySelector(".btn-resume");
+
+        if (btnPause) btnPause.style.display = "none";
+        if (btnResume) btnResume.style.display = "inline-block";
+
+        // Nächster Lauf auf "Pausiert" setzen
+        const nextRunCell = row.querySelector(".task-next-run");
+        if (nextRunCell) nextRunCell.textContent = "Pausiert";
+      }
+
+      console.log(`Task ${taskId} erfolgreich pausiert`);
+    } else {
+      showToast(data.message, "error");
+      console.error(`Fehler beim Pausieren: ${data.message}`);
+    }
+  } catch (error) {
+    showToast("Fehler beim Pausieren des Tasks", "error");
+    console.error("Error:", error);
+  }
+}
+
+// Task fortsetzen
+async function resumeTask(taskId) {
+  console.log(`Setze Task fort: ${taskId}`);
+
+  try {
+    const response = await fetch(url_api_resume_task + taskId, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      showToast(data.message, "success");
+
+      // UI Update
+      const row = document.querySelector(`tr[data-task-id="${taskId}"]`);
+      if (row) {
+        const statusCell = row.querySelector(".task-status");
+        if (statusCell) {
+          statusCell.innerHTML = `
+            <span class="status-badge status-active">
+              <i class="bi bi-check-circle-fill"></i> Aktiv
+            </span>
+          `;
+        }
+
+        // Button-Anzeige umschalten
+        const btnPause = row.querySelector(".btn-pause");
+        const btnResume = row.querySelector(".btn-resume");
+
+        if (btnPause) btnPause.style.display = "inline-block";
+        if (btnResume) btnResume.style.display = "none";
+
+        // Task-Info aktualisieren
+        await updateTaskInfo(taskId);
+      }
+
+      console.log(`Task ${taskId} erfolgreich fortgesetzt`);
+    } else {
+      showToast(data.message, "error");
+      console.error(`Fehler beim Fortsetzen: ${data.message}`);
+    }
+  } catch (error) {
+    showToast("Fehler beim Fortsetzen des Tasks", "error");
+    console.error("Error:", error);
+  }
+}
+
+// Task sofort ausführen
+async function runTask(taskId) {
+  console.log(`Führe Task aus: ${taskId}`);
+
+  try {
+    showToast("Task wird ausgeführt...", "info");
+
+    const response = await fetch(url_api_run_task + taskId, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      showToast(data.message, "success");
+      console.log(`Task ${taskId} wird ausgeführt`);
+    } else {
+      showToast(data.message, "error");
+      console.error(`Fehler beim Ausführen: ${data.message}`);
+    }
+  } catch (error) {
+    showToast("Fehler beim Ausführen des Tasks", "error");
+    console.error("Error:", error);
+  }
+}
+
+// Task-Informationen aktualisieren
+async function updateTaskInfo(taskId) {
+  try {
+    const response = await fetch(url_api_task_info + taskId);
+    const data = await response.json();
+
+    if (data.success) {
+      const row = document.querySelector(`tr[data-task-id="${taskId}"]`);
+      if (row) {
+        const nextRunCell = row.querySelector(".task-next-run");
+        if (nextRunCell) {
+          nextRunCell.textContent = data.task.next_run;
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Fehler beim Aktualisieren der Task-Info:", error);
+  }
+}
+
+// Alle Tasks aktualisieren
+async function refreshTasks() {
+  console.log("Aktualisiere Tasks...");
+
+  try {
+    showToast("Tasks werden aktualisiert...", "info");
+
+    const response = await fetch(url_api_get_tasks);
+    const data = await response.json();
+
+    if (data.success) {
+      // Seite neu laden für vollständige Aktualisierung
+      window.location.reload();
+    } else {
+      showToast("Fehler beim Aktualisieren", "error");
+      console.error(`Fehler: ${data.message}`);
+    }
+  } catch (error) {
+    showToast("Fehler beim Aktualisieren", "error");
+    console.error("Error:", error);
+  }
+}
+
+// Auto-Refresh alle 30 Sekunden
+let autoRefreshInterval = null;
+
+function startAutoRefresh() {
+  // Verhindere mehrfache Intervalle
+  if (autoRefreshInterval) {
+    clearInterval(autoRefreshInterval);
+  }
+
+  autoRefreshInterval = setInterval(async () => {
+    try {
+      const response = await fetch(url_api_get_tasks);
+      const data = await response.json();
+
+      if (data.success) {
+        // Aktualisiere Task-Count
+        const countElement = document.getElementById("active-task-count");
+        if (countElement) {
+          countElement.textContent = data.count;
+        }
+
+        // Aktualisiere jeden Task
+        data.tasks.forEach((task) => {
+          const row = document.querySelector(`tr[data-task-id="${task.id}"]`);
+          if (row) {
+            // Nächster Lauf aktualisieren
+            const nextRunCell = row.querySelector(".task-next-run");
+            if (nextRunCell) {
+              nextRunCell.textContent = task.next_run;
+            }
+
+            // Status aktualisieren
+            const statusCell = row.querySelector(".task-status");
+            if (statusCell) {
+              if (task.active) {
+                statusCell.innerHTML = `
+                  <span class="status-badge status-active">
+                    <i class="bi bi-check-circle-fill"></i> Aktiv
+                  </span>
+                `;
+              } else {
+                statusCell.innerHTML = `
+                  <span class="status-badge status-paused">
+                    <i class="bi bi-pause-circle-fill"></i> Pausiert
+                  </span>
+                `;
+              }
+            }
+
+            // Buttons aktualisieren
+            const btnPause = row.querySelector(".btn-pause");
+            const btnResume = row.querySelector(".btn-resume");
+
+            if (task.active) {
+              if (btnPause) btnPause.style.display = "inline-block";
+              if (btnResume) btnResume.style.display = "none";
+            } else {
+              if (btnPause) btnPause.style.display = "none";
+              if (btnResume) btnResume.style.display = "inline-block";
+            }
+          }
+        });
+
+        console.log("Auto-Refresh erfolgreich");
+      }
+    } catch (error) {
+      console.error("Auto-refresh error:", error);
+    }
+  }, 30000); // 30 Sekunden
+
+  console.log("Auto-Refresh gestartet (30s Intervall)");
+}
+
+// Stoppe Auto-Refresh (z.B. wenn Seite verlassen wird)
+function stopAutoRefresh() {
+  if (autoRefreshInterval) {
+    clearInterval(autoRefreshInterval);
+    autoRefreshInterval = null;
+    console.log("Auto-Refresh gestoppt");
+  }
+}
+
+// Initialisierung beim Laden der Seite
+document.addEventListener("DOMContentLoaded", function () {
+  console.log("Task Management wird initialisiert...");
+
+  // Prüfe ob wir auf der Task-Seite sind
+  const taskTable = document.querySelector(".task-table");
+  if (taskTable) {
+    console.log("Task-Tabelle gefunden - starte Auto-Refresh");
+    startAutoRefresh();
+  }
+});
+
+// Stoppe Auto-Refresh beim Verlassen der Seite
+window.addEventListener("beforeunload", function () {
+  stopAutoRefresh();
+});
+
+// Export für globale Verwendung
+window.TaskManagement = {
+  pauseTask,
+  resumeTask,
+  runTask,
+  refreshTasks,
+  updateTaskInfo,
+  startAutoRefresh,
+  stopAutoRefresh,
+  showToast,
+};

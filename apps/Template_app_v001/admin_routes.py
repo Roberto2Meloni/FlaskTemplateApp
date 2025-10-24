@@ -10,6 +10,7 @@ from .helper_app_functions.helper_admin_app import (
 )
 from .app_config import AppConfig
 from app.socketio_manager import get_socketio_manager
+from .tasks import get_all_tasks
 
 # Globale Variablen
 config = Config()
@@ -139,8 +140,9 @@ def app_settings_sockets():
 @blueprint.route("/app_settings/tasks", methods=["GET"])
 @admin_required
 def app_settings_tasks():
-    """Task-Verwaltung"""
+    """Task-Verwaltung - Zeigt alle aktiven Tasks"""
     app_infos = get_app_info()
+    tasks = get_all_tasks()
 
     if is_ajax_request():
         return render_template(
@@ -149,6 +151,7 @@ def app_settings_tasks():
             config=config,
             app_infos=app_infos,
             app_config=app_config,
+            tasks=tasks,
         )
 
     return render_template(
@@ -159,6 +162,7 @@ def app_settings_tasks():
         settings="tasks",
         app_infos=app_infos,
         app_config=app_config,
+        tasks=tasks,
     )
 
 

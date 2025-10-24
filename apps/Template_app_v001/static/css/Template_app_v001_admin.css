@@ -1101,3 +1101,251 @@
 .loading {
     animation: pulse 1.5s ease-in-out infinite;
 }
+
+/* App Tasks */
+.task-management-container {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.task-header h2 {
+    margin: 0;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-refresh {
+    padding: 10px 20px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    transition: background 0.3s ease;
+}
+
+.btn-refresh:hover {
+    background: #2980b9;
+}
+
+.task-info-box {
+    display: flex;
+    gap: 30px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 25px;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #666;
+}
+
+.info-value {
+    color: #333;
+    font-weight: 500;
+}
+
+.task-list {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.task-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.task-table thead {
+    background: #f8f9fa;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.task-table th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #555;
+    font-size: 14px;
+}
+
+.task-table tbody tr {
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.2s ease;
+}
+
+.task-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.task-table td {
+    padding: 15px;
+    color: #333;
+    font-size: 14px;
+}
+
+.task-id {
+    font-family: monospace;
+    font-size: 12px;
+    color: #666;
+}
+
+.task-name {
+    font-weight: 500;
+}
+
+.task-func {
+    font-family: monospace;
+    color: #e74c3c;
+    background: #fef5f5;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.task-trigger {
+    font-size: 12px;
+    color: #666;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-paused {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.task-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-action {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.btn-run {
+    background: #28a745;
+    color: white;
+}
+
+.btn-run:hover {
+    background: #218838;
+}
+
+.btn-pause {
+    background: #ffc107;
+    color: #333;
+}
+
+.btn-pause:hover {
+    background: #e0a800;
+}
+
+.btn-resume {
+    background: #17a2b8;
+    color: white;
+}
+
+.btn-resume:hover {
+    background: #138496;
+}
+
+.no-tasks-message {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+}
+
+.no-tasks-message i {
+    font-size: 64px;
+    margin-bottom: 20px;
+    color: #ddd;
+}
+
+.no-tasks-message p {
+    font-size: 18px;
+    margin: 10px 0;
+    color: #666;
+}
+
+.no-tasks-message small {
+    color: #999;
+}
+
+.toast-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    background: #333;
+    color: white;
+    border-radius: 5px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: all 0.3s ease;
+    z-index: 9999;
+    display: none;
+}
+
+.toast-notification.show {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast-notification.success {
+    background: #28a745;
+}
+
+.toast-notification.error {
+    background: #dc3545;
+}
+
+.toast-notification.info {
+    background: #17a2b8;
+}

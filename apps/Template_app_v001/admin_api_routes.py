@@ -1,10 +1,11 @@
 from . import blueprint, app_logger
 from app.decorators import admin_required
 from flask_login import current_user
-from flask import jsonify
+from flask import jsonify, request
 from flask_socketio import disconnect as socketio_disconnect
 from app.socketio_manager import get_socketio_manager
 from .app_config import AppConfig
+import threading
 
 app_config = AppConfig()
 app_logger.info(f"Starte App-{app_config.app_name} admin_api_routes")
@@ -129,6 +130,203 @@ def api_disconnect_all_sockets():
 
 
 # ========================================
+# TASK MANAGEMENT API ROUTES
+# ========================================
+
+
+@blueprint.route("/admin/api_get_tasks", methods=["GET"])
+@admin_required
+def api_get_tasks():
+    """
+    API: Hole alle Tasks der App
+    """
+    try:
+        from .tasks import app_scheduler
+
+        tasks = []
+        jobs = app_scheduler.get_jobs()
+
+        for job in jobs:
+            # Filtere nur Jobs dieser App
+            if job.id.startswith(app_config.app_name):
+                # Prüfe ob Job pausiert ist
+                is_paused = False
+                if hasattr(job, "next_run_time") and job.next_run_time is None:
+                    is_paused = True
+
+                task_info = {
+                    "id": job.id,
+                    "name": job.name if job.name else job.id,
+                    "next_run": (
+                        job.next_run_time.strftime("%Y-%m-%d %H:%M:%S")
+                        if job.next_run_time
+                        else "Pausiert" if is_paused else "Nicht geplant"
+                    ),
+                    "trigger": str(job.trigger),
+                    "func": (
+                        job.func.__name__
+                        if hasattr(job.func, "__name__")
+                        else "Unbekannt"
+                    ),
+                    "active": not is_paused,
+                }
+                tasks.append(task_info)
+
+        app_logger.debug(f"API: {len(tasks)} Tasks gefunden")
+
+        return jsonify({"success": True, "tasks": tasks, "count": len(tasks)})
+
+    except Exception as e:
+        app_logger.error(f"Fehler beim Abrufen der Tasks: {str(e)}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@blueprint.route("/admin/api_pause_task/<task_id>", methods=["POST"])
+@admin_required
+def api_pause_task(task_id):
+    """
+    API: Pausiere einen Task
+    """
+    try:
+        from .tasks import app_scheduler
+
+        job = app_scheduler.get_job(task_id)
+        if job:
+            app_scheduler.pause_job(task_id)
+            app_logger.info(
+                f"Task {task_id} wurde pausiert von Admin {current_user.username}"
+            )
+
+            return jsonify(
+                {"success": True, "message": "Task wurde pausiert", "status": "paused"}
+            )
+        else:
+            app_logger.warning(f"Task {task_id} nicht gefunden")
+            return jsonify({"success": False, "message": "Task nicht gefunden"}), 404
+
+    except Exception as e:
+        app_logger.error(f"Fehler beim Pausieren von Task {task_id}: {str(e)}")
+        return jsonify({"success": False, "message": f"Fehler: {str(e)}"}), 500
+
+
+@blueprint.route("/admin/api_resume_task/<task_id>", methods=["POST"])
+@admin_required
+def api_resume_task(task_id):
+    """
+    API: Setze einen pausierten Task fort
+    """
+    try:
+        from .tasks import app_scheduler
+
+        job = app_scheduler.get_job(task_id)
+        if job:
+            app_scheduler.resume_job(task_id)
+            app_logger.info(
+                f"Task {task_id} wurde fortgesetzt von Admin {current_user.username}"
+            )
+
+            return jsonify(
+                {
+                    "success": True,
+                    "message": "Task wurde fortgesetzt",
+                    "status": "active",
+                }
+            )
+        else:
+            app_logger.warning(f"Task {task_id} nicht gefunden")
+            return jsonify({"success": False, "message": "Task nicht gefunden"}), 404
+
+    except Exception as e:
+        app_logger.error(f"Fehler beim Fortsetzen von Task {task_id}: {str(e)}")
+        return jsonify({"success": False, "message": f"Fehler: {str(e)}"}), 500
+
+
+@blueprint.route("/admin/api_run_task/<task_id>", methods=["POST"])
+@admin_required
+def api_run_task(task_id):
+    """
+    API: Führe einen Task sofort aus
+    """
+    try:
+        from .tasks import app_scheduler
+
+        job = app_scheduler.get_job(task_id)
+        if job:
+            app_logger.info(
+                f"Task {task_id} wird manuell ausgeführt von Admin {current_user.username}"
+            )
+
+            # Führe die Funktion direkt aus
+            if hasattr(job, "func"):
+                # In einem Thread ausführen, damit die Response nicht blockiert wird
+                thread = threading.Thread(
+                    target=job.func,
+                    args=job.args if hasattr(job, "args") else (),
+                    kwargs=job.kwargs if hasattr(job, "kwargs") else {},
+                    daemon=True,
+                    name=f"Manual_{task_id}",
+                )
+                thread.start()
+
+                return jsonify({"success": True, "message": "Task wird ausgeführt"})
+            else:
+                return (
+                    jsonify(
+                        {"success": False, "message": "Task-Funktion nicht gefunden"}
+                    ),
+                    500,
+                )
+        else:
+            app_logger.warning(f"Task {task_id} nicht gefunden")
+            return jsonify({"success": False, "message": "Task nicht gefunden"}), 404
+
+    except Exception as e:
+        app_logger.error(f"Fehler beim Ausführen von Task {task_id}: {str(e)}")
+        return jsonify({"success": False, "message": f"Fehler: {str(e)}"}), 500
+
+
+@blueprint.route("/admin/api_task_info/<task_id>", methods=["GET"])
+@admin_required
+def api_task_info(task_id):
+    """
+    API: Hole detaillierte Task-Informationen
+    """
+    try:
+        from .tasks import app_scheduler
+
+        job = app_scheduler.get_job(task_id)
+        if job:
+            is_paused = False
+            if hasattr(job, "next_run_time") and job.next_run_time is None:
+                is_paused = True
+
+            task_info = {
+                "id": job.id,
+                "name": job.name if job.name else job.id,
+                "next_run": (
+                    job.next_run_time.strftime("%Y-%m-%d %H:%M:%S")
+                    if job.next_run_time
+                    else "Pausiert" if is_paused else "Nicht geplant"
+                ),
+                "trigger": str(job.trigger),
+                "func": (
+                    job.func.__name__ if hasattr(job.func, "__name__") else "Unbekannt"
+                ),
+                "active": not is_paused,
+                "args": str(job.args) if hasattr(job, "args") else "",
+                "kwargs": str(job.kwargs) if hasattr(job, "kwargs") else "",
+            }
+
+            return jsonify({"success": True, "task": task_info})
+        else:
+            return jsonify({"success": False, "message": "Task nicht gefunden"}), 404
+
+    except Exception as e:
+        app_logger.error(f"Fehler beim Abrufen der Task-Info {task_id}: {str(e)}")
+        return jsonify({"success": False, "message": f"Fehler: {str(e)}"}), 500
+
+
+# ========================================
 # CONFIG MANAGEMENT API
 # ========================================
 
@@ -138,9 +336,7 @@ def api_disconnect_all_sockets():
 def api_save_config():
     """
     API: Speichere App-Konfiguration
-    (Diese Route kann aus admin_routes hierher verschoben werden)
     """
-    from flask import request
     from .helper_app_functions.helper_admin_app import convert_value
 
     try:
