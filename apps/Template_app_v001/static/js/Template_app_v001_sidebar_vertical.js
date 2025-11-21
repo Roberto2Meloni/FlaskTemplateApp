@@ -659,7 +659,7 @@ function showToast(message, type = "info") {
 async function pauseTask(taskId) {
   try {
     const response = await fetch(
-      `/Template_app_v001/api/tasks/pause/${taskId}`,
+      `/Template_app_v001/admin/api_pause_task/${taskId}`,
       {
         method: "POST",
         headers: {

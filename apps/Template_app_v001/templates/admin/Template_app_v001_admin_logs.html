@@ -7,17 +7,17 @@
       <div class="stat-item">
         <i class="bi bi-hdd-fill"></i>
         <span class="stat-label">Dateigröße:</span>
-        <span class="stat-value">{{ log_stats.total_size_mb }} MB</span>
+        <span class="stat-value">{{ log_stats.total_size_mb|default('0', true) }} MB</span>
       </div>
       <div class="stat-item">
         <i class="bi bi-list-ol"></i>
         <span class="stat-label">Gefilterte Logs:</span>
-        <span class="stat-value">{{ app_logs.filtered_lines }}</span>
+        <span class="stat-value">{{ app_logs.filtered_lines|default('0', true) }}</span>
       </div>
       <div class="stat-item">
         <i class="bi bi-clock-fill"></i>
         <span class="stat-label">Letzte Änderung:</span>
-        <span class="stat-value">{{ log_stats.last_modified }}</span>
+        <span class="stat-value">{{ log_stats.last_modified|default('Unbekannt', true) }}</span>
       </div>
     </div>
   </div>
@@ -32,11 +32,21 @@
         </label>
         <select id="level-filter" class="form-control">
           <option value="">Alle Levels</option>
-          <option value="INFO" {% if current_level == 'INFO' %}selected{% endif %}>INFO ({{ log_stats.levels.INFO }})</option>
-          <option value="WARNING" {% if current_level == 'WARNING' %}selected{% endif %}>WARNING ({{ log_stats.levels.WARNING }})</option>
-          <option value="ERROR" {% if current_level == 'ERROR' %}selected{% endif %}>ERROR ({{ log_stats.levels.ERROR }})</option>
-          <option value="DEBUG" {% if current_level == 'DEBUG' %}selected{% endif %}>DEBUG ({{ log_stats.levels.DEBUG }})</option>
-          <option value="CRITICAL" {% if current_level == 'CRITICAL' %}selected{% endif %}>CRITICAL ({{ log_stats.levels.CRITICAL }})</option>
+          <option value="INFO" {% if current_level == 'INFO' %}selected{% endif %}>
+            INFO {% if log_stats.levels and log_stats.levels.INFO %}({{ log_stats.levels.INFO }}){% endif %}
+          </option>
+          <option value="WARNING" {% if current_level == 'WARNING' %}selected{% endif %}>
+            WARNING {% if log_stats.levels and log_stats.levels.WARNING %}({{ log_stats.levels.WARNING }}){% endif %}
+          </option>
+          <option value="ERROR" {% if current_level == 'ERROR' %}selected{% endif %}>
+            ERROR {% if log_stats.levels and log_stats.levels.ERROR %}({{ log_stats.levels.ERROR }}){% endif %}
+          </option>
+          <option value="DEBUG" {% if current_level == 'DEBUG' %}selected{% endif %}>
+            DEBUG {% if log_stats.levels and log_stats.levels.DEBUG %}({{ log_stats.levels.DEBUG }}){% endif %}
+          </option>
+          <option value="CRITICAL" {% if current_level == 'CRITICAL' %}selected{% endif %}>
+            CRITICAL {% if log_stats.levels and log_stats.levels.CRITICAL %}({{ log_stats.levels.CRITICAL }}){% endif %}
+          </option>
         </select>
       </div>
 
@@ -63,7 +73,7 @@
           id="search-filter" 
           class="form-control" 
           placeholder="Nach Text suchen..."
-          value="{{ current_search if current_search else '' }}"
+          value="{{ current_search|default('', true) }}"
         />
       </div>
 
@@ -98,11 +108,11 @@
 
   <!-- Log Display -->
   <div class="log-display">
-    {% if app_logs.logs %}
+    {% if app_logs and app_logs.logs %}
       {% if app_logs.has_more %}
       <div class="log-warning">
         <i class="bi bi-info-circle-fill"></i>
-        Es werden {{ current_limit }} von {{ app_logs.filtered_lines }} gefilterten Logs angezeigt.
+        Es werden {{ current_limit|default(100) }} von {{ app_logs.filtered_lines }} gefilterten Logs angezeigt.
         Erhöhe das Limit oder verfeinere den Filter für mehr Ergebnisse.
       </div>
       {% endif %}
@@ -119,11 +129,11 @@
           </thead>
           <tbody>
             {% for log in app_logs.logs %}
-            <tr class="log-row log-level-{{ log.level|lower }}">
-              <td class="log-timestamp">{{ log.timestamp }}</td>
+            <tr class="log-row log-level-{{ log.level|lower|default('unknown') }}">
+              <td class="log-timestamp">{{ log.timestamp|default('N/A') }}</td>
               <td class="log-level">
-                <span class="level-badge level-{{ log.level|lower }}">
-                  {% if log.level == 'ERROR' or log.level == 'CRITICAL' %}
+                <span class="level-badge level-{{ log.level|lower|default('unknown') }}">
+                  {% if log.level in ['ERROR', 'CRITICAL'] %}
                     <i class="bi bi-exclamation-triangle-fill"></i>
                   {% elif log.level == 'WARNING' %}
                     <i class="bi bi-exclamation-circle-fill"></i>
@@ -131,12 +141,14 @@
                     <i class="bi bi-info-circle-fill"></i>
                   {% elif log.level == 'DEBUG' %}
                     <i class="bi bi-bug-fill"></i>
+                  {% else %}
+                    <i class="bi bi-question-circle-fill"></i>
                   {% endif %}
-                  {{ log.level }}
+                  {{ log.level|default('UNKNOWN') }}
                 </span>
               </td>
-              <td class="log-logger">{{ log.logger }}</td>
-              <td class="log-message">{{ log.message }}</td>
+              <td class="log-logger">{{ log.logger|default('N/A') }}</td>
+              <td class="log-message">{{ log.message|default('Keine Nachricht') }}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -152,6 +164,54 @@
   </div>
 
   <!-- Toast Notification -->
-  <div id="log-toast-notification" class="toast-notification"></div>
+  <div id="log-toast-notification" class="toast-notification" style="display: none;"></div>
 </div>
 
+<script>
+// JavaScript-Funktionen für Filter
+function applyFilters() {
+  const level = document.getElementById('level-filter').value;
+  const limit = document.getElementById('limit-filter').value;
+  const search = document.getElementById('search-filter').value;
+  
+  const params = new URLSearchParams();
+  if (level) params.append('level', level);
+  if (limit) params.append('limit', limit);
+  if (search) params.append('search', search);
+  
+  window.location.href = `${window.location.pathname}?${params.toString()}`;
+}
+
+function resetFilters() {
+  window.location.href = window.location.pathname;
+}
+
+function quickFilter(level) {
+  document.getElementById('level-filter').value = level;
+  applyFilters();
+}
+
+function downloadLogs() {
+  const level = document.getElementById('level-filter').value;
+  const search = document.getElementById('search-filter').value;
+  
+  const params = new URLSearchParams();
+  params.append('download', 'true');
+  if (level) params.append('level', level);
+  if (search) params.append('search', search);
+  
+  window.location.href = `${window.location.pathname}?${params.toString()}`;
+}
+
+// Toast Notification Helper
+function showToast(message, type = 'info') {
+  const toast = document.getElementById('log-toast-notification');
+  toast.textContent = message;
+  toast.className = `toast-notification toast-${type}`;
+  toast.style.display = 'block';
+  
+  setTimeout(() => {
+    toast.style.display = 'none';
+  }, 3000);
+}
+</script>

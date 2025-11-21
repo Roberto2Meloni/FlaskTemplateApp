@@ -7,11 +7,11 @@ from .helper_app_functions.helper_admin_app import (
     get_app_info,
     get_app_logs,
     is_ajax_request,
+    get_log_statistics,
 )
 from .app_config import AppConfig
 from app.socketio_manager import get_socketio_manager
 from .tasks import get_all_tasks
-from .helper_app_functions.helper_admin_app import get_log_statistics
 
 # Globale Variablen
 config = Config()

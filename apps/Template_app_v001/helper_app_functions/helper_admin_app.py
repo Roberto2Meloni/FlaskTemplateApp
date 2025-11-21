@@ -171,15 +171,15 @@ def parse_log_line(line):
     """
     Parsed eine Log-Zeile in strukturierte Komponenten
 
-    Format: 2025-01-24 14:30:45 - APP-Template_app_v001 - INFO - Nachricht
+    Format: 2025-11-07 18:26:50,104 [APP-NexusPlayer] [INFO] Nachricht
 
     Returns:
         dict: Strukturierte Log-Daten
     """
-    # Regex für typisches Log-Format
-    pattern = r"(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})\s*-\s*([^-]+)\s*-\s*(INFO|ERROR|WARNING|DEBUG|CRITICAL)\s*-\s*(.+)"
+    # Pattern mit eckigen Klammern und Millisekunden
+    pattern = r"^(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2},\d{3})\s+\[([^\]]+)\]\s+\[(INFO|ERROR|WARNING|DEBUG|CRITICAL)\]\s+(.+)$"
 
-    match = re.match(pattern, line)
+    match = re.match(pattern, line.strip())
 
     if match:
         return {
@@ -195,7 +195,7 @@ def parse_log_line(line):
             "timestamp": "",
             "logger": "",
             "level": "UNKNOWN",
-            "message": line,
+            "message": line.strip(),
             "raw": line,
         }
 
@@ -227,39 +227,6 @@ def is_ajax_request():
     Prüft ob der Request von fetch/JavaScript kommt
     """
     return request.headers.get("X-Requested-With") == "XMLHttpRequest"
-
-
-def parse_log_line(line):
-    """
-    Parsed eine Log-Zeile in strukturierte Komponenten
-
-    Format: 2025-01-24 14:30:45 - APP-Template_app_v001 - INFO - Nachricht
-
-    Returns:
-        dict: Strukturierte Log-Daten
-    """
-    # Regex für typisches Log-Format
-    pattern = r"(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})\s*-\s*([^-]+)\s*-\s*(INFO|ERROR|WARNING|DEBUG|CRITICAL)\s*-\s*(.+)"
-
-    match = re.match(pattern, line)
-
-    if match:
-        return {
-            "timestamp": match.group(1).strip(),
-            "logger": match.group(2).strip(),
-            "level": match.group(3).strip(),
-            "message": match.group(4).strip(),
-            "raw": line,
-        }
-    else:
-        # Fallback: Unstrukturierte Zeile
-        return {
-            "timestamp": "",
-            "logger": "",
-            "level": "UNKNOWN",
-            "message": line,
-            "raw": line,
-        }
 
 
 def get_log_statistics():
