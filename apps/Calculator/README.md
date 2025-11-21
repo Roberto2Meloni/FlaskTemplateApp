@@ -23,3 +23,5 @@ Tags: template
 Repository URL: https://github.com/Roberto2Meloni/FlaskTemplateApp
 
 Other: Dies ist die Vorlage App. Der Other Eintrag.
+
+Template_Base: 000

@@ -23,3 +23,5 @@ Tags: 3D Print
 Repository URL: https://github.com/Roberto2Meloni/FlaskTemplateApp
 
 Other: Keine weiteren Informationen.
+
+Template_Base: 000
