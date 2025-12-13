@@ -310,14 +310,12 @@ def parse_date(date_string):
 
 def log_playlist_statistics(stats):
     """Loggt die Statistiken der Playlist-Synchronisation"""
-    app_logger.info(
-        f"Playlist-Synchronisation abgeschlossen:\n"
-        f"  - Gesamte Dateien gescannt: {stats['total_files']}\n"
-        f"  - Gültige Playlists: {stats['valid_playlists']}\n"
-        f"  - Neue Playlists hinzugefügt: {stats['added_playlists']}\n"
-        f"  - Playlists aktualisiert: {stats['updated_playlists']}\n"
-        f"  - Playlists aus DB gelöscht: {stats['deleted_playlists']}\n"
-        f"  - Ungültige Dateien gelöscht: {stats['deleted_invalid_files']}\n"
-        f"  - Fehlende UUIDs ergänzt: {stats['fixed_uuids']}\n"
-        f"  - Fehler: {stats['errors']}"
-    )
+    app_logger.info("Playlist-Synchronisation abgeschlossen")
+    app_logger.info(f"Gesamte Dateien gescannt: {stats['total_files']}")
+    app_logger.info(f"Gültige Playlists: {stats['valid_playlists']}")
+    app_logger.info(f"Neue Playlists hinzugefügt: {stats['added_playlists']}")
+    app_logger.info(f"Playlists aktualisiert: {stats['updated_playlists']}")
+    app_logger.info(f"Playlists aus DB gelöscht: {stats['deleted_playlists']}")
+    app_logger.info(f"Ungültige Dateien gelöscht: {stats['deleted_invalid_files']}")
+    app_logger.info(f"Fehlende UUIDs ergänzt: {stats['fixed_uuids']}")
+    app_logger.info(f"Fehler: {stats['errors']}")
