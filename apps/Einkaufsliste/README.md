@@ -25,3 +25,5 @@ Repository URL: https://github.com/Roberto2Meloni/FlaskTemplateApp
 Other: Dies ist die erste produktive App.
 
 Template_Base: 000
+
+Type: dev
