@@ -1,4 +1,4 @@
-# cli
+# MyGambler
 
 ## App Information
 

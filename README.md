@@ -1,17 +1,27 @@
 # FlaskTemplateApp
 
-## Repo Information
+## App Information
 
 Name: FlaskTemplateApp
 
 Author: Karatekti_123
 
-Created: 24.01.2025
+Created: 16.07.2025
 
-Type: DEV
+Last Update: 16.07.2025
 
-Description: In diesem Repository, werden dieverse Apps für das FlaskTemplate zur verfügung gestellt.
+Last Version: 0.0.0
 
-Last Update: 24.01.2025
+System Requirements: 1.3
 
-Other: No other informations now.
+Description: Dies ist die Vorlage App
+
+Category: App, Template
+
+Tags: Template
+
+Repository URL: https://github.com/Roberto2Meloni/FlaskTemplateApp
+
+Other: Keine weiteren Informationen.
+
+Template_Base: 001

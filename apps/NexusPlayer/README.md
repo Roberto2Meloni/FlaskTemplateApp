@@ -1,4 +1,4 @@
-# cli
+# NexusPlayer
 
 ## App Information
 

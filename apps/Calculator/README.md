@@ -1,4 +1,4 @@
-# cli
+# Calculator
 
 ## App Information
 
