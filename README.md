@@ -8,8 +8,6 @@ Author: Karatekti_123
 
 Created: 24.01.2025
 
-Type: DEV
-
 Description: In diesem Repository, werden dieverse Apps für das FlaskTemplate zur verfügung gestellt.
 
 Last Update: 24.01.2025
