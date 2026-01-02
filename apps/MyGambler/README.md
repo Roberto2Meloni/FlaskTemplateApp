@@ -10,7 +10,7 @@ Created: 04.10.2025
 
 Last Update: 04.10.2025
 
-Last Version: 0.0.0
+Last Version: 0.0.1
 
 System Requirements: 1.3
 
