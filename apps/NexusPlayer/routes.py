@@ -1,7 +1,7 @@
 import os
 from flask import render_template, current_app as app, request, jsonify
 from flask_login import current_user
-from . import blueprint, app_logger, api_routes, admin_routes
+from . import blueprint, app_logger, api_routes, admin_routes, admin_api_routes
 from app.config import Config
 from app.decorators import admin_required, enabled_required
 from app import db
