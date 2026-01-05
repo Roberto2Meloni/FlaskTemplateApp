@@ -1,0 +1,6 @@
+{
+    "app_name": "Template_app_v001",
+    "tasks_intervall": {
+        "app_keep_alive_log": 200
+    }
+}
