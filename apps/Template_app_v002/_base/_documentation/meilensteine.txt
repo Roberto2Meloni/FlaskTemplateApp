@@ -1,13 +1,6 @@
 Meilen Steine
-- Log Angabe schneller machen
-
-zu integriern bei anderen apps
-- Config route
-- app_config.py
-- Safe option
-- css
-- veritacl JS
-- helpar_admin
-- admin_route
-- Socketio_veentt
-- tempalt socketio_events.html
+- Integration der Config klasse
+- Integration der Models Klassen
+- Integration der routen
+- Integration der SocketIO Events
+- Integration der Task Scheduler

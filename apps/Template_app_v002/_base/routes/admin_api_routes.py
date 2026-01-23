@@ -1,18 +1,28 @@
-from . import blueprint, app_logger
-from app.decorators import admin_required
-from flask_login import current_user
+"""
+Base Admin API Routes
+"""
+
 from flask import jsonify, request
+from flask_login import current_user
 from flask_socketio import disconnect as socketio_disconnect
+from app.decorators import admin_required
 from app.socketio_manager import get_socketio_manager
-from .app_config import AppConfig
 import threading
-from .helper_app_functions.helper_admin_app import get_log_statistics, get_app_logs
+
+# Import aus Parent Package (Template_app_v002)
+from .. import blueprint, app_logger, app_config
+
+# Import Helper-Funktionen
+from ..helper_app_function.helper_admin_app import (
+    get_log_statistics,
+    get_app_logs,
+    convert_value,
+)
 
 # Import Socket-Management aus socketio_events
-from .socketio_events import active_sockets, remove_socket_connection
+from ..socketio_events import active_sockets, remove_socket_connection
 
-app_config = AppConfig()
-app_logger.info(f"Starte App-{app_config.app_name} admin_api_routes")
+app_logger.info(f"Starte Admin API Routes für {app_config.app_name}")
 
 
 # ========================================
@@ -142,7 +152,7 @@ def api_get_tasks():
     API: Hole alle Tasks der App
     """
     try:
-        from .tasks import app_scheduler
+        from ..tasks import app_scheduler
 
         tasks = []
         jobs = app_scheduler.get_jobs()
@@ -189,7 +199,7 @@ def api_pause_task(task_id):
     API: Pausiere einen Task
     """
     try:
-        from .tasks import app_scheduler
+        from ..tasks import app_scheduler
 
         job = app_scheduler.get_job(task_id)
         if job:
@@ -217,7 +227,7 @@ def api_resume_task(task_id):
     API: Setze einen pausierten Task fort
     """
     try:
-        from .tasks import app_scheduler
+        from ..tasks import app_scheduler
 
         job = app_scheduler.get_job(task_id)
         if job:
@@ -249,7 +259,7 @@ def api_run_task(task_id):
     API: Führe einen Task sofort aus
     """
     try:
-        from .tasks import app_scheduler
+        from ..tasks import app_scheduler
 
         job = app_scheduler.get_job(task_id)
         if job:
@@ -293,7 +303,7 @@ def api_task_info(task_id):
     API: Hole detaillierte Task-Informationen
     """
     try:
-        from .tasks import app_scheduler
+        from ..tasks import app_scheduler
 
         job = app_scheduler.get_job(task_id)
         if job:
@@ -338,10 +348,8 @@ def api_save_config():
     """
     API: Speichere App-Konfiguration
     """
-    from .helper_app_functions.helper_admin_app import convert_value
-
     try:
-        current_config = app_config.to_dict()
+        current_config = app_config.config
         new_config = {}
 
         # Verarbeite Form-Daten
@@ -381,8 +389,9 @@ def api_save_config():
                 if key not in request.form:
                     new_config[key] = False
 
-        app_config.update_config(new_config, skip_app_name=True)
-        app_config.refresh()
+        # Update Config (direkt auf .config Dict zugreifen und dann neu laden)
+        for key, value in new_config.items():
+            app_config.set(key, value)
 
         app_logger.info(f"App-Konfiguration gespeichert von {current_user.username}")
 
@@ -448,4 +457,4 @@ def api_get_log_stats():
         return jsonify({"success": False, "message": str(e)}), 500
 
 
-app_logger.info(f"Ende App-{app_config.app_name} admin_api_routes")
+app_logger.info(f"Ende Admin API Routes für {app_config.app_name}")

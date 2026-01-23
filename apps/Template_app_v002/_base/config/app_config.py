@@ -1,158 +1,165 @@
-import os
+"""
+Minimale App Configuration
+Liest _base und _custom Config und merged sie
+"""
+
 import json
-from typing import Dict, Any
+from pathlib import Path
+from typing import Any, Dict
 
 
 class AppConfig:
-    """
-    Konfigurationsklasse für die App
-    Liest Konfigurationen aus der app_config.json mit Default-Werten
-    """
+    """Einfache Config die _base und _custom merged"""
 
-    _config_data = None
-    _app_name = "Template_app_v001"
-
-    def __init__(self):
+    def __init__(self, app_name: str, app_root: Path):
         """
-        Initialisiere die Konfiguration
-        Lädt Konfiguration und wendet Standardwerte an
+        Args:
+            app_name: Name der App (z.B. "Template_app_v002")
+            app_root: Pfad zum App-Root-Verzeichnis
         """
-        if AppConfig._config_data is None:
-            self._load_config()
-        self._save_config()
+        self.app_name = app_name
+        self.app_root = Path(app_root)
+        self.config = self._load_config()
 
-    def _load_config(self):
-        """
-        Lade Konfiguration aus der JSON-Datei
-        """
-        try:
-            root_path = os.getcwd()
-            app_path = os.path.join(
-                root_path, "app", "imported_apps", "develop_release", self._app_name
-            )
-            config_path = os.path.join(app_path, "app_config.json")
+    def _load_config(self) -> Dict[str, Any]:
+        """Lade Config: Python-Defaults + _custom Überschreibungen"""
 
-            with open(config_path, "r", encoding="utf-8") as file:
-                AppConfig._config_data = json.load(file)
-        except FileNotFoundError:
-            print(f"Warnung: Konfigurationsdatei nicht gefunden: {config_path}")
-            AppConfig._config_data = {}
-        except json.JSONDecodeError:
-            print(f"Fehler: Ungültiges JSON in {config_path}")
-            AppConfig._config_data = {}
+        # 1. Python-Defaults (Single Source of Truth)
+        config = {
+            "app_display_name": self.app_name,
+            "app_version": "0.0.0",
+            "app_author": "Unknown",
+            "app_description": "",
+            "blueprint": {
+                "url_prefix": f"/{self.app_name}",
+                "static_url_path": f"/{self.app_name}_static",
+                "template_folder": "templates",
+                "static_folder": "static",
+            },
+            "logger": {"name": f"APP-{self.app_name}", "level": "INFO"},
+            "tasks_intervall": {},
+            "features": {
+                "socketio_enabled": True,
+                "scheduler_enabled": True,
+                "admin_panel_enabled": True,
+            },
+        }
 
-    def _save_config(self):
-        """
-        Speichere die Konfiguration in der JSON-Datei
-        """
-        try:
-            root_path = os.getcwd()
-            app_path = os.path.join(
-                root_path, "app", "imported_apps", "develop_release", self._app_name
-            )
-            config_path = os.path.join(app_path, "app_config.json")
+        # 2. Lade _custom Config (überschreibt Python-Defaults)
+        # Suche in: _custom/config/ oder config/
+        custom_config_paths = [
+            self.app_root / "_custom" / "config" / "app_config.json",
+            self.app_root / "config" / "app_config.json",
+        ]
 
-            with open(config_path, "w", encoding="utf-8") as file:
-                json.dump(AppConfig._config_data, file, ensure_ascii=False, indent=4)
-        except Exception as e:
-            print(f"Fehler beim Speichern der Konfiguration: {e}")
+        for custom_config in custom_config_paths:
+            if custom_config.exists():
+                with open(custom_config, "r", encoding="utf-8") as f:
+                    custom_data = json.load(f)
+                    # Deep merge für nested dicts
+                    for key, value in custom_data.items():
+                        if (
+                            isinstance(value, dict)
+                            and key in config
+                            and isinstance(config[key], dict)
+                        ):
+                            config[key].update(value)
+                        else:
+                            config[key] = value
+                break  # Nur erste gefundene Custom-Config laden
 
-    @classmethod
-    def refresh(cls):
-        """
-        Lade die Konfiguration neu
-        """
-        cls._config_data = None
-        instance = cls()
-        instance._load_config()
+        return config
 
-    def to_dict(self) -> Dict[str, Any]:
-        """
-        Konvertiere die Konfiguration zu einem Dictionary für Template-Verwendung
-        :return: Dictionary mit allen Konfigurationswerten
-        """
-        return AppConfig._config_data.copy() if AppConfig._config_data else {}
-
-    def update_config(self, updates: Dict[str, Any], skip_app_name: bool = True):
-        """
-        Aktualisiere mehrere Konfigurationswerte auf einmal
-        :param updates: Dictionary mit zu aktualisierenden Werten
-        :param skip_app_name: Wenn True, wird app_name nicht überschrieben
-        """
-        if AppConfig._config_data is None:
-            self._load_config()
-
-        for key, value in updates.items():
-            if skip_app_name and key == "app_name":
-                continue
-            AppConfig._config_data[key] = value
-
-        self._save_config()
-
-    def set(self, key: str, value: Any):
-        """
-        Setze einen Konfigurationswert und speichere
-        :param key: Schlüssel in der Konfiguration
-        :param value: Neuer Wert
-        """
-        if AppConfig._config_data is None:
-            self._load_config()
-
-        # Verhindere Änderung des app_name
-        if key == "app_name":
-            print("Warnung: app_name kann nicht geändert werden")
-            return
-
-        AppConfig._config_data[key] = value
-        self._save_config()
-
-    # Eigenschaften für häufig verwendete Konfigurationswerte
+    # Properties
     @property
-    def app_name(self):
-        return AppConfig._config_data.get("app_name", self._app_name)
+    def app_display_name(self) -> str:
+        return self.config.get("app_display_name", self.app_name)
 
     @property
-    def tasks_intervals(self):
-        return AppConfig._config_data.get("tasks_intervall", {})
+    def app_version(self) -> str:
+        return self.config.get("app_version", "0.0.0")
 
-    def get(self, key: str, default: Any = None) -> Any:
-        """
-        Hole einen Konfigurationswert
-        :param key: Schlüssel in der Konfiguration (mit Punktnotation möglich)
-        :param default: Standardwert, wenn Schlüssel nicht existiert
-        :return: Wert des Schlüssels oder Standardwert
-        """
-        if AppConfig._config_data is None:
-            return default
+    @property
+    def app_author(self) -> str:
+        return self.config.get("app_author", "Unknown")
 
-        keys = key.split(".")
-        value = AppConfig._config_data
-        for k in keys:
-            if isinstance(value, dict):
-                value = value.get(k, default)
-            else:
-                return default
-        return value if value != default else default
+    @property
+    def app_description(self) -> str:
+        return self.config.get("app_description", "")
 
-    def get_tasks_intervals(self) -> Dict[str, int]:
-        """
-        Hole alle Task-Intervalle
-        :return: Dictionary mit Task-Namen und ihren Intervallen
-        """
-        return self.get("tasks_intervall", {})
+    @property
+    def blueprint_url_prefix(self) -> str:
+        return self.config.get("blueprint", {}).get("url_prefix", f"/{self.app_name}")
+
+    @property
+    def blueprint_static_url_path(self) -> str:
+        return self.config.get("blueprint", {}).get(
+            "static_url_path", f"/{self.app_name}_static"
+        )
+
+    @property
+    def blueprint_template_folder(self) -> str:
+        return self.config.get("blueprint", {}).get("template_folder", "templates")
+
+    @property
+    def blueprint_static_folder(self) -> str:
+        return self.config.get("blueprint", {}).get("static_folder", "static")
+
+    @property
+    def logger_name(self) -> str:
+        return self.config.get("logger", {}).get("name", f"APP-{self.app_name}")
+
+    @property
+    def logger_level(self) -> str:
+        return self.config.get("logger", {}).get("level", "INFO")
+
+    @property
+    def socketio_enabled(self) -> bool:
+        """Ist SocketIO aktiviert?"""
+        return self.config.get("features", {}).get("socketio_enabled", True)
+
+    @property
+    def scheduler_enabled(self) -> bool:
+        """Ist Scheduler aktiviert?"""
+        return self.config.get("features", {}).get("scheduler_enabled", True)
+
+    @property
+    def admin_panel_enabled(self) -> bool:
+        """Ist Admin-Panel aktiviert?"""
+        return self.config.get("features", {}).get("admin_panel_enabled", True)
+
+    @property
+    def tasks_intervals(self) -> Dict[str, int]:
+        """Alle Task-Intervalle"""
+        return self.config.get("tasks_intervall", {})
 
     def get_task_interval(self, task_name: str, default: int = 5) -> int:
         """
-        Hole das Intervall für einen spezifischen Task
-        :param task_name: Name des Tasks
-        :param default: Standardintervall (Standard: 5 Minuten)
-        :return: Intervall in Minuten
-        """
-        intervals = self.get_tasks_intervals()
-        return intervals.get(task_name, default)
+        Hole Intervall für spezifischen Task
 
-    def __repr__(self):
+        Args:
+            task_name: Name des Tasks (z.B. "app_keep_alive_log")
+            default: Standard-Intervall in Minuten
+
+        Returns:
+            Intervall in Minuten
         """
-        Gib eine formatierte String-Repräsentation der Konfiguration zurück
+        return self.tasks_intervals.get(task_name, default)
+
+    def get(self, key: str, default: Any = None) -> Any:
         """
-        return json.dumps(AppConfig._config_data, indent=2)
+        Hole Config-Wert mit Punktnotation
+        Beispiel: config.get("blueprint.url_prefix")
+        """
+        keys = key.split(".")
+        value = self.config
+
+        for k in keys:
+            if isinstance(value, dict):
+                value = value.get(k)
+                if value is None:
+                    return default
+            else:
+                return default
+
+        return value if value is not None else default

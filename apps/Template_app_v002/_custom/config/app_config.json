@@ -1,6 +1,24 @@
 {
-    "app_name": "Template_app_v001",
-    "tasks_intervall": {
-        "app_keep_alive_log": 200
-    }
+  "app_display_name": "Template_app_v002",
+  "app_version": "0.0.0",
+  "app_author": "Unknown",
+  "app_description": "Flask Application based on Template",
+  "blueprint": {
+    "url_prefix": "/Template_app_v002",
+    "static_url_path": "/Template_app_v002_static",
+    "template_folder": "templates",
+    "static_folder": "static"
+  },
+  "logger": {
+    "name": "APP-Template_app_v002",
+    "level": "DEBUG"
+  },
+  "tasks_intervall": {
+    "app_keep_alive_log": 200
+  },
+  "features": {
+    "socketio_enabled": true,
+    "scheduler_enabled": true,
+    "admin_panel_enabled": true
+  }
 }
