@@ -1,18 +1,18 @@
-# cli
+# Template_app_v002
 
 ## App Information
 
-Name: Template_app_v001
+Name: Template_app_v002
 
 Author: Karatekti_123
 
-Created: 28.07.2024
+Created: 25.1.2026
 
-Last Update: 11.07.2025
+Last Update: 25.01.2026
 
-Last Version: 0.0.1
+Last Version: 0.0.0
 
-System Requirements: 1.3
+System Requirements: 1.4.2
 
 Description: Dies ist die Vorlage App.
 
@@ -22,8 +22,8 @@ Tags: template
 
 Repository URL: https://github.com/Roberto2Meloni/FlaskTemplateApp
 
-Other: Dies ist die Vorlage App. Der Other Eintrag.
+Other: Dies ist die Vorlage App. Der Other Eintrag. Neue App integratons Version
 
-Template_Base: 001
+Template_Base: 002
 
 Type: dev
