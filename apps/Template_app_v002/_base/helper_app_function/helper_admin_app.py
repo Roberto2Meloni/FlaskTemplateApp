@@ -1,6 +1,5 @@
 import re
 import os
-from .. import logger_name
 from flask import request
 
 root__path = os.getcwd()
@@ -83,6 +82,8 @@ def get_app_logs(limit=500, level_filter=None, search_term=None):
     Returns:
         dict: Dictionary mit Log-Informationen
     """
+    from ... import logger_name
+
     pre_defined_log_filter = logger_name
     additional_filter = r"\[ ?Reboot FLASK ?\]"
 
@@ -233,6 +234,8 @@ def get_log_statistics():
     """
     Gibt Statistiken über die Log-Datei zurück
     """
+    from ... import logger_name
+
     try:
         stats = {
             "total_size_mb": 0,

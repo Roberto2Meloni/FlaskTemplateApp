@@ -3,13 +3,10 @@ from flask_socketio import emit
 from flask_login import current_user
 from flask import request
 from datetime import datetime
-from . import app_logger
-from .app_config import AppConfig
+from .. import app_logger, app_config
 from app.socketio_manager import get_socketio_manager
 
-app_logger.info("Starte App-Template_app_v001 SocketIO Events")
-
-app_config = AppConfig()
+app_logger.info(f"Starte App-{app_config.app_name} SocketIO Events")
 
 # ========================================
 # SOCKET TRACKING
@@ -96,7 +93,14 @@ def register_socket_events():
     Registriert app-spezifische Socket-Events
     """
 
-    @socketio.on("Template_app_v001_connect")
+    # NEU: Dynamische Event-Namen
+    connect_event = f"{app_config.app_name}_connect"
+    connected_event = f"{app_config.app_name}_connected"
+    ping_event = f"{app_config.app_name}_ping"
+    pong_event = f"{app_config.app_name}_pong"
+    disconnect_event = f"{app_config.app_name}_disconnect"
+
+    @socketio.on(connect_event)
     def handle_app_connect(data=None):
         """
         App-spezifisches Connect Event
@@ -126,7 +130,7 @@ def register_socket_events():
 
         # Sende Bestätigung an Client
         emit(
-            "Template_app_v001_connected",
+            connected_event,
             {
                 "sid": sid,
                 "username": user_info["username"],
@@ -136,13 +140,13 @@ def register_socket_events():
             },
         )
 
-    @socketio.on("Template_app_v001_ping")
+    @socketio.on(connect_event)
     def handle_app_ping():
         """
         App-spezifischer Ping für Connection-Health-Check
         """
         emit(
-            "Template_app_v001_pong",
+            connected_event,
             {
                 "timestamp": datetime.now().isoformat(),
                 "app": app_config.app_name,
@@ -150,7 +154,7 @@ def register_socket_events():
             },
         )
 
-    @socketio.on("Template_app_v001_disconnect")
+    @socketio.on(connect_event)
     def handle_app_disconnect():
         """
         App-spezifisches Disconnect Event
@@ -174,15 +178,21 @@ def register_socket_events():
     #
     #     # Verarbeite Event...
     #
-    #     emit('Template_app_v001_custom_response', {
+    #     emit(connected_event, {
     #         'status': 'ok',
     #         'data': data
     #     })
 
-    app_logger.info("✅ Template_app_v001 Socket-Events registriert")
+    app_logger.info(f"✅ {app_config.app_name} Socket-Events registriert")
+    return {
+        connect_event: handle_app_connect,
+        ping_event: handle_app_ping,
+        disconnect_event: handle_app_disconnect,
+    }
 
 
 # Registriere Events beim Import
-register_socket_events()
+# Registriere Events beim Import und speichere sie
+SOCKETIO_EVENTS = register_socket_events()
 
-app_logger.info("Ende App-Template_app_v001 SocketIO Events")
+app_logger.info(f"Ende App-{app_config.app_name} SocketIO Events")

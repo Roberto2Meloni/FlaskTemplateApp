@@ -7,7 +7,7 @@ from flask_login import current_user
 from app.decorators import admin_required, enabled_required
 
 # Import aus Parent Package (Template_app_v002)
-from .. import blueprint, app_logger, app_config
+from ... import blueprint, app_logger, app_config
 
 # Import Helper-Funktionen
 from ..helper_app_function.helper_admin_app import (

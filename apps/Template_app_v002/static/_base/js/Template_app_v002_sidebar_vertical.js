@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-  console.log("=== Template_app_v001 JavaScript gestartet ===");
+  console.log("=== Template_app_v002 JavaScript gestartet ===");
 
   // ========================================
   // HAMBURGER MENU
@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Spezialfall: Root → Dashboard
     if (
       !matchingLink &&
-      (currentURL === "/" || currentURL.endsWith("/Template_app_v001"))
+      (currentURL === "/" || currentURL.endsWith("/Template_app_v002"))
     ) {
       matchingLink = linksInfo.find(
         (linkInfo) => linkInfo.page === "dashboard"
@@ -493,7 +493,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     try {
       const response = await fetch(
-        "{{ url_for('Template_app_v001.api_disconnect_all_sockets') }}",
+        "{{ url_for('Template_app_v002.api_disconnect_all_sockets') }}",
         {
           method: "POST",
           headers: {
@@ -536,7 +536,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     try {
       const response = await fetch(
-        `{{ url_for('Template_app_v001.api_disconnect_socket', sid='SID_PLACEHOLDER') }}`.replace(
+        `{{ url_for('Template_app_v002.api_disconnect_socket', sid='SID_PLACEHOLDER') }}`.replace(
           "SID_PLACEHOLDER",
           sid
         ),
@@ -659,7 +659,7 @@ function showToast(message, type = "info") {
 async function pauseTask(taskId) {
   try {
     const response = await fetch(
-      `/Template_app_v001/admin/api_pause_task/${taskId}`,
+      `/Template_app_v002/admin/api_pause_task/${taskId}`,
       {
         method: "POST",
         headers: {
@@ -698,7 +698,7 @@ async function pauseTask(taskId) {
 async function resumeTask(taskId) {
   try {
     const response = await fetch(
-      `/Template_app_v001/api/tasks/resume/${taskId}`,
+      `/Template_app_v002/api/tasks/resume/${taskId}`,
       {
         method: "POST",
         headers: {
@@ -738,7 +738,7 @@ async function runTask(taskId) {
   try {
     showToast("Task wird ausgeführt...", "info");
 
-    const response = await fetch(`/Template_app_v001/api/tasks/run/${taskId}`, {
+    const response = await fetch(`/Template_app_v002/api/tasks/run/${taskId}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -763,7 +763,7 @@ async function refreshTasks() {
   try {
     showToast("Tasks werden aktualisiert...", "info");
 
-    const response = await fetch("/Template_app_v001/api/tasks/status");
+    const response = await fetch("/Template_app_v002/api/tasks/status");
     const data = await response.json();
 
     if (data.success) {
@@ -781,7 +781,7 @@ async function refreshTasks() {
 // Auto-Refresh alle 30 Sekunden
 setInterval(async () => {
   try {
-    const response = await fetch("/Template_app_v001/api/tasks/status");
+    const response = await fetch("/Template_app_v002/api/tasks/status");
     const data = await response.json();
 
     if (data.success) {

@@ -3,7 +3,7 @@
     <h4>App Konfiguration</h4>
     <p class="config-subtitle">
       Bearbeite die Einstellungen für {{ app_infos.get('Name',
-      'Template_app_v001') }}
+      'Template_app_v002') }}
     </p>
     <p class="config-subtitle">Die Integerwerte sind in Minuten programmiert</p>
   </div>
@@ -34,7 +34,7 @@
     <form
       id="configForm"
       method="POST"
-      action="{{ url_for('Template_app_v001.api_save_config') }}"
+      action="{{ url_for('Template_app_v002.api_save_config') }}"
     >
       <input type="hidden" name="csrf_token" value="{{ config.SECRET_KEY }}" />
 

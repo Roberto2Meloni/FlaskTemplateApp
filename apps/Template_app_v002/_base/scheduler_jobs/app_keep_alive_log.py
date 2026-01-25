@@ -1,7 +1,4 @@
-from .. import app_logger
-from ..app_config import AppConfig
-
-app_config = AppConfig()
+from ... import app_logger, app_config  # ✅ Beide aus Haupt-__init__.py
 
 
 def app_keep_alive_log():

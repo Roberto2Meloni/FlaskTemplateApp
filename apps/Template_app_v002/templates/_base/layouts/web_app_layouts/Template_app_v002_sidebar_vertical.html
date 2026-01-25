@@ -3,13 +3,13 @@
     <button class="hamburger-menu" id="hamburgerMenu">
       <i class="bi bi-list"></i>
     </button>
-    <div class="sidebar_title">Template_app_v001</div>
+    <div class="sidebar_title">Template_app_v002</div>
   </div>
   <ul>
     <div class="upper_items">
       <li class="list active">
         <a
-          href="{{ url_for('Template_app_v001.dashboard') }}"
+          href="{{ url_for('Template_app_v002.dashboard') }}"
           class="nav-link"
           data-page="dashboard"
         >
@@ -21,7 +21,7 @@
       </li>
       <li class="list">
         <a
-          href="{{ url_for('Template_app_v001.page_01') }}"
+          href="{{ url_for('Template_app_v002.page_01') }}"
           class="nav-link"
           data-page="Page_01"
         >
@@ -33,7 +33,7 @@
       </li>
       <li class="list">
         <a
-          href="{{ url_for('Template_app_v001.page_02') }}"
+          href="{{ url_for('Template_app_v002.page_02') }}"
           class="nav-link"
           data-page="Page_02"
         >
@@ -45,7 +45,7 @@
       </li>
       <li class="list">
         <a
-          href="{{ url_for('Template_app_v001.page_03') }}"
+          href="{{ url_for('Template_app_v002.page_03') }}"
           class="nav-link"
           data-page="Page_03"
         >
@@ -69,7 +69,7 @@
       {% if current_user|has_admin_rights %}
       <li class="list">
         <a
-          href="{{ url_for('Template_app_v001.app_settings') }}"
+          href="{{ url_for('Template_app_v002.app_settings') }}"
           class="nav-link"
           data-page="app_settings"
         >

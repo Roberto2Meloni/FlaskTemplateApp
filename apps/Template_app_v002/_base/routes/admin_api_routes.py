@@ -10,7 +10,7 @@ from app.socketio_manager import get_socketio_manager
 import threading
 
 # Import aus Parent Package (Template_app_v002)
-from .. import blueprint, app_logger, app_config
+from ... import blueprint, app_logger, app_config
 
 # Import Helper-Funktionen
 from ..helper_app_function.helper_admin_app import (
