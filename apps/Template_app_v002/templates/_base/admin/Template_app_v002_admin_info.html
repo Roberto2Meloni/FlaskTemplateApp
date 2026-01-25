@@ -1,0 +1,114 @@
+<!-- App Info - Moderne Card-Ansicht -->
+<div class="app-info-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1>
+        <i class="bi bi-info-circle-fill"></i>
+        App Information
+      </h1>
+      <p class="subtitle">
+        {{ app_infos.app_name }} - Version {{ app_infos.last_version }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Info Cards Grid -->
+  <div class="info-grid">
+    <!-- Card: Allgemein -->
+    <div class="info-card">
+      <div class="card-header">
+        <i class="bi bi-app-indicator"></i>
+        <h3>Allgemeine Informationen</h3>
+      </div>
+      <div class="card-body">
+        <div class="info-row">
+          <span class="label">App Name</span>
+          <span class="value">{{ app_infos.app_name }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Kategorie</span>
+          <span class="badge badge-category">{{ app_infos.category }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Tags</span>
+          <span class="badge badge-tag">{{ app_infos.tags }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Beschreibung</span>
+          <span class="value">{{ app_infos.description }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card: Version & Datum -->
+    <div class="info-card">
+      <div class="card-header">
+        <i class="bi bi-calendar-check"></i>
+        <h3>Version & Updates</h3>
+      </div>
+      <div class="card-body">
+        <div class="info-row highlight">
+          <span class="label">Aktuelle Version</span>
+          <span class="value version">v{{ app_infos.last_version }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Erstellt am</span>
+          <span class="value">{{ app_infos.created }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Letztes Update</span>
+          <span class="value">{{ app_infos.last_update }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">System Requirements</span>
+          <span class="badge badge-system"
+            >{{ app_infos.system_requirements }}</span
+          >
+        </div>
+      </div>
+    </div>
+
+    <!-- Card: Entwickler -->
+    <div class="info-card">
+      <div class="card-header">
+        <i class="bi bi-person-badge"></i>
+        <h3>Entwickler</h3>
+      </div>
+      <div class="card-body">
+        <div class="info-row">
+          <span class="label">Autor</span>
+          <span class="value">{{ app_infos.author }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Repository</span>
+          {% if app_infos.repository_url %}
+          <a
+            href="{{ app_infos.repository_url }}"
+            target="_blank"
+            class="link-external"
+          >
+            <i class="bi bi-github"></i> GitHub Repository
+            <i class="bi bi-box-arrow-up-right"></i>
+          </a>
+          {% else %}
+          <span class="value text-muted">Nicht verfügbar</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Card: Zusätzliche Infos (volle Breite) -->
+    {% if app_infos.other %}
+    <div class="info-card full-width">
+      <div class="card-header">
+        <i class="bi bi-bookmark-star"></i>
+        <h3>Weitere Informationen</h3>
+      </div>
+      <div class="card-body">
+        <div class="other-content">{{ app_infos.other }}</div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>

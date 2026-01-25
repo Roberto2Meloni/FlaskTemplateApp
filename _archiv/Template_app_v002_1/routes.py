@@ -1,0 +1,125 @@
+from flask import render_template, current_app as app, request, jsonify
+from flask_login import current_user
+from . import (
+    api_routes,
+    blueprint,
+    app_logger,
+    admin_routes,
+    admin_api_routes,
+    socketio_events,
+    tasks,
+)
+from app.config import Config
+from app.decorators import admin_required, enabled_required
+from .app_config import AppConfig
+
+
+config = Config()
+app_config = AppConfig()
+app_logger.info(f"Starte App-{app_config.app_name} Route Initialization")
+print(f"App-{app_config.app_name} Version 0.0.0")
+
+
+def is_ajax_request():
+    """
+    Prüft ob der Request von fetch/JavaScript kommt
+    """
+    return request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+
+@blueprint.route("/", methods=["GET"])
+@blueprint.route("/Template_app_v001_index", methods=["GET"])
+@enabled_required
+def Template_app_v001_index():
+    return render_template(
+        "Template_app_v001.html",
+        user=current_user,
+        config=config,
+        content="dashboard",
+        app_config=app_config,
+    )
+
+
+@blueprint.route("/dashboard", methods=["GET"])
+@enabled_required
+def dashboard():
+    # Bei AJAX: Nur Content
+    if is_ajax_request():
+        return render_template(
+            "content/Template_app_v001_dashboard.html",
+            user=current_user,
+            config=config,
+            app_config=app_config,
+        )
+
+    # Normal: Komplette Seite
+    return render_template(
+        "Template_app_v001.html",
+        user=current_user,
+        config=config,
+        content="dashboard",
+        app_config=app_config,
+    )
+
+
+@blueprint.route("/page_01", methods=["GET"])
+@enabled_required
+def page_01():
+    if is_ajax_request():
+        return render_template(
+            "content/Template_app_v001_page_01.html",
+            user=current_user,
+            config=config,
+            app_config=app_config,
+        )
+
+    return render_template(
+        "Template_app_v001.html",
+        user=current_user,
+        config=config,
+        content="page_01",
+        app_config=app_config,
+    )
+
+
+@blueprint.route("/page_02", methods=["GET"])
+@enabled_required
+def page_02():
+    if is_ajax_request():
+        return render_template(
+            "content/Template_app_v001_page_02.html",
+            user=current_user,
+            config=config,
+            app_config=app_config,
+        )
+
+    return render_template(
+        "Template_app_v001.html",
+        user=current_user,
+        config=config,
+        content="page_02",
+        app_config=app_config,
+    )
+
+
+@blueprint.route("/page_03", methods=["GET"])
+@enabled_required
+def page_03():
+    if is_ajax_request():
+        return render_template(
+            "content/Template_app_v001_page_03.html",
+            user=current_user,
+            config=config,
+            app_config=app_config,
+        )
+
+    return render_template(
+        "Template_app_v001.html",
+        user=current_user,
+        config=config,
+        content="page_03",
+        app_config=app_config,
+    )
+
+
+app_logger.info(f"Ende App-{app_config.app_name} Route Initialization")

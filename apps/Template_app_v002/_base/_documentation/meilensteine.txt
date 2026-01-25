@@ -1,0 +1,6 @@
+Meilen Steine
+- Integration der Config klasse
+- Integration der Models Klassen
+- Integration der routen
+- Integration der SocketIO Events
+- Integration der Task Scheduler

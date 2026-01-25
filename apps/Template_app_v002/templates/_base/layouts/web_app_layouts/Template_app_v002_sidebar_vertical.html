@@ -1,0 +1,85 @@
+<div class="navigation" id="navigation">
+  <div class="sidbear_header">
+    <button class="hamburger-menu" id="hamburgerMenu">
+      <i class="bi bi-list"></i>
+    </button>
+    <div class="sidebar_title">Template_app_v001</div>
+  </div>
+  <ul>
+    <div class="upper_items">
+      <li class="list active">
+        <a
+          href="{{ url_for('Template_app_v001.dashboard') }}"
+          class="nav-link"
+          data-page="dashboard"
+        >
+          <span class="icon">
+            <i class="sidebar-icon bi bi-house-door-fill"></i>
+          </span>
+          <div class="list_element">Dashboard</div>
+        </a>
+      </li>
+      <li class="list">
+        <a
+          href="{{ url_for('Template_app_v001.page_01') }}"
+          class="nav-link"
+          data-page="Page_01"
+        >
+          <span class="icon">
+            <i class="bi bi-cash-coin"></i>
+          </span>
+          <div class="list_element">Seite 01</div>
+        </a>
+      </li>
+      <li class="list">
+        <a
+          href="{{ url_for('Template_app_v001.page_02') }}"
+          class="nav-link"
+          data-page="Page_02"
+        >
+          <span class="icon">
+            <i class="bi bi-controller"></i>
+          </span>
+          <div class="list_element">Seite 02</div>
+        </a>
+      </li>
+      <li class="list">
+        <a
+          href="{{ url_for('Template_app_v001.page_03') }}"
+          class="nav-link"
+          data-page="Page_03"
+        >
+          <span class="icon">
+            <i class="bi bi-controller"></i>
+          </span>
+          <div class="list_element">Seite 03</div>
+        </a>
+      </li>
+    </div>
+    <div class="lower_items">
+      <li class="list">
+        <a href="{{ url_for('myapp.home') }}">
+          <span class="icon">
+            <i class="sidebar-icon bi bi-grid-3x3-gap-fill"></i>
+          </span>
+          <div class="list_element">Zurück zu Apps</div>
+        </a>
+      </li>
+
+      {% if current_user|has_admin_rights %}
+      <li class="list">
+        <a
+          href="{{ url_for('Template_app_v001.app_settings') }}"
+          class="nav-link"
+          data-page="app_settings"
+        >
+          <span class="icon">
+            <i class="sidebar-icon bi bi-gear-fill"></i>
+          </span>
+          <div class="list_element">Admin</div>
+        </a>
+      </li>
+      {% endif %}
+    </div>
+  </ul>
+</div>

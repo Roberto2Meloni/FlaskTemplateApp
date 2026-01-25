@@ -1,0 +1,114 @@
+{% extends "layouts/websites/base.html" %} {% block window_title_and_icon %}
+<title>{{app_config.app_name}}</title>
+<link
+  rel="icon"
+  type="image/png"
+  href="{{ url_for('Template_app_v001.static', filename='img/icon.png') }}"
+/>
+<!-- Alternativ für verschiedene Größen: -->
+<link
+  rel="icon"
+  type="image/png"
+  sizes="32x32"
+  href="{{ url_for('Template_app_v001.static', filename='img/icon.png') }}"
+/>
+<link
+  rel="icon"
+  type="image/png"
+  sizes="16x16"
+  href="{{ url_for('Template_app_v001.static', filename='img/icon.png') }}"
+/>
+<link
+  rel="apple-touch-icon"
+  href="{{ url_for('Template_app_v001.static', filename='img/icon.png') }}"
+/>
+{% endblock %} {% block head %}
+<!-- Bootstrap Icons -->
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+/>
+{% endblock %} {% block app_styles %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('Template_app_v001.static', filename='css/Template_app_v001.css') }}"
+/>
+<link
+  rel="stylesheet"
+  href="{{ url_for('Template_app_v001.static', filename='css/Template_app_v001_admin.css') }}"
+/>
+<link
+  rel="stylesheet"
+  href="{{ url_for('Template_app_v001.static', filename='css/Template_app_v001_VerticalSidbar.css') }}"
+/>
+{% endblock %} {% block navigation %}
+<!-- Entferne Standard Navigation -->
+{% endblock %} {% block footer %}
+<!-- Entferne Footer -->
+{% endblock %} {%block content %}
+<!-- Main Content Area -->
+<div class="main-content">
+  <!-- Sidebar -->
+  {% include "layouts/web_app_layouts/Template_app_v001_sidebar_vertical.html"
+  %}
+
+  <!-- App Content -->
+  <div class="app-content">
+    {% block main_content %}
+    <!-- Hier kommt der spezifische App-Content rein -->
+    {% endblock %}
+  </div>
+</div>
+
+{% endblock %} {% block javascripts %}
+
+<!-- Hier findest du die Seiten -->
+<script>
+  // Hier sind die verschiedene Seiten dokumentiert
+  const url_index =
+    "{{ url_for('Template_app_v001.Template_app_v001_index') }}";
+  const url_app_settings = "{{ url_for('Template_app_v001.app_settings') }}";
+  const url_app_tasks = "{{ url_for('Template_app_v001.app_settings_tasks') }}";
+
+  const url_api_get_tasks = "{{ url_for('Template_app_v001.api_get_tasks') }}";
+  const url_api_pause_task =
+    "{{ url_for('Template_app_v001.api_pause_task', task_id='TASK_ID') }}".replace(
+      "TASK_ID",
+      ""
+    );
+  const url_api_resume_task =
+    "{{ url_for('Template_app_v001.api_resume_task', task_id='TASK_ID') }}".replace(
+      "TASK_ID",
+      ""
+    );
+  const url_api_run_task =
+    "{{ url_for('Template_app_v001.api_run_task', task_id='TASK_ID') }}".replace(
+      "TASK_ID",
+      ""
+    );
+  const url_api_task_info =
+    "{{ url_for('Template_app_v001.api_task_info', task_id='TASK_ID') }}".replace(
+      "TASK_ID",
+      ""
+    );
+
+  // Socketio URLS
+  const url_api_get_sockets =
+    "{{ url_for('Template_app_v001.api_get_sockets') }}";
+  const url_api_disconnect_socket =
+    "{{ url_for('Template_app_v001.api_disconnect_socket', sid='[_SID_]') }}";
+  const url_api_disconnect_all_sockets =
+    "{{ url_for('Template_app_v001.api_disconnect_all_sockets') }}";
+
+  //
+</script>
+
+<!-- Socket.IO -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+<script src="{{ url_for('Template_app_v001.static', filename='js/Template_app_v001_socketio.js') }}"></script>
+<script src="{{ url_for('Template_app_v001.static', filename='js/Template_app_v001_admin_sockets.js') }}"></script>
+
+<script src="{{ url_for('Template_app_v001.static', filename='js/Template_app_v001.js') }}"></script>
+<script src="{{ url_for('Template_app_v001.static', filename='js/Template_app_v001_sidebar_vertical.js') }}"></script>
+
+{% endblock %}

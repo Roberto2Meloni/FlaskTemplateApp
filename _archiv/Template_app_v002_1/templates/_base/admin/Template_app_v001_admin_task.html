@@ -1,0 +1,86 @@
+<div class="task-management-container">
+  <div class="task-header">
+    <h2><i class="bi bi-list-task"></i> Task Verwaltung</h2>
+    <button class="btn-refresh" onclick="refreshTasks()">
+      <i class="bi bi-arrow-clockwise"></i> Aktualisieren
+    </button>
+  </div>
+
+  <div class="task-info-box">
+    <div class="info-item">
+      <span class="info-label">App:</span>
+      <span class="info-value">{{ app_infos.app_name }}</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">Aktive Tasks:</span>
+      <span class="info-value" id="active-task-count">{{ tasks|length }}</span>
+    </div>
+  </div>
+
+  <div class="task-list">
+    {% if tasks %}
+    <table class="task-table">
+      <thead>
+        <tr>
+          <th>Task ID</th>
+          <th>Name</th>
+          <th>Funktion</th>
+          <th>Nächster Lauf</th>
+          <th>Trigger</th>
+          <th>Status</th>
+          <th>Aktionen</th>
+        </tr>
+      </thead>
+      <tbody id="task-table-body">
+        {% for task in tasks %}
+        <tr data-task-id="{{ task.id }}">
+          <td class="task-id">{{ task.id }}</td>
+          <td class="task-name">{{ task.name }}</td>
+          <td class="task-func">{{ task.func }}</td>
+          <td class="task-next-run">{{ task.next_run }}</td>
+          <td class="task-trigger">{{ task.trigger }}</td>
+          <td class="task-status">
+            <span class="status-badge status-active">
+              <i class="bi bi-check-circle-fill"></i> Aktiv
+            </span>
+          </td>
+          <td class="task-actions">
+            <button
+              class="btn-action btn-run"
+              onclick="runTask('{{ task.id }}')"
+              title="Jetzt ausführen"
+            >
+              <i class="bi bi-play-fill"></i>
+            </button>
+            <button
+              class="btn-action btn-pause"
+              onclick="pauseTask('{{ task.id }}')"
+              title="Pausieren"
+            >
+              <i class="bi bi-pause-fill"></i>
+            </button>
+            <button
+              class="btn-action btn-resume"
+              onclick="resumeTask('{{ task.id }}')"
+              title="Fortsetzen"
+              style="display: none"
+            >
+              <i class="bi bi-play-circle-fill"></i>
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="no-tasks-message">
+      <i class="bi bi-inbox"></i>
+      <p>Keine Tasks gefunden</p>
+      <small>Es sind aktuell keine Tasks für diese App registriert.</small>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast-notification" class="toast-notification"></div>
+</div>
