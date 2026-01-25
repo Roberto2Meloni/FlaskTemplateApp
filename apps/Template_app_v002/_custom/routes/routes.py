@@ -20,9 +20,7 @@ app_logger.info(f"Starte Content Routes für {APP_NAME}")
 
 
 def is_ajax_request():
-    """
-    Prüft ob der Request von fetch/JavaScript kommt
-    """
+    """Prüft ob der Request von fetch/JavaScript kommt"""
     return request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
 
@@ -39,10 +37,10 @@ def Template_app_v002_index():
     app_logger.info(f"{APP_NAME} Index-Seite aufgerufen")
 
     return render_template(
-        "_custom/content/Template_app_v002_dashboard.html",  # ✅ Korrekt
+        "_base/Template_app_v002.html",  # ✅ Nutzt dynamisches Template-System
         user=current_user,
         config=config,
-        content="dashboard",
+        content="dashboard",  # ✅ Lädt Dashboard-Content
         app_config=app_config,
     )
 
@@ -61,18 +59,18 @@ def dashboard():
     # Bei AJAX: Nur Content
     if is_ajax_request():
         return render_template(
-            "_custom/content/Template_app_v002_dashboard.html",  # ✅ Mit _custom
+            "_custom/content/Template_app_v002_dashboard.html",
             user=current_user,
             config=config,
             app_config=app_config,
         )
 
-    # Normal: Nutze Base-Layout + Content
+    # Normal: Komplette Seite mit Layout
     return render_template(
-        "_base/layouts/web_app_layouts/Template_app_v002_web_app_base.html",  # ✅ Base-Layout
+        "_base/Template_app_v002.html",  # ✅ Haupt-Template
         user=current_user,
         config=config,
-        content_template="_custom/content/Template_app_v002_dashboard.html",  # ✅ Content
+        content="dashboard",  # ✅ content-Variable
         app_config=app_config,
     )
 
@@ -85,17 +83,17 @@ def page_01():
 
     if is_ajax_request():
         return render_template(
-            "_custom/content/Template_app_v002_page_01.html",  # ✅ Mit _custom
+            "_custom/content/Template_app_v002_page_01.html",
             user=current_user,
             config=config,
             app_config=app_config,
         )
 
     return render_template(
-        "_base/layouts/web_app_layouts/Template_app_v002_web_app_base.html",  # ✅ Base
+        "_base/Template_app_v002.html",
         user=current_user,
         config=config,
-        content_template="_custom/content/Template_app_v002_page_01.html",  # ✅ Content
+        content="page_01",  # ✅ Lädt page_01
         app_config=app_config,
     )
 
@@ -108,17 +106,17 @@ def page_02():
 
     if is_ajax_request():
         return render_template(
-            "_custom/content/Template_app_v002_page_02.html",  # ✅
+            "_custom/content/Template_app_v002_page_02.html",
             user=current_user,
             config=config,
             app_config=app_config,
         )
 
     return render_template(
-        "_base/layouts/web_app_layouts/Template_app_v002_web_app_base.html",  # ✅
+        "_base/Template_app_v002.html",
         user=current_user,
         config=config,
-        content_template="_custom/content/Template_app_v002_page_02.html",  # ✅
+        content="page_02",  # ✅
         app_config=app_config,
     )
 
@@ -131,17 +129,17 @@ def page_03():
 
     if is_ajax_request():
         return render_template(
-            "_custom/content/Template_app_v003_page_03.html",  # ✅ Beachte: v003!
+            "_custom/content/Template_app_v003_page_03.html",
             user=current_user,
             config=config,
             app_config=app_config,
         )
 
     return render_template(
-        "_base/layouts/web_app_layouts/Template_app_v002_web_app_base.html",  # ✅
+        "_base/Template_app_v002.html",
         user=current_user,
         config=config,
-        content_template="_custom/content/Template_app_v003_page_03.html",  # ✅
+        content="page_03",  # ✅
         app_config=app_config,
     )
 
