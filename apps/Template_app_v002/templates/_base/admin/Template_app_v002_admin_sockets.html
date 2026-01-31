@@ -1,4 +1,5 @@
 <div class="sockets-container">
+  <!-- Header -->
   <div class="sockets-header">
     <div class="header-left">
       <h4><i class="bi bi-plug-fill"></i> Socket Verbindungen</h4>
@@ -10,7 +11,7 @@
       <button
         id="refreshBtn"
         class="btn btn-secondary"
-        onclick="refreshSocketList('{{ url_for('Template_app_v002.api_get_sockets') }}')"
+        onclick="refreshSocketList()"
       >
         <i class="bi bi-arrow-clockwise"></i> Aktualisieren
       </button>
@@ -18,13 +19,79 @@
       <button
         id="disconnectAllBtn"
         class="btn btn-danger"
-        onclick="disconnectAllSockets('{{ url_for('Template_app_v002.api_disconnect_all_sockets') }}')"
+        onclick="disconnectAllSockets()"
       >
         <i class="bi bi-x-circle"></i> Alle trennen
       </button>
     </div>
   </div>
 
+  <!-- Socket Status & Test Section -->
+  <div class="socket-test-section">
+    <div class="test-card">
+      <div class="test-card-header">
+        <h5><i class="bi bi-activity"></i> Socket Status & Tests</h5>
+      </div>
+      <div class="test-card-body">
+        <!-- Connection Status -->
+        <div class="connection-status">
+          <div class="status-indicator">
+            <div id="socketStatus" class="status-badge offline">
+              <span class="status-dot"></span>
+              <span class="status-text">Getrennt</span>
+            </div>
+            <div id="socketId" class="socket-info">Socket ID: -</div>
+          </div>
+          <div id="lastPing" class="last-activity">Letzter Ping: -</div>
+        </div>
+
+        <!-- Test Buttons -->
+        <div class="test-buttons">
+          <button
+            id="connectBtn"
+            class="btn btn-success"
+            onclick="testSocketConnect()"
+          >
+            <i class="bi bi-plug"></i> Verbinden
+          </button>
+          <button
+            id="pingBtn"
+            class="btn btn-primary"
+            onclick="testSocketPing()"
+            disabled
+          >
+            <i class="bi bi-lightning"></i> Ping senden
+          </button>
+          <button
+            id="disconnectBtn"
+            class="btn btn-warning"
+            onclick="testSocketDisconnect()"
+            disabled
+          >
+            <i class="bi bi-plug-fill"></i> Trennen
+          </button>
+        </div>
+
+        <!-- Test Log -->
+        <div class="test-log-section">
+          <div class="test-log-header">
+            <span>Event Log</span>
+            <button class="btn-small" onclick="clearTestLog()">
+              <i class="bi bi-trash"></i> Löschen
+            </button>
+          </div>
+          <div id="testLog" class="test-log">
+            <div class="log-entry log-info">
+              <span class="log-time">--:--:--</span>
+              <span class="log-message">Bereit für Tests...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics -->
   <div class="sockets-stats">
     <div class="stat-card">
       <div class="stat-icon">
@@ -37,8 +104,21 @@
         <div class="stat-label">Aktive Verbindungen</div>
       </div>
     </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="bi bi-people"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value" id="onlineUsers">
+          {{ online_users_count|default(0) }}
+        </div>
+        <div class="stat-label">Online Benutzer</div>
+      </div>
+    </div>
   </div>
 
+  <!-- Sockets Table -->
   <div class="sockets-content">
     {% if active_sockets %}
     <div class="sockets-table-wrapper">
@@ -74,7 +154,7 @@
             <td>
               <button
                 class="btn-icon btn-disconnect"
-                data-sid="{{ sid }}"
+                onclick="disconnectSocket('{{ sid }}')"
                 title="Verbindung trennen"
               >
                 <i class="bi bi-x-circle"></i>

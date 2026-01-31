@@ -1,0 +1,142 @@
+<!-- 
+  URL Definitions für Template_app_v002
+  Wird in web_app_base.html eingebunden
+-->
+<script>
+  // ========================================
+  // APP CONFIGURATION
+  // ========================================
+  const APP_NAME = "{{ app_config.app_name }}";
+  const APP_DISPLAY_NAME = "{{ app_config.app_display_name }}";
+  const API_BASE = "/{{ app_config.app_name }}/admin";
+
+  // ========================================
+  // CONTENT PAGES
+  // ========================================
+  const URL_INDEX =
+    "{{ url_for('Template_app_v002.Template_app_v002_index') }}";
+  const URL_DASHBOARD = "{{ url_for('Template_app_v002.dashboard') }}";
+  const URL_PAGE_01 = "{{ url_for('Template_app_v002.page_01') }}";
+  const URL_PAGE_02 = "{{ url_for('Template_app_v002.page_02') }}";
+  const URL_PAGE_03 = "{{ url_for('Template_app_v002.page_03') }}";
+
+  // ========================================
+  // ADMIN PAGES
+  // ========================================
+  const URL_APP_SETTINGS = "{{ url_for('Template_app_v002.app_settings') }}";
+  const URL_APP_SETTINGS_CONFIG =
+    "{{ url_for('Template_app_v002.app_settings_config') }}";
+  const URL_APP_SETTINGS_TASKS =
+    "{{ url_for('Template_app_v002.app_settings_tasks') }}";
+  const URL_APP_SETTINGS_SOCKETS =
+    "{{ url_for('Template_app_v002.app_settings_sockets') }}";
+  const URL_APP_SETTINGS_LOGS =
+    "{{ url_for('Template_app_v002.app_settings_logs') }}";
+  const URL_APP_INFO = "{{ url_for('Template_app_v002.app_info') }}";
+
+  // ========================================
+  // ADMIN API - TASKS
+  // ========================================
+  const API_GET_TASKS = "{{ url_for('Template_app_v002.api_get_tasks') }}";
+  const API_PAUSE_TASK =
+    "{{ url_for('Template_app_v002.api_pause_task', task_id='__TASK_ID__') }}";
+  const API_RESUME_TASK =
+    "{{ url_for('Template_app_v002.api_resume_task', task_id='__TASK_ID__') }}";
+  const API_RUN_TASK =
+    "{{ url_for('Template_app_v002.api_run_task', task_id='__TASK_ID__') }}";
+  const API_TASK_INFO =
+    "{{ url_for('Template_app_v002.api_task_info', task_id='__TASK_ID__') }}";
+
+  // ========================================
+  // ADMIN API - SOCKETS
+  // ========================================
+  const API_GET_SOCKETS = "{{ url_for('Template_app_v002.api_get_sockets') }}";
+  const API_DISCONNECT_SOCKET =
+    "{{ url_for('Template_app_v002.api_disconnect_socket', sid='__SID__') }}";
+  const API_DISCONNECT_ALL_SOCKETS =
+    "{{ url_for('Template_app_v002.api_disconnect_all_sockets') }}";
+
+  // ========================================
+  // ADMIN API - LOGS
+  // ========================================
+  const API_GET_LOGS = "{{ url_for('Template_app_v002.api_get_logs') }}";
+  const API_GET_LOG_STATS =
+    "{{ url_for('Template_app_v002.api_get_log_stats') }}";
+
+  // ========================================
+  // ADMIN API - CONFIG
+  // ========================================
+  const API_SAVE_CONFIG = "{{ url_for('Template_app_v002.api_save_config') }}";
+
+  // ========================================
+  // PUBLIC API
+  // ========================================
+  const API_STATUS = "{{ url_for('Template_app_v002.api_status') }}";
+  const API_INFO = "{{ url_for('Template_app_v002.api_info') }}";
+
+  // ========================================
+  // HELPER FUNCTIONS
+  // ========================================
+
+  /**
+   * Ersetzt Platzhalter in API-URLs
+   * @param {string} url - URL mit Platzhalter
+   * @param {string} value - Wert zum Ersetzen
+   * @returns {string} - URL mit ersetztem Wert
+   */
+  function replaceUrlParam(url, value) {
+    return url.replace(/__TASK_ID__|__SID__/, value);
+  }
+
+  /**
+   * Baut API-URL für Tasks
+   */
+  const TaskAPI = {
+    pause: (taskId) => replaceUrlParam(API_PAUSE_TASK, taskId),
+    resume: (taskId) => replaceUrlParam(API_RESUME_TASK, taskId),
+    run: (taskId) => replaceUrlParam(API_RUN_TASK, taskId),
+    info: (taskId) => replaceUrlParam(API_TASK_INFO, taskId),
+  };
+
+  /**
+   * Baut API-URL für Sockets
+   */
+  const SocketAPI = {
+    disconnect: (sid) => replaceUrlParam(API_DISCONNECT_SOCKET, sid),
+  };
+
+  // ========================================
+  // EXPORT (für Debugging)
+  // ========================================
+  window.AppURLs = {
+    APP_NAME,
+    APP_DISPLAY_NAME,
+    API_BASE,
+    // Content
+    URL_INDEX,
+    URL_DASHBOARD,
+    URL_PAGE_01,
+    URL_PAGE_02,
+    URL_PAGE_03,
+    // Admin
+    URL_APP_SETTINGS,
+    URL_APP_SETTINGS_CONFIG,
+    URL_APP_SETTINGS_TASKS,
+    URL_APP_SETTINGS_SOCKETS,
+    URL_APP_SETTINGS_LOGS,
+    URL_APP_INFO,
+    // API
+    API_GET_TASKS,
+    API_GET_SOCKETS,
+    API_GET_LOGS,
+    API_GET_LOG_STATS,
+    API_SAVE_CONFIG,
+    API_STATUS,
+    API_INFO,
+    // Helpers
+    TaskAPI,
+    SocketAPI,
+  };
+
+  console.log("✅ App URLs geladen:", APP_NAME);
+</script>

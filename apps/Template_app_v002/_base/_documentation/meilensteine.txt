@@ -1,17 +1,13 @@
 Meilen Steine
 - Integration der SocketIO Events
 - Integration der Task Scheduler
-
-- Korrekte anzeige App Config
-- App konfigurierebar machen
+- Korrekte anzeige App config
+- Kontrolle JS
+- kontrolle CS Elemente
 - socket io
 - Dynamische Sidbar
-- Zentraller ort für App Variabeln
-- Zentraller Ort für App URL's
 - entfneren app_info
-- integration config Variabeln
-- kontrolle login pfad
-- Kontrolle JS
-- integration app_variabel.html
-- kontrolle CS Elemente
 - Wo wird der Anzeigename der App verwendet?
+- App spezfisches Config für Admin-Bereich
+- Warnung meldung, wenn SocketIO nicht aktiviert ist muss meldugn ersechenne, dass die app neugestartet werden muss!
+- custom socketio events js datei

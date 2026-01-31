@@ -1,11 +1,10 @@
 {% extends "layouts/websites/base.html" %} {% block window_title_and_icon %}
-<title>{{app_config.app_name}}</title>
+<title>{{ app_config.app_display_name }}</title>
 <link
   rel="icon"
   type="image/png"
   href="{{ url_for('Template_app_v002.static', filename='_base/img/icon.png') }}"
 />
-<!-- Alternativ für verschiedene Größen: -->
 <link
   rel="icon"
   type="image/png"
@@ -23,6 +22,9 @@
   href="{{ url_for('Template_app_v002.static', filename='_base/img/icon.png') }}"
 />
 {% endblock %} {% block head %}
+<!-- App Name Meta Tag (für JavaScript) -->
+<meta name="app-name" content="{{ app_config.app_name }}" />
+
 <!-- Bootstrap Icons -->
 <link
   rel="stylesheet"
@@ -36,33 +38,34 @@
 />
 <link
   rel="stylesheet"
-  href="{{ url_for('Template_app_v002.static', filename='_base/css/Template_app_v002_admin.css') }}"
+  href="{{ url_for('Template_app_v002.static', filename='_base/css/Template_app_v002_VerticalSidbar.css') }}"
 />
 <link
   rel="stylesheet"
-  href="{{ url_for('Template_app_v002.static', filename='_base/css/Template_app_v002_VerticalSidbar.css') }}"
+  href="{{ url_for('Template_app_v002.static', filename='_base/css/Template_app_v002_admin.css') }}"
 />
 
-<!-- Custom Styles (überschreiben Base Styles) -->
+<!-- Custom Styles (optional) -->
+{% if config.TEMPLATE_APP_CUSTOM_CSS %}
 <link
   rel="stylesheet"
   href="{{ url_for('Template_app_v002.static', filename='_custom/css/Template_app_v002.css') }}"
 />
 <link
   rel="stylesheet"
-  href="{{ url_for('Template_app_v002.static', filename='_custom/css/Template_app_v002_admin.css') }}"
+  href="{{ url_for('Template_app_v002.static', filename='_custom/css/Template_app_v002_VerticalSidbar.css') }}"
 />
 <link
   rel="stylesheet"
-  href="{{ url_for('Template_app_v002.static', filename='_custom/css/Template_app_v002_VerticalSidbar.css') }}"
+  href="{{ url_for('Template_app_v002.static', filename='_custom/css/Template_app_v002_admin.css') }}"
 />
-{% endblock %} {% block navigation %}
+{% endif %} {% endblock %} {% block navigation %}
 <!-- Entferne Standard Navigation -->
 {% endblock %} {% block footer %}
 <!-- Entferne Footer -->
 {% endblock %} {% block content %}
 <!-- Main Content Area -->
-<div class="main-content">
+<div class="main-content" data-app-name="{{ app_config.app_name }}">
   <!-- Sidebar -->
   {% include
   "_base/layouts/web_app_layouts/Template_app_v002_sidebar_vertical.html" %}
@@ -75,85 +78,37 @@
   </div>
 </div>
 {% endblock %} {% block javascripts %}
-<!-- URL Definitionen -->
-<script>
-  // Content Pages
-  const url_index =
-    "{{ url_for('Template_app_v002.Template_app_v002_index') }}";
-  const url_dashboard = "{{ url_for('Template_app_v002.dashboard') }}";
-  const url_page_01 = "{{ url_for('Template_app_v002.page_01') }}";
-  const url_page_02 = "{{ url_for('Template_app_v002.page_02') }}";
-  const url_page_03 = "{{ url_for('Template_app_v002.page_03') }}";
+<!-- ========================================
+     URL DEFINITIONS (ausgelagert)
+     ======================================== -->
+{% include
+"_base/layouts/web_app_layouts/Template_app_v002_url_definitions.html" %} {%
+include "_custom/layout/Template_app_v002_url_definitions.html" %}
 
-  // App Settings
-  const url_app_settings = "{{ url_for('Template_app_v002.app_settings') }}";
-  const url_app_settings_config =
-    "{{ url_for('Template_app_v002.app_settings_config') }}";
-  const url_app_settings_tasks =
-    "{{ url_for('Template_app_v002.app_settings_tasks') }}";
-  const url_app_settings_sockets =
-    "{{ url_for('Template_app_v002.app_settings_sockets') }}";
-  const url_app_settings_logs =
-    "{{ url_for('Template_app_v002.app_settings_logs') }}";
-  const url_app_settings_backup =
-    "{{ url_for('Template_app_v002.app_settings_backup_and_restore') }}";
-  const url_app_info = "{{ url_for('Template_app_v002.app_info') }}";
-
-  // Admin API - Tasks
-  const url_api_get_tasks = "{{ url_for('Template_app_v002.api_get_tasks') }}";
-  const url_api_pause_task =
-    "{{ url_for('Template_app_v002.api_pause_task', task_id='TASK_ID') }}".replace(
-      "TASK_ID",
-      ""
-    );
-  const url_api_resume_task =
-    "{{ url_for('Template_app_v002.api_resume_task', task_id='TASK_ID') }}".replace(
-      "TASK_ID",
-      ""
-    );
-  const url_api_run_task =
-    "{{ url_for('Template_app_v002.api_run_task', task_id='TASK_ID') }}".replace(
-      "TASK_ID",
-      ""
-    );
-  const url_api_task_info =
-    "{{ url_for('Template_app_v002.api_task_info', task_id='TASK_ID') }}".replace(
-      "TASK_ID",
-      ""
-    );
-
-  // Admin API - Sockets
-  const url_api_get_sockets =
-    "{{ url_for('Template_app_v002.api_get_sockets') }}";
-  const url_api_disconnect_socket =
-    "{{ url_for('Template_app_v002.api_disconnect_socket', sid='[_SID_]') }}";
-  const url_api_disconnect_all_sockets =
-    "{{ url_for('Template_app_v002.api_disconnect_all_sockets') }}";
-
-  // Admin API - Logs
-  const url_api_get_logs = "{{ url_for('Template_app_v002.api_get_logs') }}";
-  const url_api_get_log_stats =
-    "{{ url_for('Template_app_v002.api_get_log_stats') }}";
-
-  // Admin API - Config
-  const url_api_save_config =
-    "{{ url_for('Template_app_v002.api_save_config') }}";
-
-  // Public API
-  const url_api_status = "{{ url_for('Template_app_v002.api_status') }}";
-  const url_api_info = "{{ url_for('Template_app_v002.api_info') }}";
-</script>
+<!-- ========================================
+     JAVASCRIPT LIBRARIES
+     ======================================== -->
 
 <!-- Socket.IO -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
-<!-- Base Scripts -->
+<!-- ========================================
+     APP SCRIPTS (Base)
+     ======================================== -->
+
+<!-- 1. Socket Integration -->
 <script src="{{ url_for('Template_app_v002.static', filename='_base/js/Template_app_v002_socketio.js') }}"></script>
-<script src="{{ url_for('Template_app_v002.static', filename='_base/js/Template_app_v002.js') }}"></script>
+
+<!-- 2. Sidebar Navigation -->
 <script src="{{ url_for('Template_app_v002.static', filename='_base/js/Template_app_v002_sidebar_vertical.js') }}"></script>
 
-<!-- Custom Scripts (überschreiben/erweitern Base Scripts) -->
+<!-- 3. Admin Functions -->
+<script src="{{ url_for('Template_app_v002.static', filename='_base/js/Template_app_v002_admin.js') }}"></script>
+
+<!-- ========================================
+     CUSTOM SCRIPTS (optional)
+     ======================================== -->
+{% if config.TEMPLATE_APP_CUSTOM_JS %}
 <script src="{{ url_for('Template_app_v002.static', filename='_custom/js/Template_app_v002.js') }}"></script>
 <script src="{{ url_for('Template_app_v002.static', filename='_custom/js/Template_app_v002_sidebar_vertical.js') }}"></script>
-
-{% endblock %}
+{% endif %} {% endblock %}

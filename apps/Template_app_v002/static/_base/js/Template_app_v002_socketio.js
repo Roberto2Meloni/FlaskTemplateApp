@@ -1,365 +1,230 @@
-// BasicChat.js - KORRIGIERTE VERSION mit Benutzerinformationen
-console.log("Socket IO JS geladen");
-
-// === GLOBALE VARIABLEN ===
-let socket = null;
-let isConnected = false;
-let currentChatRoom = null;
-
-// === SOCKET.IO INTEGRATION ===
-function initializeSocketIO() {
-  if (typeof io === "undefined") {
-    console.error("❌ Socket.IO nicht verfügbar!");
-    return;
-  }
-
-  console.log("🔌 Initialisiere Socket.IO...");
-  try {
-    socket = io();
-    setupSocketEvents();
-  } catch (error) {
-    console.error("❌ Socket.IO Fehler:", error);
-  }
-}
-
-function setupSocketEvents() {
-  // === BASIS VERBINDUNGS-EVENTS ===
-  socket.on("connect", () => {
-    console.log("✅ Socket.IO verbunden!");
-    isConnected = true;
-  });
-
-  socket.on("disconnect", () => {
-    console.log("❌ Socket.IO getrennt");
-    isConnected = false;
-    currentChatRoom = null;
-    currentChatInfo = null;
-  });
-
-  socket.on("connect_error", (error) => {
-    console.error("❌ Verbindungsfehler:", error);
-  });
-}
-
-// === INITIALISIERUNG ===
-document.addEventListener("DOMContentLoaded", function () {
-  console.log("🏁 DOM bereit - SocketIO geladen");
-  initializeSocketIO();
-});
-
-// ========================================
-// SOCKET ADMIN FUNKTIONEN
-// ========================================
-
 /**
- * Aktualisiert die Socket-Liste
- * @param {string} apiUrl - URL zum Abrufen der Socket-Liste
+ * Template_app_v002 - Socket.IO Integration
+ * Kombiniert: Globale Socket-Verbindung + App-spezifische Events
  */
-async function refreshSocketList(apiUrl) {
-  const refreshBtn = document.getElementById("refreshBtn");
-  const totalConnections = document.getElementById("totalConnections");
 
-  if (!refreshBtn) {
-    console.error("refreshBtn nicht gefunden");
-    return;
+(function () {
+  "use strict";
+
+  console.log("🔌 Template_app_v002 Socket.IO wird initialisiert");
+
+  // ========================================
+  // GLOBALE SOCKET-VERBINDUNG
+  // ========================================
+
+  let socket = null;
+  let isConnected = false;
+
+  /**
+   * Initialisiert globale Socket.IO Verbindung
+   */
+  function initializeGlobalSocket() {
+    if (typeof io === "undefined") {
+      console.error("❌ Socket.IO Library nicht verfügbar!");
+      return null;
+    }
+
+    console.log("🔌 Initialisiere globale Socket.IO Verbindung...");
+
+    try {
+      socket = io();
+
+      // Basis Events
+      socket.on("connect", () => {
+        console.log("✅ Socket.IO verbunden! (SID:", socket.id + ")");
+        isConnected = true;
+
+        // Trigger Event für andere Scripts
+        document.dispatchEvent(
+          new CustomEvent("global-socket-connected", {
+            detail: { socket, sid: socket.id },
+          }),
+        );
+      });
+
+      socket.on("disconnect", (reason) => {
+        console.log("❌ Socket.IO getrennt:", reason);
+        isConnected = false;
+      });
+
+      socket.on("connect_error", (error) => {
+        console.error("❌ Verbindungsfehler:", error);
+      });
+
+      // Mache Socket global verfügbar
+      window.socket = socket;
+      window.isSocketConnected = () => isConnected;
+
+      return socket;
+    } catch (error) {
+      console.error("❌ Socket.IO Fehler:", error);
+      return null;
+    }
   }
 
-  // Button deaktivieren und Loading-State
-  refreshBtn.disabled = true;
-  const originalHTML = refreshBtn.innerHTML;
-  refreshBtn.innerHTML =
-    '<i class="bi bi-arrow-clockwise loading"></i> Lädt...';
+  // ========================================
+  // APP-SPEZIFISCHE SOCKET INTEGRATION
+  // ========================================
 
-  try {
-    const response = await fetch(apiUrl, {
-      headers: {
-        "X-Requested-With": "XMLHttpRequest",
-      },
+  // App-Name aus Meta-Tag oder Attribut
+  const APP_NAME =
+    document.querySelector('meta[name="app-name"]')?.content ||
+    document.querySelector("[data-app-name]")?.dataset.appName ||
+    "UnknownApp";
+
+  console.log(`📱 App: ${APP_NAME}`);
+
+  /**
+   * Setup app-spezifische Socket Events
+   */
+  function setupAppSocketEvents(socket) {
+    if (!socket) {
+      console.warn(`⚠️ ${APP_NAME}: Socket nicht verfügbar`);
+      return;
+    }
+
+    console.log(`✅ ${APP_NAME}: Registriere Socket-Events`);
+
+    // Dynamische Event-Namen
+    const CONNECT_EVENT = `${APP_NAME}_connect`;
+    const CONNECTED_EVENT = `${APP_NAME}_connected`;
+    const PONG_EVENT = `${APP_NAME}_pong`;
+    const DISCONNECT_EVENT = `${APP_NAME}_disconnect`;
+
+    // Registriere bei App
+    socket.emit(CONNECT_EVENT, {
+      timestamp: new Date().toISOString(),
+      page: window.location.pathname,
     });
 
-    const result = await response.json();
+    // Server-Bestätigung
+    socket.on(CONNECTED_EVENT, (data) => {
+      console.log(`✅ ${APP_NAME} verbunden:`, data);
 
-    if (result.success) {
-      updateSocketTable(result.sockets);
-      if (totalConnections) {
-        totalConnections.textContent = result.total;
-      }
-      showStatus("Socket-Liste aktualisiert", "success");
-      console.log(
-        "✅ Socket-Liste aktualisiert:",
-        result.total,
-        "Verbindungen"
+      // Custom Event für weitere Initialisierung
+      document.dispatchEvent(
+        new CustomEvent("app-socket-connected", {
+          detail: { appName: APP_NAME, data },
+        }),
       );
-    } else {
-      showStatus("Fehler: " + result.message, "error");
-      console.error("❌ API-Fehler:", result.message);
-    }
-  } catch (error) {
-    console.error("❌ Fetch-Fehler:", error);
-    showStatus("Fehler beim Aktualisieren: " + error.message, "error");
-  } finally {
-    refreshBtn.disabled = false;
-    refreshBtn.innerHTML = originalHTML;
-  }
-}
-
-/**
- * Trennt alle Socket-Verbindungen
- * @param {string} apiUrl - URL zum Trennen aller Sockets
- */
-async function disconnectAllSockets(apiUrl) {
-  if (!confirm("Möchten Sie wirklich ALLE Socket-Verbindungen trennen?")) {
-    return;
-  }
-
-  const disconnectAllBtn = document.getElementById("disconnectAllBtn");
-
-  if (!disconnectAllBtn) {
-    console.error("disconnectAllBtn nicht gefunden");
-    return;
-  }
-
-  // Button deaktivieren
-  disconnectAllBtn.disabled = true;
-  const originalHTML = disconnectAllBtn.innerHTML;
-  disconnectAllBtn.innerHTML =
-    '<i class="bi bi-hourglass-split"></i> Trenne...';
-
-  try {
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "X-Requested-With": "XMLHttpRequest",
-      },
     });
 
-    const result = await response.json();
-
-    if (result.success) {
-      showStatus(result.message, "success");
-      console.log("✅ Alle Sockets getrennt:", result.disconnected);
-
-      // Aktualisiere Liste nach 1 Sekunde
-      const container = document.querySelector(".sockets-container");
-      if (container && container.dataset.apiList) {
-        setTimeout(() => refreshSocketList(container.dataset.apiList), 1000);
-      }
-    } else {
-      showStatus("Fehler: " + result.message, "error");
-      console.error("❌ API-Fehler:", result.message);
-    }
-  } catch (error) {
-    console.error("❌ Disconnect-All-Fehler:", error);
-    showStatus("Fehler: " + error.message, "error");
-  } finally {
-    disconnectAllBtn.disabled = false;
-    disconnectAllBtn.innerHTML = originalHTML;
-  }
-}
-
-/**
- * Trennt eine einzelne Socket-Verbindung
- * @param {string} apiUrlTemplate - URL-Template mit __SID__ Platzhalter
- * @param {string} sid - Socket ID
- * @param {HTMLElement} btnElement - Button-Element das geklickt wurde
- */
-async function disconnectSocket(apiUrlTemplate, sid, btnElement) {
-  if (!confirm("Diese Socket-Verbindung trennen?")) {
-    return;
-  }
-
-  const row = document.querySelector(`tr[data-sid="${sid}"]`);
-  const totalConnections = document.getElementById("totalConnections");
-
-  // Button deaktivieren
-  btnElement.disabled = true;
-  const originalHTML = btnElement.innerHTML;
-  btnElement.innerHTML = '<i class="bi bi-hourglass-split"></i>';
-
-  try {
-    const url = apiUrlTemplate.replace("__SID__", sid);
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "X-Requested-With": "XMLHttpRequest",
-      },
+    // Pong Event
+    socket.on(PONG_EVENT, (data) => {
+      console.log(`🏓 ${APP_NAME} Pong:`, data);
     });
 
-    const result = await response.json();
-
-    if (result.success) {
-      showStatus("Verbindung getrennt", "success");
-      console.log("✅ Socket getrennt:", sid);
-
-      // Fade out und entfernen
-      if (row) {
-        row.style.opacity = "0";
-        setTimeout(() => {
-          row.remove();
-
-          // Update Counter
-          if (totalConnections) {
-            const currentTotal = parseInt(totalConnections.textContent);
-            totalConnections.textContent = currentTotal - 1;
-          }
-
-          // Prüfe ob noch Verbindungen da sind
-          const remainingRows = document.querySelectorAll(
-            "#socketsTableBody tr"
-          );
-          if (remainingRows.length === 0) {
-            // Lade Liste neu für Empty State
-            const container = document.querySelector(".sockets-container");
-            if (container && container.dataset.apiList) {
-              setTimeout(
-                () => refreshSocketList(container.dataset.apiList),
-                500
-              );
-            }
-          }
-        }, 300);
+    // Cleanup Handler
+    window.addEventListener("beforeunload", () => {
+      if (socket && socket.connected) {
+        socket.emit(DISCONNECT_EVENT);
+        console.log(`👋 ${APP_NAME}: Socket cleanup`);
       }
-    } else {
-      showStatus("Fehler: " + result.message, "error");
-      console.error("❌ API-Fehler:", result.message);
-      btnElement.disabled = false;
-      btnElement.innerHTML = originalHTML;
-    }
-  } catch (error) {
-    console.error("❌ Disconnect-Fehler:", error);
-    showStatus("Fehler: " + error.message, "error");
-    btnElement.disabled = false;
-    btnElement.innerHTML = originalHTML;
-  }
-}
-
-// ========================================
-// HELPER FUNCTIONS
-// ========================================
-
-function updateSocketTable(sockets) {
-  const socketsTableBody = document.getElementById("socketsTableBody");
-  const socketsContent = document.querySelector(".sockets-content");
-
-  if (sockets.length === 0) {
-    // Zeige Empty State
-    if (socketsContent) {
-      socketsContent.innerHTML = `
-        <div class="empty-state">
-          <i class="bi bi-plug"></i>
-          <h5>Keine aktiven Verbindungen</h5>
-          <p>Aktuell sind keine Socket-Verbindungen für diese App aktiv.</p>
-        </div>
-      `;
-    }
-    return;
+    });
   }
 
-  // Wenn kein Table Body existiert, erstelle Table
-  if (!socketsTableBody) {
-    if (socketsContent) {
-      socketsContent.innerHTML = `
-        <div class="sockets-table-wrapper">
-          <table class="sockets-table" id="socketsTable">
-            <thead>
-              <tr>
-                <th><i class="bi bi-person"></i> Benutzer</th>
-                <th><i class="bi bi-fingerprint"></i> Socket ID</th>
-                <th><i class="bi bi-clock"></i> Verbunden seit</th>
-                <th><i class="bi bi-gear"></i> Aktionen</th>
-              </tr>
-            </thead>
-            <tbody id="socketsTableBody"></tbody>
-          </table>
-        </div>
-      `;
-    }
-    // Hole neue Referenz
-    const newTableBody = document.getElementById("socketsTableBody");
-    if (!newTableBody) return;
-    newTableBody.innerHTML = generateSocketRows(sockets);
-  } else {
-    // Update existierende Tabelle
-    socketsTableBody.innerHTML = generateSocketRows(sockets);
+  // ========================================
+  // HELPER FUNCTIONS
+  // ========================================
+
+  /**
+   * Warte auf Socket-Verbindung
+   */
+  function waitForSocketConnection(maxAttempts = 10) {
+    return new Promise((resolve, reject) => {
+      let attempts = 0;
+
+      function checkConnection() {
+        if (socket && socket.connected) {
+          resolve(socket);
+        } else if (attempts++ < maxAttempts) {
+          setTimeout(checkConnection, 500);
+        } else {
+          reject(new Error("Socket-Verbindung Timeout"));
+        }
+      }
+
+      checkConnection();
+    });
   }
-}
 
-function generateSocketRows(sockets) {
-  // Hole API-URL aus Container für onclick
-  const container = document.querySelector(".sockets-container");
-  const apiDisconnect = container ? container.dataset.apiDisconnect : "";
+  // ========================================
+  // INITIALISIERUNG
+  // ========================================
 
-  return sockets
-    .map(
-      (socket) => `
-      <tr data-sid="${socket.sid}">
-        <td>
-          <div class="user-info">
-            <i class="bi bi-person-circle user-icon"></i>
-            <span class="username">${socket.username}</span>
-            ${
-              socket.user_id
-                ? '<span class="user-badge authenticated">Auth</span>'
-                : '<span class="user-badge guest">Gast</span>'
-            }
-          </div>
-        </td>
-        <td>
-          <code class="socket-id">${socket.sid.substring(0, 16)}...</code>
-        </td>
-        <td>
-          <span class="timestamp">${socket.connected_at}</span>
-        </td>
-        <td>
-          <button 
-            class="btn-icon btn-disconnect" 
-            onclick="disconnectSocket('${apiDisconnect}', '${
-        socket.sid
-      }', this)"
-            title="Verbindung trennen"
-          >
-            <i class="bi bi-x-circle"></i>
-          </button>
-        </td>
-      </tr>
-    `
-    )
-    .join("");
-}
+  document.addEventListener("DOMContentLoaded", async function () {
+    console.log(`🏁 ${APP_NAME}: Socket Client wird initialisiert`);
 
-function showStatus(message, type) {
-  const statusMessage = document.getElementById("statusMessage");
-  if (!statusMessage) return;
+    // 1. Initialisiere globalen Socket
+    const globalSocket = initializeGlobalSocket();
 
-  const icons = {
-    success: "check-circle",
-    error: "exclamation-circle",
-    info: "info-circle",
+    if (!globalSocket) {
+      console.error("❌ Konnte Socket nicht initialisieren");
+      return;
+    }
+
+    // 2. Warte auf Verbindung
+    try {
+      await waitForSocketConnection();
+      console.log("✅ Socket verbunden, registriere App-Events");
+
+      // 3. Setup App-spezifische Events
+      setupAppSocketEvents(globalSocket);
+    } catch (error) {
+      console.warn(`⚠️ ${APP_NAME}: ${error.message}`);
+    }
+  });
+
+  // ========================================
+  // GLOBAL EXPORT
+  // ========================================
+
+  window.AppSocket = {
+    appName: APP_NAME,
+
+    /**
+     * Sendet App-spezifisches Event
+     */
+    emit: (eventName, data) => {
+      if (socket && socket.connected) {
+        socket.emit(`${APP_NAME}_${eventName}`, data);
+        console.log(`📤 ${APP_NAME}_${eventName}:`, data);
+      } else {
+        console.warn("⚠️ Socket nicht verbunden");
+      }
+    },
+
+    /**
+     * Hört auf App-spezifisches Event
+     */
+    on: (eventName, callback) => {
+      if (socket) {
+        socket.on(`${APP_NAME}_${eventName}`, callback);
+      }
+    },
+
+    /**
+     * Sendet Ping
+     */
+    sendPing: () => {
+      if (socket && socket.connected) {
+        socket.emit(`${APP_NAME}_ping`);
+        console.log("🏓 Ping gesendet");
+      } else {
+        console.warn("⚠️ Socket nicht verbunden, kann kein Ping senden");
+      }
+    },
+
+    /**
+     * Prüft Verbindungsstatus
+     */
+    isConnected: () => socket && socket.connected,
+
+    /**
+     * Gibt Socket-Instanz zurück
+     */
+    getSocket: () => socket,
   };
 
-  statusMessage.innerHTML = `<i class="bi bi-${icons[type]}"></i>${message}`;
-  statusMessage.className = "status-message " + type;
-  statusMessage.style.display = "flex";
-
-  setTimeout(() => {
-    statusMessage.style.display = "none";
-  }, 3000);
-}
-
-// ========================================
-// AUTO-REFRESH (optional)
-// ========================================
-document.addEventListener("DOMContentLoaded", function () {
-  const container = document.querySelector(".sockets-container");
-
-  if (container && container.dataset.apiList) {
-    console.log("✅ Socket Admin: Auto-Refresh aktiviert (30s)");
-
-    setInterval(() => {
-      if (!document.hidden) {
-        console.log("🔄 Auto-Refresh Socket-Liste");
-        refreshSocketList(container.dataset.apiList);
-      }
-    }, 30000);
-  }
-});
+  console.log(`✅ ${APP_NAME} Socket Integration bereit`);
+})();

@@ -57,11 +57,18 @@ def _register_extensions():
     """Importiere optionale Extensions"""
     if app_config.socketio_enabled:
         try:
+            app_logger.debug(
+                f"{app_config.app_name}: starte base socketio_events import"
+            )
             from ._base import socketio_events
+
+            app_logger.debug(f"{app_config.app_name}: ende base socketio_events import")
 
             app_logger.info("SocketIO registriert")
         except ImportError:
             pass
+    else:
+        app_logger.debug(f"{app_config.app_name}: socketio_disabled")
 
     if app_config.scheduler_enabled:
         try:

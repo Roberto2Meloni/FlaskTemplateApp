@@ -1,18 +1,21 @@
+/**
+ * Template_app_v002 - Sidebar Styles
+ * Haupt- und Admin-Navigation
+ */
+
+/* CSS Variables (Sidebar-spezifisch) */
 :root {
-    margin: 0;
-    padding: 0;
     --color-sidbar-background: #1e1e1e;
     --color-sidbar-background-hover: #ffffff;
-    /* ← FIX: Nur ein # */
     --color-sidbar-admin-background: #fcfcfc;
     --color-active-background: #3498db;
     --color-text-light: #ffffff;
     --color-text-dark: #333333;
 }
 
-.main-content {
-    display: flex;
-}
+/* ========================================
+   HAUPT-SIDEBAR (Dunkel)
+   ======================================== */
 
 .navigation {
     background: var(--color-sidbar-background);
@@ -21,21 +24,14 @@
     flex-direction: column;
     width: 250px;
     transition: width 0.3s ease;
-}
-
-.navigation-admin {
-    background: var(--color-sidbar-admin-background);
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    width: 250px;
-    transition: width 0.3s ease;
+    flex-shrink: 0;
 }
 
 .navigation.collapsed {
     width: 70px;
 }
 
+/* Sidebar Header */
 .sidbear_header {
     display: flex;
     flex-direction: row;
@@ -43,7 +39,6 @@
     padding: 15px;
 }
 
-/* Hamburger Menu - Normal Sidebar */
 .hamburger-menu {
     background: none;
     border: none;
@@ -70,6 +65,7 @@
     overflow: hidden;
 }
 
+/* Navigation List */
 ul {
     display: flex;
     flex-direction: column;
@@ -77,6 +73,7 @@ ul {
     flex: 1;
     margin: 0;
     padding: 0;
+    list-style: none;
 }
 
 .list {
@@ -95,24 +92,23 @@ ul {
     white-space: nowrap;
 }
 
-/* Hover-Effekt - Weißer Hintergrund, schwarzer Text */
 .list a:hover {
     background: var(--color-sidbar-background-hover);
     color: var(--color-text-dark);
 }
 
-/* Aktiver Link - deutlich sichtbar mit blauem Hintergrund */
+/* Aktiver Link */
 .list.active a {
     background: var(--color-active-background);
     color: var(--color-text-light);
 }
 
-/* Aktiver Link behält seine Farbe beim Hover */
 .list.active a:hover {
     background: var(--color-active-background);
     color: var(--color-text-light);
 }
 
+/* Icons */
 .icon {
     margin-right: 15px;
     font-size: 18px;
@@ -130,11 +126,11 @@ ul {
     overflow: hidden;
 }
 
+/* Tooltip bei Collapsed */
 .navigation.collapsed .list {
     position: relative;
 }
 
-/* Tooltip bei Collapsed - Weißer Hintergrund, schwarzer Text */
 .navigation.collapsed .list:hover::after {
     content: attr(data-tooltip);
     position: absolute;
@@ -142,9 +138,7 @@ ul {
     top: 50%;
     transform: translateY(-50%);
     background: var(--color-sidbar-background-hover);
-    /* Weiß */
     color: var(--color-text-dark);
-    /* Schwarzer Text auf weißem Hintergrund */
     padding: 5px 10px;
     border-radius: 4px;
     font-size: 14px;
@@ -153,59 +147,92 @@ ul {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-
 /* ========================================
-   ADMIN SIDEBAR - Heller Hintergrund
+   ADMIN SIDEBAR (Hell)
    ======================================== */
 
-/* Hamburger Menu - Admin */
+.navigation-admin {
+    background: var(--color-sidbar-admin-background);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    width: 250px;
+    transition: width 0.3s ease;
+    flex-shrink: 0;
+    border-right: 1px solid #e0e0e0;
+}
+
 .navigation-admin .hamburger-menu {
     color: var(--color-text-dark);
 }
 
-/* Sidebar Title - Admin */
 .navigation-admin .sidebar_title {
     color: var(--color-text-dark);
 }
 
-/* Links - Admin Sidebar (dunkler Text auf hellem Hintergrund) */
 .navigation-admin .list a {
     color: var(--color-text-dark);
 }
 
-/* Hover-Effekt - Admin Sidebar (noch hellerer Hintergrund) */
 .navigation-admin .list a:hover {
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.05);
 }
 
-/* Aktiver Link - Admin (blauer Hintergrund, weißer Text) */
 .navigation-admin .list.active a {
     background: var(--color-active-background);
     color: var(--color-text-light);
 }
 
-/* Aktiver Link behält seine Farbe beim Hover - Admin */
 .navigation-admin .list.active a:hover {
     background: var(--color-active-background);
     color: var(--color-text-light);
 }
 
-/* Tooltip bei Collapsed Admin Sidebar */
 .navigation-admin.collapsed .list:hover::after {
     background: var(--color-sidbar-admin-background);
     color: var(--color-text-dark);
     border: 1px solid #ddd;
 }
 
+/* ========================================
+   ADMIN LAYOUT
+   ======================================== */
+
 .admin-layout {
     display: flex;
     width: 100%;
-    height: 100%;
-    /* Sidebar und Content nebeneinander */
+    min-height: 100vh;
 }
 
 .admin-content {
     flex: 1;
-    /* Content nimmt restlichen Platz */
     padding: 20px;
+    overflow-y: auto;
+    background: #f8f9fa;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 768px) {
+
+    .navigation,
+    .navigation-admin {
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: 1000;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+
+    .navigation.open,
+    .navigation-admin.open {
+        transform: translateX(0);
+    }
+
+    .admin-content {
+        padding: 15px;
+    }
 }
