@@ -70,6 +70,21 @@ class AppConfig:
 
         return config
 
+    def _save_config(self):
+        """Speichere aktuelle Config in _custom/config/app_config.json"""
+        custom_config_path = self.app_root / "_custom" / "config" / "app_config.json"
+
+        # Erstelle Verzeichnis falls nicht vorhanden
+        custom_config_path.parent.mkdir(parents=True, exist_ok=True)
+
+        try:
+            with open(custom_config_path, "w", encoding="utf-8") as f:
+                json.dump(self.config, f, ensure_ascii=False, indent=2)
+            print(f"✓ Config gespeichert: {custom_config_path}")
+        except Exception as e:
+            print(f"❌ Fehler beim Speichern der Config: {e}")
+            raise
+
     # Properties
     @property
     def app_display_name(self) -> str:
@@ -163,3 +178,31 @@ class AppConfig:
                 return default
 
         return value if value is not None else default
+
+    def set(self, key: str, value: Any):
+        """
+        Setze Config-Wert mit Punktnotation
+        Beispiel: config.set("blueprint.url_prefix", "/new_path")
+
+        Args:
+            key: Schlüssel mit Punktnotation
+            value: Neuer Wert
+        """
+        keys = key.split(".")
+        current = self.config
+
+        # Navigiere zur richtigen Stelle
+        for k in keys[:-1]:
+            if k not in current or not isinstance(current[k], dict):
+                current[k] = {}
+            current = current[k]
+
+        # Setze Wert
+        current[keys[-1]] = value
+
+        # Speichere in _custom/config/app_config.json
+        self._save_config()
+
+    def reload(self):
+        """Lade Config neu (nützlich nach externen Änderungen)"""
+        self.config = self._load_config()

@@ -6,27 +6,27 @@ from flask import render_template, request
 from flask_login import current_user
 from app.decorators import admin_required, enabled_required
 
-# Import aus Parent Package (Template_app_v002)
-from ... import blueprint, app_logger, app_config
+# Import aus Parent Package (Template_app_v002/__init__.py)
+from ... import blueprint, app_logger, app_config, APP_ROOT
 
-# Import Helper-Funktionen
-from ..helper_app_function.helper_admin_app import (
-    get_app_info,
-    get_app_logs,
-    is_ajax_request,
-    get_log_statistics,
-)
+# Import AdminHelper-Klasse
+from ..helper_app_function.helper_admin_app import AdminHelper, is_ajax_request
 
 # Import Socket-Manager
 from app.socketio_manager import get_socketio_manager
 
-# Import Socket-Funktionen aus socketio_events
+# Import Socket-Funktionen
 from ..socketio_events import get_active_sockets, get_socket_count
 
 # Import Tasks
 from ..tasks import get_all_tasks
 
 app_logger.info(f"Starte Admin Routes für {app_config.app_name}")
+
+# ============================================
+# INITIALISIERE ADMIN HELPER
+# ============================================
+admin_helper = AdminHelper(app_config, APP_ROOT)
 
 
 # ========================================
@@ -38,14 +38,11 @@ app_logger.info(f"Starte Admin Routes für {app_config.app_name}")
 @admin_required
 def app_settings():
     """Admin-Hauptseite"""
-    app_infos = get_app_info()
     return render_template(
         "Template_app_v002.html",
         user=current_user,
-        config=app_config,
+        # config=app_config, --> ersetzen durch config variable aus root?
         content="app_settings",
-        settings="app_info",
-        app_infos=app_infos,
         app_config=app_config,
     )
 
@@ -54,14 +51,12 @@ def app_settings():
 @admin_required
 def app_info():
     """App-Informationen"""
-    app_infos = get_app_info()
 
     if is_ajax_request():
         return render_template(
             "admin/Template_app_v002_admin_info.html",
             user=current_user,
             config=app_config,
-            app_infos=app_infos,
             app_config=app_config,
         )
 
@@ -71,7 +66,6 @@ def app_info():
         config=app_config,
         content="app_settings",
         settings="app_info",
-        app_infos=app_infos,
         app_config=app_config,
     )
 
@@ -80,7 +74,7 @@ def app_info():
 @admin_required
 def app_settings_config():
     """App-Konfiguration bearbeiten"""
-    app_infos = get_app_info()
+
     app_config_dict = app_config.config  # Nutze direkt .config statt .to_dict()
 
     if is_ajax_request():
@@ -88,7 +82,6 @@ def app_settings_config():
             "admin/Template_app_v002_admin_config.html",
             user=current_user,
             config=app_config,
-            app_infos=app_infos,
             app_config_dict=app_config_dict,
             app_config=app_config,
         )
@@ -99,7 +92,6 @@ def app_settings_config():
         config=app_config,
         content="app_settings",
         settings="config",
-        app_infos=app_infos,
         app_config_dict=app_config_dict,
         app_config=app_config,
     )
@@ -109,7 +101,6 @@ def app_settings_config():
 @admin_required
 def app_settings_sockets():
     """Socket-Verbindungen anzeigen"""
-    app_infos = get_app_info()
 
     # Hole Socket-Manager für zusätzliche Infos
     try:
@@ -126,7 +117,6 @@ def app_settings_sockets():
             "admin/Template_app_v002_admin_sockets.html",
             user=current_user,
             config=app_config,
-            app_infos=app_infos,
             app_config=app_config,
             active_sockets=app_sockets,
             online_users_count=online_users_count,
@@ -138,7 +128,6 @@ def app_settings_sockets():
         config=app_config,
         content="app_settings",
         settings="sockets",
-        app_infos=app_infos,
         app_config=app_config,
         active_sockets=app_sockets,
         online_users_count=online_users_count,
@@ -149,7 +138,7 @@ def app_settings_sockets():
 @admin_required
 def app_settings_tasks():
     """Task-Verwaltung - Zeigt alle aktiven Tasks"""
-    app_infos = get_app_info()
+
     tasks = get_all_tasks()
 
     if is_ajax_request():
@@ -157,7 +146,6 @@ def app_settings_tasks():
             "admin/Template_app_v002_admin_task.html",
             user=current_user,
             config=app_config,
-            app_infos=app_infos,
             app_config=app_config,
             tasks=tasks,
         )
@@ -168,7 +156,6 @@ def app_settings_tasks():
         config=app_config,
         content="app_settings",
         settings="tasks",
-        app_infos=app_infos,
         app_config=app_config,
         tasks=tasks,
     )
@@ -177,23 +164,23 @@ def app_settings_tasks():
 @blueprint.route("/app_settings/logs", methods=["GET"])
 @admin_required
 def app_settings_logs():
-    """
-    App-Logs anzeigen mit Filteroptionen
-    """
+    """App-Logs anzeigen mit Filteroptionen"""
+
     # Parameter aus Request
     limit = request.args.get("limit", 500, type=int)
     level_filter = request.args.get("level", None, type=str)
     search_term = request.args.get("search", None, type=str)
 
-    # Begrenze Limit auf Maximum
+    # Begrenze Limit
     if limit > 2000:
         limit = 2000
 
-    app_infos = get_app_info()
-    app_logs = get_app_logs(
+    # Nutze AdminHelper (dynamisch!)
+    app_infos = admin_helper.get_app_info()
+    app_logs = admin_helper.get_app_logs(
         limit=limit, level_filter=level_filter, search_term=search_term
     )
-    log_stats = get_log_statistics()
+    log_stats = admin_helper.get_log_statistics()
 
     if is_ajax_request():
         return render_template(
@@ -229,14 +216,12 @@ def app_settings_logs():
 @admin_required
 def app_settings_backup_and_restore():
     """Backup & Restore"""
-    app_infos = get_app_info()
 
     if is_ajax_request():
         return render_template(
             "admin/Template_app_v002_admin_backup_and_restore.html",
             user=current_user,
             config=app_config,
-            app_infos=app_infos,
             app_config=app_config,
         )
 
@@ -246,7 +231,6 @@ def app_settings_backup_and_restore():
         config=app_config,
         content="app_settings",
         settings="backup_and_restore",
-        app_infos=app_infos,
         app_config=app_config,
     )
 

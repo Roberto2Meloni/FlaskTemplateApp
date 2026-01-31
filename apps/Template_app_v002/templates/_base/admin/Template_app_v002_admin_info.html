@@ -8,7 +8,7 @@
         App Information
       </h1>
       <p class="subtitle">
-        {{ app_infos.app_name }} - Version {{ app_infos.last_version }}
+        {{ app_config.app_display_name }} - Version {{ app_config.app_version }}
       </p>
     </div>
   </div>
@@ -24,47 +24,44 @@
       <div class="card-body">
         <div class="info-row">
           <span class="label">App Name</span>
-          <span class="value">{{ app_infos.app_name }}</span>
+          <span class="value">{{ app_config.app_name }}</span>
         </div>
         <div class="info-row">
-          <span class="label">Kategorie</span>
-          <span class="badge badge-category">{{ app_infos.category }}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Tags</span>
-          <span class="badge badge-tag">{{ app_infos.tags }}</span>
+          <span class="label">Display Name</span>
+          <span class="value">{{ app_config.app_display_name }}</span>
         </div>
         <div class="info-row">
           <span class="label">Beschreibung</span>
-          <span class="value">{{ app_infos.description }}</span>
+          <span class="value"
+            >{{ app_config.app_description or 'Keine Beschreibung vorhanden'
+            }}</span
+          >
         </div>
       </div>
     </div>
 
-    <!-- Card: Version & Datum -->
+    <!-- Card: Version & Konfiguration -->
     <div class="info-card">
       <div class="card-header">
         <i class="bi bi-calendar-check"></i>
-        <h3>Version & Updates</h3>
+        <h3>Version & Konfiguration</h3>
       </div>
       <div class="card-body">
         <div class="info-row highlight">
           <span class="label">Aktuelle Version</span>
-          <span class="value version">v{{ app_infos.last_version }}</span>
+          <span class="value version">v{{ app_config.app_version }}</span>
         </div>
         <div class="info-row">
-          <span class="label">Erstellt am</span>
-          <span class="value">{{ app_infos.created }}</span>
+          <span class="label">Blueprint URL</span>
+          <span class="value">{{ app_config.blueprint_url_prefix }}</span>
         </div>
         <div class="info-row">
-          <span class="label">Letztes Update</span>
-          <span class="value">{{ app_infos.last_update }}</span>
+          <span class="label">Static URL</span>
+          <span class="value">{{ app_config.blueprint_static_url_path }}</span>
         </div>
         <div class="info-row">
-          <span class="label">System Requirements</span>
-          <span class="badge badge-system"
-            >{{ app_infos.system_requirements }}</span
-          >
+          <span class="label">Logger Level</span>
+          <span class="badge badge-system">{{ app_config.logger_level }}</span>
         </div>
       </div>
     </div>
@@ -78,35 +75,64 @@
       <div class="card-body">
         <div class="info-row">
           <span class="label">Autor</span>
-          <span class="value">{{ app_infos.author }}</span>
+          <span class="value">{{ app_config.app_author }}</span>
         </div>
         <div class="info-row">
-          <span class="label">Repository</span>
-          {% if app_infos.repository_url %}
-          <a
-            href="{{ app_infos.repository_url }}"
-            target="_blank"
-            class="link-external"
-          >
-            <i class="bi bi-github"></i> GitHub Repository
-            <i class="bi bi-box-arrow-up-right"></i>
-          </a>
-          {% else %}
-          <span class="value text-muted">Nicht verfügbar</span>
-          {% endif %}
+          <span class="label">Logger Name</span>
+          <span class="value">{{ app_config.logger_name }}</span>
         </div>
       </div>
     </div>
 
-    <!-- Card: Zusätzliche Infos (volle Breite) -->
-    {% if app_infos.other %}
+    <!-- Card: Features (volle Breite) -->
     <div class="info-card full-width">
       <div class="card-header">
-        <i class="bi bi-bookmark-star"></i>
-        <h3>Weitere Informationen</h3>
+        <i class="bi bi-toggles"></i>
+        <h3>Aktivierte Features</h3>
       </div>
       <div class="card-body">
-        <div class="other-content">{{ app_infos.other }}</div>
+        <div class="info-row">
+          <span class="label">SocketIO</span>
+          <span
+            class="badge {% if app_config.socketio_enabled %}badge-category{% else %}badge-tag{% endif %}"
+          >
+            {{ 'Aktiviert' if app_config.socketio_enabled else 'Deaktiviert' }}
+          </span>
+        </div>
+        <div class="info-row">
+          <span class="label">Scheduler</span>
+          <span
+            class="badge {% if app_config.scheduler_enabled %}badge-category{% else %}badge-tag{% endif %}"
+          >
+            {{ 'Aktiviert' if app_config.scheduler_enabled else 'Deaktiviert' }}
+          </span>
+        </div>
+        <div class="info-row">
+          <span class="label">Admin Panel</span>
+          <span
+            class="badge {% if app_config.admin_panel_enabled %}badge-category{% else %}badge-tag{% endif %}"
+          >
+            {{ 'Aktiviert' if app_config.admin_panel_enabled else 'Deaktiviert'
+            }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card: Task-Intervalle (falls vorhanden) -->
+    {% if app_config.tasks_intervals %}
+    <div class="info-card full-width">
+      <div class="card-header">
+        <i class="bi bi-list-task"></i>
+        <h3>Task-Intervalle</h3>
+      </div>
+      <div class="card-body">
+        {% for task_name, interval in app_config.tasks_intervals.items() %}
+        <div class="info-row">
+          <span class="label">{{ task_name }}</span>
+          <span class="value">{{ interval }} Minuten</span>
+        </div>
+        {% endfor %}
       </div>
     </div>
     {% endif %}

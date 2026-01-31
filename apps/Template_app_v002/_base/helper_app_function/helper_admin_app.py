@@ -1,209 +1,246 @@
+"""
+Helper Functions für Admin-Bereich
+Dynamisch - funktioniert mit jedem App-Namen
+"""
+
 import re
 import os
 from flask import request
-
-root__path = os.getcwd()
-app_path = os.path.join(
-    root__path, "app", "imported_apps", "develop_release", "Template_app_v001"
-)
-log_path = os.path.join(root__path, "log")
-log_file = os.path.join(log_path, "server_log.log")
-readme_file = os.path.join(app_path, "README.md")
+from pathlib import Path
 
 
-def get_app_info():
-    """
-    Liest die README.md und extrahiert alle App-Informationen.
+class AdminHelper:
+    """Helper-Klasse für Admin-Funktionen"""
 
-    Returns:
-        dict: Dictionary mit allen App-Informationen
-    """
-    app_info = {
-        "app_name": "",
-        "author": "",
-        "created": "",
-        "last_update": "",
-        "last_version": "",
-        "system_requirements": "",
-        "description": "",
-        "category": "",
-        "tags": "",
-        "repository_url": "",
-        "other": "",
-    }
+    def __init__(self, app_config, app_root: Path):
+        """
+        Args:
+            app_config: AppConfig-Instanz
+            app_root: Pfad zum App-Root
+        """
+        self.app_config = app_config
+        self.app_root = Path(app_root)
 
-    try:
-        with open(readme_file, "r", encoding="utf-8") as f:
-            readme = f.read()
+        # Pfade
+        self.root_path = Path.cwd()
+        self.log_path = self.root_path / "log"
+        self.log_file = self.log_path / "server_log.log"
+        self.readme_file = self.app_root / "README.md"
 
-        # Mapping: README-Key → Dict-Key
-        mappings = {
-            "Name": "app_name",
-            "Author": "author",
-            "Created": "created",
-            "Last Update": "last_update",
-            "Last Version": "last_version",
-            "System Requirements": "system_requirements",
-            "Description": "description",
-            "Category": "category",
-            "Tags": "tags",
-            "Repository URL": "repository_url",
-            "Other": "other",
+    def get_app_logs(self, limit=500, level_filter=None, search_term=None):
+        """
+        Liest App-Logs effizient - nur die letzten N Zeilen
+
+        Args:
+            limit (int): Anzahl der Log-Zeilen die zurückgegeben werden sollen
+            level_filter (str): Filter nach Log-Level (INFO, ERROR, WARNING, DEBUG)
+            search_term (str): Suchbegriff zum Filtern
+
+        Returns:
+            dict: Dictionary mit Log-Informationen
+        """
+        # Dynamischer Filter basierend auf app_config
+        pre_defined_log_filter = self.app_config.logger_name
+        additional_filter = r"\[ ?Reboot FLASK ?\]"
+
+        result = {
+            "logs": [],
+            "total_lines": 0,
+            "filtered_lines": 0,
+            "file_size_mb": 0,
+            "has_more": False,
         }
 
-        # Für jeden Mapping-Eintrag suchen
-        for readme_key, dict_key in mappings.items():
-            # Pattern: "Key: Value" (ohne Prefix wie ## oder ***)
-            pattern = rf"^{re.escape(readme_key)}:\s*(.+)$"
-            match = re.search(pattern, readme, re.MULTILINE | re.IGNORECASE)
+        try:
+            # Hole Dateigröße
+            file_size = self.log_file.stat().st_size
+            result["file_size_mb"] = round(file_size / (1024 * 1024), 2)
 
-            if match:
-                app_info[dict_key] = match.group(1).strip()
+            # Effiziente Rückwärts-Lesung
+            if file_size > 10 * 1024 * 1024:  # > 10MB
+                read_size = 2 * 1024 * 1024  # Lese letzte 2MB
 
-        return app_info
+                with open(self.log_file, "rb") as f:
+                    f.seek(-read_size, os.SEEK_END)
+                    f.readline()  # Überspringe erste unvollständige Zeile
+                    lines = f.read().decode("utf-8", errors="ignore").splitlines()
+            else:
+                with open(self.log_file, "r", encoding="utf-8") as f:
+                    lines = f.readlines()
 
-    except FileNotFoundError:
-        print(f"ERROR: README.md nicht gefunden: {readme_file}")
-        return app_info
-    except Exception as e:
-        print(f"ERROR beim Lesen der README: {e}")
-        return app_info
+            result["total_lines"] = len(lines)
 
+            # Filter 1: App-spezifische Logs
+            filtered_lines = []
+            for line in lines:
+                if re.search(pre_defined_log_filter, line, re.IGNORECASE) or re.search(
+                    additional_filter, line, re.IGNORECASE
+                ):
+                    filtered_lines.append(line.rstrip("\n"))
 
-def get_app_logs(limit=500, level_filter=None, search_term=None):
-    """
-    Liest App-Logs effizient - nur die letzten N Zeilen
+            # Filter 2: Log-Level
+            if level_filter:
+                level_pattern = rf"\b{re.escape(level_filter)}\b"
+                filtered_lines = [
+                    line
+                    for line in filtered_lines
+                    if re.search(level_pattern, line, re.IGNORECASE)
+                ]
 
-    Args:
-        limit (int): Anzahl der Log-Zeilen die zurückgegeben werden sollen
-        level_filter (str): Filter nach Log-Level (INFO, ERROR, WARNING, DEBUG)
-        search_term (str): Suchbegriff zum Filtern
+            # Filter 3: Suchbegriff
+            if search_term:
+                search_pattern = re.escape(search_term)
+                filtered_lines = [
+                    line
+                    for line in filtered_lines
+                    if re.search(search_pattern, line, re.IGNORECASE)
+                ]
 
-    Returns:
-        dict: Dictionary mit Log-Informationen
-    """
-    from ... import logger_name
+            result["filtered_lines"] = len(filtered_lines)
 
-    pre_defined_log_filter = logger_name
-    additional_filter = r"\[ ?Reboot FLASK ?\]"
+            # Neueste zuerst
+            filtered_lines.reverse()
 
-    result = {
-        "logs": [],
-        "total_lines": 0,
-        "filtered_lines": 0,
-        "file_size_mb": 0,
-        "has_more": False,
-    }
+            # Limitierung
+            if len(filtered_lines) > limit:
+                result["has_more"] = True
+                filtered_lines = filtered_lines[:limit]
 
-    try:
-        # Hole Dateigröße
-        file_size = os.path.getsize(log_file)
-        result["file_size_mb"] = round(file_size / (1024 * 1024), 2)
+            # Parse Zeilen
+            for line in filtered_lines:
+                parsed = self._parse_log_line(line)
+                result["logs"].append(parsed)
 
-        # Effiziente Rückwärts-Lesung: Lese nur die letzten Bytes
-        # Bei großen Files (>10MB) nur die letzten 2MB lesen
-        if file_size > 10 * 1024 * 1024:  # > 10MB
-            read_size = 2 * 1024 * 1024  # Lese letzte 2MB
+            return result
 
-            with open(log_file, "rb") as f:
-                f.seek(-read_size, os.SEEK_END)
-                # Überspringe die erste unvollständige Zeile
-                f.readline()
-                lines = f.read().decode("utf-8", errors="ignore").splitlines()
+        except FileNotFoundError:
+            print(f"ERROR: Log-Datei nicht gefunden: {self.log_file}")
+            return result
+        except Exception as e:
+            print(f"ERROR beim Lesen der Log-Datei: {e}")
+            return result
+
+    def _parse_log_line(self, line):
+        """
+        Parsed eine Log-Zeile in strukturierte Komponenten
+
+        Format: 2025-11-07 18:26:50,104 [APP-NexusPlayer] [INFO] Nachricht
+        """
+        pattern = r"^(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2},\d{3})\s+\[([^\]]+)\]\s+\[(INFO|ERROR|WARNING|DEBUG|CRITICAL)\]\s+(.+)$"
+
+        match = re.match(pattern, line.strip())
+
+        if match:
+            return {
+                "timestamp": match.group(1).strip(),
+                "logger": match.group(2).strip(),
+                "level": match.group(3).strip(),
+                "message": match.group(4).strip(),
+                "raw": line,
+            }
         else:
-            # Bei kleinen Files alles lesen
-            with open(log_file, "r", encoding="utf-8") as f:
-                lines = f.readlines()
+            return {
+                "timestamp": "",
+                "logger": "",
+                "level": "UNKNOWN",
+                "message": line.strip(),
+                "raw": line,
+            }
 
-        result["total_lines"] = len(lines)
+    def get_log_statistics(self):
+        """Gibt Statistiken über die Log-Datei zurück"""
+        try:
+            stats = {
+                "total_size_mb": 0,
+                "total_lines": 0,
+                "app_lines": 0,
+                "levels": {
+                    "INFO": 0,
+                    "ERROR": 0,
+                    "WARNING": 0,
+                    "DEBUG": 0,
+                    "CRITICAL": 0,
+                },
+                "last_modified": "",
+            }
 
-        # Filter 1: App-spezifische Logs
-        filtered_lines = []
-        for line in lines:
-            if re.search(pre_defined_log_filter, line, re.IGNORECASE) or re.search(
-                additional_filter, line, re.IGNORECASE
-            ):
-                filtered_lines.append(line.rstrip("\n"))
+            if not self.log_file.exists():
+                return stats
 
-        # Filter 2: Log-Level
-        if level_filter:
-            level_pattern = rf"\b{re.escape(level_filter)}\b"
-            filtered_lines = [
-                line
-                for line in filtered_lines
-                if re.search(level_pattern, line, re.IGNORECASE)
-            ]
+            # Dateigröße
+            file_size = self.log_file.stat().st_size
+            stats["total_size_mb"] = round(file_size / (1024 * 1024), 2)
 
-        # Filter 3: Suchbegriff
-        if search_term:
-            search_pattern = re.escape(search_term)
-            filtered_lines = [
-                line
-                for line in filtered_lines
-                if re.search(search_pattern, line, re.IGNORECASE)
-            ]
+            # Letzte Änderung
+            from datetime import datetime
 
-        result["filtered_lines"] = len(filtered_lines)
+            mtime = self.log_file.stat().st_mtime
+            stats["last_modified"] = datetime.fromtimestamp(mtime).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
 
-        # Neueste zuerst (reverse)
-        filtered_lines.reverse()
+            # Zeilen-Zählung (nur für kleine Files)
+            if file_size < 5 * 1024 * 1024:  # < 5MB
+                with open(self.log_file, "r", encoding="utf-8") as f:
+                    for line in f:
+                        stats["total_lines"] += 1
 
-        # Limitierung
-        if len(filtered_lines) > limit:
-            result["has_more"] = True
-            filtered_lines = filtered_lines[:limit]
+                        if re.search(self.app_config.logger_name, line, re.IGNORECASE):
+                            stats["app_lines"] += 1
 
-        # Parse jede Zeile in strukturierte Form
-        for line in filtered_lines:
-            parsed = parse_log_line(line)
-            result["logs"].append(parsed)
+                            # Level zählen
+                            for level in stats["levels"].keys():
+                                if re.search(rf"\b{level}\b", line, re.IGNORECASE):
+                                    stats["levels"][level] += 1
+                                    break
 
-        return result
+            return stats
 
-    except FileNotFoundError:
-        print(f"ERROR: Log-Datei nicht gefunden: {log_file}")
-        return result
-    except Exception as e:
-        print(f"ERROR beim Lesen der Log-Datei: {e}")
-        return result
+        except Exception as e:
+            print(f"ERROR beim Erstellen der Statistiken: {e}")
+            return stats
 
+    def get_app_info(self):
+        """
+        Hole App-Informationen aus app_config
 
-def parse_log_line(line):
-    """
-    Parsed eine Log-Zeile in strukturierte Komponenten
-
-    Format: 2025-11-07 18:26:50,104 [APP-NexusPlayer] [INFO] Nachricht
-
-    Returns:
-        dict: Strukturierte Log-Daten
-    """
-    # Pattern mit eckigen Klammern und Millisekunden
-    pattern = r"^(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2},\d{3})\s+\[([^\]]+)\]\s+\[(INFO|ERROR|WARNING|DEBUG|CRITICAL)\]\s+(.+)$"
-
-    match = re.match(pattern, line.strip())
-
-    if match:
+        Returns:
+            dict: App-Informationen
+        """
         return {
-            "timestamp": match.group(1).strip(),
-            "logger": match.group(2).strip(),
-            "level": match.group(3).strip(),
-            "message": match.group(4).strip(),
-            "raw": line,
+            "app_name": self.app_config.app_name,
+            "app_display_name": self.app_config.app_display_name,
+            "version": self.app_config.app_version,
+            "author": self.app_config.app_author,
+            "description": self.app_config.app_description,
+            "logger_name": self.app_config.logger_name,
+            "logger_level": self.app_config.logger_level,
+            "socketio_enabled": self.app_config.socketio_enabled,
+            "scheduler_enabled": self.app_config.scheduler_enabled,
+            "admin_panel_enabled": self.app_config.admin_panel_enabled,
         }
-    else:
-        # Fallback: Unstrukturierte Zeile
-        return {
-            "timestamp": "",
-            "logger": "",
-            "level": "UNKNOWN",
-            "message": line.strip(),
-            "raw": line,
-        }
+
+
+# ============================================
+# STANDALONE HELPER FUNCTIONS
+# ============================================
+
+
+def is_ajax_request():
+    """Prüft ob Request von fetch/JavaScript kommt"""
+    return request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
 
 def convert_value(value, original_value):
     """
-    Konvertiert einen String-Wert in den korrekten Typ basierend auf dem Original
+    Konvertiert String-Wert in korrekten Typ basierend auf Original
+
+    Args:
+        value: Neuer Wert als String
+        original_value: Original-Wert (bestimmt den Typ)
+
+    Returns:
+        Konvertierter Wert im richtigen Typ
     """
     if original_value is None:
         return value
@@ -221,62 +258,3 @@ def convert_value(value, original_value):
             return value
     except (ValueError, AttributeError):
         return value
-
-
-def is_ajax_request():
-    """
-    Prüft ob der Request von fetch/JavaScript kommt
-    """
-    return request.headers.get("X-Requested-With") == "XMLHttpRequest"
-
-
-def get_log_statistics():
-    """
-    Gibt Statistiken über die Log-Datei zurück
-    """
-    from ... import logger_name
-
-    try:
-        stats = {
-            "total_size_mb": 0,
-            "total_lines": 0,
-            "app_lines": 0,
-            "levels": {"INFO": 0, "ERROR": 0, "WARNING": 0, "DEBUG": 0, "CRITICAL": 0},
-            "last_modified": "",
-        }
-
-        if not os.path.exists(log_file):
-            return stats
-
-        # Dateigröße
-        file_size = os.path.getsize(log_file)
-        stats["total_size_mb"] = round(file_size / (1024 * 1024), 2)
-
-        # Letzte Änderung
-        from datetime import datetime
-
-        mtime = os.path.getmtime(log_file)
-        stats["last_modified"] = datetime.fromtimestamp(mtime).strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
-
-        # Schnelle Zeilen-Zählung (nur für kleine Files)
-        if file_size < 5 * 1024 * 1024:  # < 5MB
-            with open(log_file, "r", encoding="utf-8") as f:
-                for line in f:
-                    stats["total_lines"] += 1
-
-                    if re.search(logger_name, line, re.IGNORECASE):
-                        stats["app_lines"] += 1
-
-                        # Level zählen
-                        for level in stats["levels"].keys():
-                            if re.search(rf"\b{level}\b", line, re.IGNORECASE):
-                                stats["levels"][level] += 1
-                                break
-
-        return stats
-
-    except Exception as e:
-        print(f"ERROR beim Erstellen der Statistiken: {e}")
-        return stats

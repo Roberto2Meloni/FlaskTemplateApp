@@ -10,19 +10,20 @@ from app.socketio_manager import get_socketio_manager
 import threading
 
 # Import aus Parent Package (Template_app_v002)
-from ... import blueprint, app_logger, app_config
+from ... import blueprint, app_logger, app_config, APP_ROOT
 
-# Import Helper-Funktionen
-from ..helper_app_function.helper_admin_app import (
-    get_log_statistics,
-    get_app_logs,
-    convert_value,
-)
+# Import Helper (nur AdminHelper-Klasse und convert_value!)
+from ..helper_app_function.helper_admin_app import AdminHelper, convert_value
 
 # Import Socket-Management aus socketio_events
 from ..socketio_events import active_sockets, remove_socket_connection
 
 app_logger.info(f"Starte Admin API Routes für {app_config.app_name}")
+
+# ============================================
+# INITIALISIERE ADMIN HELPER
+# ============================================
+admin_helper = AdminHelper(app_config, APP_ROOT)
 
 
 # ========================================
@@ -33,9 +34,7 @@ app_logger.info(f"Starte Admin API Routes für {app_config.app_name}")
 @blueprint.route("/admin/api_get_sockets", methods=["GET"])
 @admin_required
 def api_get_sockets():
-    """
-    API: Hole aktuelle Socket-Liste
-    """
+    """API: Hole aktuelle Socket-Liste"""
     print("API: Hole aktuelle Socket-Liste")
     try:
         # Hole Socket-Manager Status
@@ -71,22 +70,18 @@ def api_get_sockets():
 @blueprint.route("/admin/api_disconnect_socket/<sid>", methods=["POST"])
 @admin_required
 def api_disconnect_socket(sid):
-    """
-    API: Trenne spezifische Socket-Verbindung
-    """
+    """API: Trenne spezifische Socket-Verbindung"""
     try:
         if sid not in active_sockets:
             return jsonify({"success": False, "message": "Socket nicht gefunden"}), 404
 
         socket_info = active_sockets.get(sid)
 
-        # Trenne Socket-Verbindung über SocketIO
         try:
             socketio_disconnect(sid=sid, namespace="/")
         except Exception as e:
             app_logger.warning(f"Fehler beim Disconnect von {sid}: {e}")
 
-        # Entferne aus Tracking
         remove_socket_connection(sid)
 
         app_logger.info(
@@ -104,9 +99,7 @@ def api_disconnect_socket(sid):
 @blueprint.route("/admin/api_disconnect_all_sockets", methods=["POST"])
 @admin_required
 def api_disconnect_all_sockets():
-    """
-    API: Trenne alle Socket-Verbindungen
-    """
+    """API: Trenne alle Socket-Verbindungen"""
     try:
         socket_ids = list(active_sockets.keys())
 
@@ -148,9 +141,7 @@ def api_disconnect_all_sockets():
 @blueprint.route("/admin/api_get_tasks", methods=["GET"])
 @admin_required
 def api_get_tasks():
-    """
-    API: Hole alle Tasks der App
-    """
+    """API: Hole alle Tasks der App"""
     try:
         from ..tasks import app_scheduler
 
@@ -160,7 +151,6 @@ def api_get_tasks():
         for job in jobs:
             # Filtere nur Jobs dieser App
             if job.id.startswith(app_config.app_name):
-                # Prüfe ob Job pausiert ist
                 is_paused = False
                 if hasattr(job, "next_run_time") and job.next_run_time is None:
                     is_paused = True
@@ -184,7 +174,6 @@ def api_get_tasks():
                 tasks.append(task_info)
 
         app_logger.debug(f"API: {len(tasks)} Tasks gefunden")
-
         return jsonify({"success": True, "tasks": tasks, "count": len(tasks)})
 
     except Exception as e:
@@ -195,9 +184,7 @@ def api_get_tasks():
 @blueprint.route("/admin/api_pause_task/<task_id>", methods=["POST"])
 @admin_required
 def api_pause_task(task_id):
-    """
-    API: Pausiere einen Task
-    """
+    """API: Pausiere einen Task"""
     try:
         from ..tasks import app_scheduler
 
@@ -207,7 +194,6 @@ def api_pause_task(task_id):
             app_logger.info(
                 f"Task {task_id} wurde pausiert von Admin {current_user.username}"
             )
-
             return jsonify(
                 {"success": True, "message": "Task wurde pausiert", "status": "paused"}
             )
@@ -223,9 +209,7 @@ def api_pause_task(task_id):
 @blueprint.route("/admin/api_resume_task/<task_id>", methods=["POST"])
 @admin_required
 def api_resume_task(task_id):
-    """
-    API: Setze einen pausierten Task fort
-    """
+    """API: Setze einen pausierten Task fort"""
     try:
         from ..tasks import app_scheduler
 
@@ -235,7 +219,6 @@ def api_resume_task(task_id):
             app_logger.info(
                 f"Task {task_id} wurde fortgesetzt von Admin {current_user.username}"
             )
-
             return jsonify(
                 {
                     "success": True,
@@ -255,9 +238,7 @@ def api_resume_task(task_id):
 @blueprint.route("/admin/api_run_task/<task_id>", methods=["POST"])
 @admin_required
 def api_run_task(task_id):
-    """
-    API: Führe einen Task sofort aus
-    """
+    """API: Führe einen Task sofort aus"""
     try:
         from ..tasks import app_scheduler
 
@@ -267,9 +248,7 @@ def api_run_task(task_id):
                 f"Task {task_id} wird manuell ausgeführt von Admin {current_user.username}"
             )
 
-            # Führe die Funktion direkt aus
             if hasattr(job, "func"):
-                # In einem Thread ausführen, damit die Response nicht blockiert wird
                 thread = threading.Thread(
                     target=job.func,
                     args=job.args if hasattr(job, "args") else (),
@@ -278,7 +257,6 @@ def api_run_task(task_id):
                     name=f"Manual_{task_id}",
                 )
                 thread.start()
-
                 return jsonify({"success": True, "message": "Task wird ausgeführt"})
             else:
                 return (
@@ -299,9 +277,7 @@ def api_run_task(task_id):
 @blueprint.route("/admin/api_task_info/<task_id>", methods=["GET"])
 @admin_required
 def api_task_info(task_id):
-    """
-    API: Hole detaillierte Task-Informationen
-    """
+    """API: Hole detaillierte Task-Informationen"""
     try:
         from ..tasks import app_scheduler
 
@@ -345,9 +321,7 @@ def api_task_info(task_id):
 @blueprint.route("/admin/api_save_config", methods=["POST"])
 @admin_required
 def api_save_config():
-    """
-    API: Speichere App-Konfiguration
-    """
+    """API: Speichere App-Konfiguration"""
     try:
         current_config = app_config.config
         new_config = {}
@@ -389,7 +363,7 @@ def api_save_config():
                 if key not in request.form:
                     new_config[key] = False
 
-        # Update Config (direkt auf .config Dict zugreifen und dann neu laden)
+        # Update Config
         for key, value in new_config.items():
             app_config.set(key, value)
 
@@ -407,9 +381,7 @@ def api_save_config():
 @blueprint.route("/admin/api_get_logs", methods=["GET"])
 @admin_required
 def api_get_logs():
-    """
-    API: Hole App-Logs mit Filtern
-    """
+    """API: Hole App-Logs mit Filtern"""
     try:
         # Parameter aus Request
         limit = request.args.get("limit", 500, type=int)
@@ -420,7 +392,8 @@ def api_get_logs():
         if limit > 2000:
             limit = 2000
 
-        app_logs = get_app_logs(
+        # ✅ Nutze admin_helper
+        app_logs = admin_helper.get_app_logs(
             limit=limit, level_filter=level_filter, search_term=search_term
         )
 
@@ -444,11 +417,10 @@ def api_get_logs():
 @blueprint.route("/admin/api_get_log_stats", methods=["GET"])
 @admin_required
 def api_get_log_stats():
-    """
-    API: Hole Log-Statistiken
-    """
+    """API: Hole Log-Statistiken"""
     try:
-        stats = get_log_statistics()
+        # ✅ Nutze admin_helper
+        stats = admin_helper.get_log_statistics()
 
         return jsonify({"success": True, "stats": stats})
 
