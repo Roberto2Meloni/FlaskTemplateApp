@@ -1,0 +1,47 @@
+<!-- 
+  Template_app_v002 - JavaScript Integration
+  Lädt alle benötigten Scripts in korrekter Reihenfolge
+-->
+
+<!-- URL Definitions -->
+{% include
+"_base/layouts/web_app_layouts/Template_app_v002_url_definitions.html" %}
+
+<!-- Custom URL Definitions (optional) -->
+{% if config.TEMPLATE_APP_CUSTOM_JS %} {% include
+"_custom/layouts/Template_app_v002_url_definitions.html" ignore missing %} {%
+endif %}
+
+<!-- ========================================
+     LIBRARIES
+     ======================================== -->
+
+<!-- Socket.IO Library -->
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+<!-- ========================================
+     BASE SCRIPTS
+     ======================================== -->
+
+<!-- 1. Socket Integration (global + app-spezifisch) -->
+<script src="{{ url_for('Template_app_v002.static', filename='_base/js/Template_app_v002_socketio.js') }}"></script>
+
+<!-- 2. Sidebar Navigation -->
+<script src="{{ url_for('Template_app_v002.static', filename='_base/js/Template_app_v002_sidebar_vertical.js') }}"></script>
+
+<!-- 3. Admin Functions -->
+<script src="{{ url_for('Template_app_v002.static', filename='_base/js/Template_app_v002_admin.js') }}"></script>
+
+<!-- ========================================
+     CUSTOM SCRIPTS (optional)
+     ======================================== -->
+
+{% if config.TEMPLATE_APP_CUSTOM_JS %}
+<script src="{{ url_for('Template_app_v002.static', filename='_custom/js/Template_app_v002.js') }}"></script>
+<script src="{{ url_for('Template_app_v002.static', filename='_custom/js/Template_app_v002_sidebar_vertical.js') }}"></script>
+{% endif %}
+
+<!-- Log-Viewer JS (nur auf Log-Seite) -->
+{% if 'logs' in request.path %}
+<script src="{{ url_for('Template_app_v002.static', filename='_base/js/Template_app_v002_admin_logview.js') }}"></script>
+{% endif %}

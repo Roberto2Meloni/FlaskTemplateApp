@@ -1,4 +1,9 @@
-{% extends "layouts/websites/base.html" %} {% block window_title_and_icon %}
+{% extends "layouts/websites/base.html" %}
+
+<!-- ========================================
+     WINDOW TITLE & FAVICON
+     ======================================== -->
+{% block window_title_and_icon %}
 <title>{{ app_config.app_display_name }}</title>
 <link
   rel="icon"
@@ -21,94 +26,58 @@
   rel="apple-touch-icon"
   href="{{ url_for('Template_app_v002.static', filename='_base/img/icon.png') }}"
 />
-{% endblock %} {% block head %}
-<!-- App Name Meta Tag (für JavaScript) -->
+{% endblock %}
+
+<!-- ========================================
+     HEAD (Meta Tags)
+     ======================================== -->
+{% block head %}
+<!-- App Name für JavaScript -->
 <meta name="app-name" content="{{ app_config.app_name }}" />
+{% endblock %}
 
-<!-- Bootstrap Icons -->
-<link
-  rel="stylesheet"
-  href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
-/>
-{% endblock %} {% block app_styles %}
-<!-- Base Styles -->
-<link
-  rel="stylesheet"
-  href="{{ url_for('Template_app_v002.static', filename='_base/css/Template_app_v002.css') }}"
-/>
-<link
-  rel="stylesheet"
-  href="{{ url_for('Template_app_v002.static', filename='_base/css/Template_app_v002_VerticalSidbar.css') }}"
-/>
-<link
-  rel="stylesheet"
-  href="{{ url_for('Template_app_v002.static', filename='_base/css/Template_app_v002_admin.css') }}"
-/>
+<!-- ========================================
+     STYLES
+     ======================================== -->
+{% block app_styles %} {% include
+"_base/layouts/web_app_layouts/Template_app_v002_css_integration.html" %} {%
+endblock %}
 
-<!-- Custom Styles (optional) -->
-{% if config.TEMPLATE_APP_CUSTOM_CSS %}
-<link
-  rel="stylesheet"
-  href="{{ url_for('Template_app_v002.static', filename='_custom/css/Template_app_v002.css') }}"
-/>
-<link
-  rel="stylesheet"
-  href="{{ url_for('Template_app_v002.static', filename='_custom/css/Template_app_v002_VerticalSidbar.css') }}"
-/>
-<link
-  rel="stylesheet"
-  href="{{ url_for('Template_app_v002.static', filename='_custom/css/Template_app_v002_admin.css') }}"
-/>
-{% endif %} {% endblock %} {% block navigation %}
-<!-- Entferne Standard Navigation -->
-{% endblock %} {% block footer %}
-<!-- Entferne Footer -->
-{% endblock %} {% block content %}
-<!-- Main Content Area -->
+<!-- ========================================
+     NAVIGATION (entfernen)
+     ======================================== -->
+{% block navigation %}
+<!-- Standard Navigation deaktiviert -->
+{% endblock %}
+
+<!-- ========================================
+     FOOTER (entfernen)
+     ======================================== -->
+{% block footer %}
+<!-- Standard Footer deaktiviert -->
+{% endblock %}
+
+<!-- ========================================
+     MAIN CONTENT
+     ======================================== -->
+{% block content %}
 <div class="main-content" data-app-name="{{ app_config.app_name }}">
   <!-- Sidebar -->
   {% include
   "_base/layouts/web_app_layouts/Template_app_v002_sidebar_vertical.html" %}
 
-  <!-- App Content -->
+  <!-- App Content Area -->
   <div class="app-content">
     {% block main_content %}
-    <!-- Hier kommt der spezifische App-Content rein -->
+    <!-- Spezifischer App-Content wird hier eingefügt -->
     {% endblock %}
   </div>
 </div>
-{% endblock %} {% block javascripts %}
-<!-- ========================================
-     URL DEFINITIONS (ausgelagert)
-     ======================================== -->
-{% include
-"_base/layouts/web_app_layouts/Template_app_v002_url_definitions.html" %} {%
-include "_custom/layout/Template_app_v002_url_definitions.html" %}
+{% endblock %}
 
 <!-- ========================================
-     JAVASCRIPT LIBRARIES
+     JAVASCRIPT
      ======================================== -->
-
-<!-- Socket.IO -->
-<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-
-<!-- ========================================
-     APP SCRIPTS (Base)
-     ======================================== -->
-
-<!-- 1. Socket Integration -->
-<script src="{{ url_for('Template_app_v002.static', filename='_base/js/Template_app_v002_socketio.js') }}"></script>
-
-<!-- 2. Sidebar Navigation -->
-<script src="{{ url_for('Template_app_v002.static', filename='_base/js/Template_app_v002_sidebar_vertical.js') }}"></script>
-
-<!-- 3. Admin Functions -->
-<script src="{{ url_for('Template_app_v002.static', filename='_base/js/Template_app_v002_admin.js') }}"></script>
-
-<!-- ========================================
-     CUSTOM SCRIPTS (optional)
-     ======================================== -->
-{% if config.TEMPLATE_APP_CUSTOM_JS %}
-<script src="{{ url_for('Template_app_v002.static', filename='_custom/js/Template_app_v002.js') }}"></script>
-<script src="{{ url_for('Template_app_v002.static', filename='_custom/js/Template_app_v002_sidebar_vertical.js') }}"></script>
-{% endif %} {% endblock %}
+{% block javascripts %} {% include
+"_base/layouts/web_app_layouts/Template_app_v002_js_integration.html" %} {%
+endblock %}

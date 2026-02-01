@@ -4,7 +4,6 @@ Meilen Steine
 - Korrekte anzeige App config
 - Kontrolle JS
 - kontrolle CS Elemente
-- socket io
 - Dynamische Sidbar
 - entfneren app_info
 - Wo wird der Anzeigename der App verwendet?

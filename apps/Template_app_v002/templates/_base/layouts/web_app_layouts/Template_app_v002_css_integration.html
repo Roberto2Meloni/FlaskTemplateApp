@@ -1,0 +1,99 @@
+<!-- 
+  Template_app_v002 - CSS Integration
+  Lädt alle benötigten Stylesheets basierend auf aktuellem Kontext
+-->
+
+<!-- ========================================
+     EXTERNAL LIBRARIES
+     ======================================== -->
+
+<!-- Bootstrap Icons -->
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+/>
+
+<!-- ========================================
+     BASE STYLES (immer laden)
+     ======================================== -->
+
+<!-- Base Layout & Utilities -->
+<link
+  rel="stylesheet"
+  href="{{ url_for('Template_app_v002.static', filename='_base/css/Template_app_v002.css') }}"
+/>
+
+<!-- Sidebar Navigation -->
+<link
+  rel="stylesheet"
+  href="{{ url_for('Template_app_v002.static', filename='_base/css/Template_app_v002_VerticalSidbar.css') }}"
+/>
+
+<!-- ========================================
+     ADMIN STYLES (nur im Admin-Bereich)
+     ======================================== -->
+
+{% if 'app_settings' in request.path %}
+
+<!-- Admin Base (Config, Info, Tasks, Backup) -->
+<link
+  rel="stylesheet"
+  href="{{ url_for('Template_app_v002.static', filename='_base/css/Template_app_v002_admin.css') }}"
+/>
+
+<!-- Socket-Verwaltung (nur auf Socket-Seite) -->
+{% if 'sockets' in request.path %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('Template_app_v002.static', filename='_base/css/Template_app_v002_admin_sockets.css') }}"
+/>
+{% endif %}
+
+<!-- Log-Viewer (nur auf Log-Seite) -->
+{% if 'logs' in request.path %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('Template_app_v002.static', filename='_base/css/Template_app_v002_admin_logview.css') }}"
+/>
+{% endif %} {% endif %}
+
+<!-- ========================================
+     CUSTOM STYLES (optional - Overrides)
+     ======================================== -->
+
+{% if config.TEMPLATE_APP_CUSTOM_CSS %}
+
+<!-- Custom Base Overrides -->
+<link
+  rel="stylesheet"
+  href="{{ url_for('Template_app_v002.static', filename='_custom/css/Template_app_v002.css') }}"
+/>
+
+<!-- Custom Sidebar Overrides -->
+<link
+  rel="stylesheet"
+  href="{{ url_for('Template_app_v002.static', filename='_custom/css/Template_app_v002_VerticalSidbar.css') }}"
+/>
+
+<!-- Custom Admin Overrides (nur im Admin) -->
+{% if 'app_settings' in request.path %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('Template_app_v002.static', filename='_custom/css/Template_app_v002_admin.css') }}"
+/>
+
+<!-- Custom Socket Overrides -->
+{% if 'sockets' in request.path %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('Template_app_v002.static', filename='_custom/css/Template_app_v002_admin_sockets.css') }}"
+/>
+{% endif %}
+
+<!-- Custom Log Overrides -->
+{% if 'logs' in request.path %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('Template_app_v002.static', filename='_custom/css/Template_app_v002_admin_logview.css') }}"
+/>
+{% endif %} {% endif %} {% endif %}

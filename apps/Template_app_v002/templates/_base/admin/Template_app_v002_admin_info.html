@@ -107,15 +107,6 @@
             {{ 'Aktiviert' if app_config.scheduler_enabled else 'Deaktiviert' }}
           </span>
         </div>
-        <div class="info-row">
-          <span class="label">Admin Panel</span>
-          <span
-            class="badge {% if app_config.admin_panel_enabled %}badge-category{% else %}badge-tag{% endif %}"
-          >
-            {{ 'Aktiviert' if app_config.admin_panel_enabled else 'Deaktiviert'
-            }}
-          </span>
-        </div>
       </div>
     </div>
 

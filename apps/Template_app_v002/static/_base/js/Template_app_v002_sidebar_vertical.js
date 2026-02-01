@@ -1,12 +1,12 @@
 /**
- * App Sidebar Navigation
- * Dynamisch - funktioniert für jede App
+ * App Sidebar Navigation - FIXED
+ * Problem: Content wurde nicht angezeigt
+ * Lösung: Korrekter Selector für Content-Area
  */
 
 (function () {
   "use strict";
 
-  // App-Name aus URL oder Attribut
   const APP_NAME = window.location.pathname.split("/")[1] || "app";
 
   console.log(`=== ${APP_NAME} Sidebar Navigation gestartet ===`);
@@ -47,10 +47,8 @@
       });
     });
 
-    // Suche passenden Link
     let matchingLink = linksInfo.find((info) => info.href === currentURL);
 
-    // Fallback für Root/Dashboard
     if (
       !matchingLink &&
       (currentURL === "/" || currentURL.endsWith(`/${APP_NAME}`))
@@ -71,7 +69,6 @@
   function setAdminActiveLinks() {
     const currentURL = window.location.pathname;
 
-    // Hauptnav: Alle deaktivieren, nur Admin aktivieren
     const mainNavLinks = document.querySelectorAll("#navigation .nav-link");
     mainNavLinks.forEach((link) => {
       const parentLi = link.closest(".list");
@@ -82,7 +79,6 @@
       }
     });
 
-    // Admin-Sidebar
     const adminSidebar = document.getElementById("navigation-admin");
     if (!adminSidebar) return;
 
@@ -110,7 +106,6 @@
       matchingAdminLink.parentLi.classList.add("active");
       console.log(`✓ Admin aktiv: ${matchingAdminLink.page}`);
     } else if (adminLinksInfo.length > 0) {
-      // Erster Link als Fallback
       adminLinksInfo.forEach((info) =>
         info.parentLi.classList.remove("active"),
       );
@@ -119,11 +114,21 @@
   }
 
   // ========================================
-  // DYNAMISCHES LADEN
+  // DYNAMISCHES LADEN - FIXED!
   // ========================================
   async function loadContentDynamically(url, page) {
-    const contentArea = document.querySelector(".app-content");
+    console.log(`\n→ Lade dynamisch: ${page}`);
+
+    // WICHTIG: Korrekte Content-Area finden!
+    // Die Area ist INNERHALB von .main-content
+    const contentArea = document.querySelector(".main-content .app-content");
+
     if (!contentArea) {
+      console.error("❌ .app-content nicht gefunden!");
+      console.log("Verfügbare Elemente:", {
+        mainContent: !!document.querySelector(".main-content"),
+        appContent: !!document.querySelector(".app-content"),
+      });
       window.location.href = url;
       return;
     }
@@ -136,6 +141,8 @@
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const html = await response.text();
+
+      // WICHTIG: Nur den Content ersetzen, nicht die gesamte Seite!
       contentArea.innerHTML = html;
 
       // Update aktiven Link
@@ -150,14 +157,18 @@
 
       console.log(`✓ Geladen: ${page}`);
     } catch (error) {
-      console.error("Fehler beim Laden:", error);
+      console.error("❌ Fehler beim Laden:", error);
       window.location.href = url;
     }
   }
 
   async function loadAdminContentDynamically(url, page) {
+    console.log(`\n→ Lade Admin-Content: ${page}`);
+
     const contentArea = document.getElementById("admin-content-area");
+
     if (!contentArea) {
+      console.error("❌ #admin-content-area nicht gefunden!");
       window.location.href = url;
       return;
     }
@@ -172,7 +183,6 @@
       const html = await response.text();
       contentArea.innerHTML = html;
 
-      // Update aktiven Admin-Link
       document
         .querySelectorAll("#navigation-admin .nav-link-admin")
         .forEach((link) => {
@@ -186,7 +196,7 @@
 
       console.log(`✓ Admin geladen: ${page}`);
     } catch (error) {
-      console.error("Fehler beim Laden:", error);
+      console.error("❌ Fehler beim Laden:", error);
       window.location.href = url;
     }
   }
@@ -199,7 +209,6 @@
 
     navLinks.forEach((link) => {
       link.addEventListener("click", function (event) {
-        // Spezialklicks durchlassen
         if (
           event.ctrlKey ||
           event.metaKey ||
@@ -214,13 +223,12 @@
         const url = this.getAttribute("href");
         const page = this.dataset.page;
 
-        // Admin-Seite: Normale Navigation
         if (page === "app_settings") {
+          console.log("→ Admin-Seite, normale Navigation");
           window.location.href = url;
           return;
         }
 
-        // Dynamisch laden
         loadContentDynamically(url, page);
         history.pushState({ page, url, isAdmin: false }, "", url);
       });
@@ -233,7 +241,6 @@
     );
 
     adminNavLinks.forEach((link) => {
-      // Verhindere doppelte Event Listener
       if (link.dataset.listenerInstalled === "true") return;
       link.dataset.listenerInstalled = "true";
 
@@ -263,6 +270,8 @@
   // ========================================
   function setupBrowserNavigation() {
     window.addEventListener("popstate", function (event) {
+      console.log("\n← Zurück/Vor Button");
+
       if (event.state && event.state.page && event.state.url) {
         if (event.state.isAdmin) {
           loadAdminContentDynamically(event.state.url, event.state.page);
