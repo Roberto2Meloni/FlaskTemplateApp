@@ -2,11 +2,16 @@
   <!-- Header -->
   <div class="sockets-header">
     <div class="header-left">
-      <h4><i class="bi bi-plug-fill"></i> Socket Verbindungen</h4>
+      {% if not app_config.socketio_enabled %}
+      <h2 style="color: red">SocketIO nicht aktiviert</h2>
+      {% else %}
+      <h4><i class="bi bi-plug-fill"></i>!! Socket Verbindungen !!</h4>
       <p class="sockets-subtitle">
         Aktive WebSocket-Verbindungen für {{ app_config.app_name }}
       </p>
+      {% endif %}
     </div>
+    {% if app_config.socketio_enabled %}
     <div class="header-right">
       <button
         id="refreshBtn"
@@ -177,3 +182,18 @@
   <!-- Status Messages -->
   <div id="statusMessage" class="status-message" style="display: none"></div>
 </div>
+{% else %}
+
+<!-- Socket Status & Test Section -->
+<div class="socket-test-section">
+  <div class="test-card">
+    <div class="test-card-header">
+      <h5>SocketIO nicht aktiviert</h5>
+      <p>
+        SocketIO ist für diese App nicht aktiviert. Aktiviere Socketio in den
+        Konfigurationen.
+      </p>
+    </div>
+  </div>
+</div>
+{% endif %}

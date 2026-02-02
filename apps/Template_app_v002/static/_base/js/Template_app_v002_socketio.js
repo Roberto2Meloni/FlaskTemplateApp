@@ -1,230 +1,274 @@
 /**
  * Template_app_v002 - Socket.IO Integration
- * Kombiniert: Globale Socket-Verbindung + App-spezifische Events
+ * EINFACHE VERSION - Funktionen im globalen Scope für onclick
  */
 
-(function () {
-  "use strict";
+console.log("🔌 Template_app_v002 Socket.IO wird initialisiert");
 
-  console.log("🔌 Template_app_v002 Socket.IO wird initialisiert");
+// ========================================
+// GLOBALE VARIABLEN
+// ========================================
 
-  // ========================================
-  // GLOBALE SOCKET-VERBINDUNG
-  // ========================================
+let socket = null;
+let isConnected = false;
 
-  let socket = null;
-  let isConnected = false;
+// App-Name aus Meta-Tag oder Attribut
+// const APP_NAME =
+//   document.querySelector('meta[name="app-name"]')?.content ||
+//   document.querySelector("[data-app-name]")?.dataset.appName ||
+//   "Template_app_v002";
 
-  /**
-   * Initialisiert globale Socket.IO Verbindung
-   */
-  function initializeGlobalSocket() {
-    if (typeof io === "undefined") {
-      console.error("❌ Socket.IO Library nicht verfügbar!");
-      return null;
-    }
+console.log(`📱 Socket App: ${APP_NAME}`);
 
-    console.log("🔌 Initialisiere globale Socket.IO Verbindung...");
+// ========================================
+// SOCKET INITIALISIERUNG
+// ========================================
 
-    try {
-      socket = io();
+function initializeSocket() {
+  console.log("🔌 Initialisiere globale Socket.IO Verbindung...");
 
-      // Basis Events
-      socket.on("connect", () => {
-        console.log("✅ Socket.IO verbunden! (SID:", socket.id + ")");
-        isConnected = true;
-
-        // Trigger Event für andere Scripts
-        document.dispatchEvent(
-          new CustomEvent("global-socket-connected", {
-            detail: { socket, sid: socket.id },
-          }),
-        );
-      });
-
-      socket.on("disconnect", (reason) => {
-        console.log("❌ Socket.IO getrennt:", reason);
-        isConnected = false;
-      });
-
-      socket.on("connect_error", (error) => {
-        console.error("❌ Verbindungsfehler:", error);
-      });
-
-      // Mache Socket global verfügbar
-      window.socket = socket;
-      window.isSocketConnected = () => isConnected;
-
-      return socket;
-    } catch (error) {
-      console.error("❌ Socket.IO Fehler:", error);
-      return null;
-    }
+  if (typeof io === "undefined") {
+    console.error("❌ Socket.IO Library nicht gefunden!");
+    return null;
   }
 
-  // ========================================
-  // APP-SPEZIFISCHE SOCKET INTEGRATION
-  // ========================================
+  try {
+    socket = io();
 
-  // App-Name aus Meta-Tag oder Attribut
-  const APP_NAME =
-    document.querySelector('meta[name="app-name"]')?.content ||
-    document.querySelector("[data-app-name]")?.dataset.appName ||
-    "UnknownApp";
+    // Basis Events
+    socket.on("connect", () => {
+      console.log("✅ Socket.IO verbunden! (SID:", socket.id + ")");
+      isConnected = true;
+      updateConnectionStatus(true, socket.id);
 
-  console.log(`📱 App: ${APP_NAME}`);
+      // Bei App registrieren
+      socket.emit(`${APP_NAME}_connect`, {
+        timestamp: new Date().toISOString(),
+        page: window.location.pathname,
+      });
+    });
 
-  /**
-   * Setup app-spezifische Socket Events
-   */
-  function setupAppSocketEvents(socket) {
-    if (!socket) {
-      console.warn(`⚠️ ${APP_NAME}: Socket nicht verfügbar`);
-      return;
-    }
+    socket.on("disconnect", (reason) => {
+      console.log("❌ Socket.IO getrennt:", reason);
+      isConnected = false;
+      updateConnectionStatus(false, null);
+    });
+
+    socket.on("connect_error", (error) => {
+      console.error("❌ Verbindungsfehler:", error);
+      updateConnectionStatus(false, null);
+    });
+
+    // App-spezifische Events
+    socket.on(`${APP_NAME}_connected`, (data) => {
+      console.log("✅ Bei App registriert:", data);
+      addLogEntry("success", `Verbunden: ${data.message || "Erfolgreich"}`);
+    });
+
+    socket.on(`${APP_NAME}_pong`, (data) => {
+      console.log("🏓 Pong empfangen:", data);
+      addLogEntry(
+        "info",
+        `Pong empfangen - ${data.active_connections || "?"} Verbindungen`,
+      );
+      updateLastPing();
+    });
 
     console.log(`✅ ${APP_NAME}: Registriere Socket-Events`);
 
-    // Dynamische Event-Namen
-    const CONNECT_EVENT = `${APP_NAME}_connect`;
-    const CONNECTED_EVENT = `${APP_NAME}_connected`;
-    const PONG_EVENT = `${APP_NAME}_pong`;
-    const DISCONNECT_EVENT = `${APP_NAME}_disconnect`;
+    // Socket global verfügbar machen
+    window.socket = socket;
+    window.isSocketConnected = () => isConnected;
 
-    // Registriere bei App
-    socket.emit(CONNECT_EVENT, {
-      timestamp: new Date().toISOString(),
-      page: window.location.pathname,
-    });
+    return socket;
+  } catch (error) {
+    console.error("❌ Socket Initialisierung fehlgeschlagen:", error);
+    return null;
+  }
+}
 
-    // Server-Bestätigung
-    socket.on(CONNECTED_EVENT, (data) => {
-      console.log(`✅ ${APP_NAME} verbunden:`, data);
+// ========================================
+// TEST-FUNKTIONEN - GLOBAL FÜR onclick
+// ========================================
 
-      // Custom Event für weitere Initialisierung
-      document.dispatchEvent(
-        new CustomEvent("app-socket-connected", {
-          detail: { appName: APP_NAME, data },
-        }),
-      );
-    });
+window.testSocketConnect = function () {
+  console.log("🔌 Teste Verbindung...");
+  addLogEntry("info", "Verbinde mit Socket...");
 
-    // Pong Event
-    socket.on(PONG_EVENT, (data) => {
-      console.log(`🏓 ${APP_NAME} Pong:`, data);
-    });
+  if (!socket) {
+    initializeSocket();
+  } else if (!socket.connected) {
+    socket.connect();
+  } else {
+    addLogEntry("warning", "Bereits verbunden!");
+  }
+};
 
-    // Cleanup Handler
-    window.addEventListener("beforeunload", () => {
-      if (socket && socket.connected) {
-        socket.emit(DISCONNECT_EVENT);
-        console.log(`👋 ${APP_NAME}: Socket cleanup`);
-      }
-    });
+window.testSocketPing = function () {
+  if (!socket || !socket.connected) {
+    addLogEntry("error", "Nicht verbunden!");
+    return;
   }
 
-  // ========================================
-  // HELPER FUNCTIONS
-  // ========================================
+  console.log("🏓 Sende Ping...");
+  addLogEntry("info", "Sende Ping...");
+  socket.emit(`${APP_NAME}_ping`);
+};
 
-  /**
-   * Warte auf Socket-Verbindung
-   */
-  function waitForSocketConnection(maxAttempts = 10) {
-    return new Promise((resolve, reject) => {
-      let attempts = 0;
-
-      function checkConnection() {
-        if (socket && socket.connected) {
-          resolve(socket);
-        } else if (attempts++ < maxAttempts) {
-          setTimeout(checkConnection, 500);
-        } else {
-          reject(new Error("Socket-Verbindung Timeout"));
-        }
-      }
-
-      checkConnection();
-    });
+window.testSocketDisconnect = function () {
+  if (!socket || !socket.connected) {
+    addLogEntry("warning", "Bereits getrennt!");
+    return;
   }
 
-  // ========================================
-  // INITIALISIERUNG
-  // ========================================
+  console.log("👋 Trenne Verbindung...");
+  addLogEntry("info", "Trenne Verbindung...");
+  socket.emit(`${APP_NAME}_disconnect`);
+  socket.disconnect();
+};
 
-  document.addEventListener("DOMContentLoaded", async function () {
-    console.log(`🏁 ${APP_NAME}: Socket Client wird initialisiert`);
+window.clearTestLog = function () {
+  const logElement = document.getElementById("testLog");
+  if (!logElement) return;
 
-    // 1. Initialisiere globalen Socket
-    const globalSocket = initializeGlobalSocket();
+  logElement.innerHTML = `
+    <div class="log-entry log-info">
+      <span class="log-time">--:--:--</span>
+      <span class="log-message">Log gelöscht - Bereit für Tests...</span>
+    </div>
+  `;
+};
 
-    if (!globalSocket) {
-      console.error("❌ Konnte Socket nicht initialisieren");
-      return;
+window.refreshSocketList = function () {
+  console.log("🔄 Lade Socket-Liste neu...");
+  addLogEntry("info", "Socket-Liste wird aktualisiert...");
+  location.reload();
+};
+
+window.disconnectAllSockets = function () {
+  console.log("⚠️ Trenne alle Sockets...");
+  alert("Diese Funktion wird in einer späteren Version implementiert");
+};
+
+window.disconnectSocket = function (sid) {
+  console.log("⚠️ Trenne Socket:", sid);
+  alert(`Socket ${sid} trennen - wird in einer späteren Version implementiert`);
+};
+
+// ========================================
+// UI-UPDATE FUNKTIONEN
+// ========================================
+
+function updateConnectionStatus(connected, socketId) {
+  const statusElement = document.getElementById("socketStatus");
+  const socketIdElement = document.getElementById("socketId");
+  const connectBtn = document.getElementById("connectBtn");
+  const pingBtn = document.getElementById("pingBtn");
+  const disconnectBtn = document.getElementById("disconnectBtn");
+
+  if (!statusElement) return;
+
+  if (connected) {
+    statusElement.className = "status-badge online";
+    statusElement.innerHTML = `
+      <span class="status-dot"></span>
+      <span class="status-text">Verbunden</span>
+    `;
+    socketIdElement.textContent = `Socket ID: ${socketId}`;
+
+    if (connectBtn) connectBtn.disabled = true;
+    if (pingBtn) pingBtn.disabled = false;
+    if (disconnectBtn) disconnectBtn.disabled = false;
+  } else {
+    statusElement.className = "status-badge offline";
+    statusElement.innerHTML = `
+      <span class="status-dot"></span>
+      <span class="status-text">Getrennt</span>
+    `;
+    socketIdElement.textContent = "Socket ID: -";
+
+    if (connectBtn) connectBtn.disabled = false;
+    if (pingBtn) pingBtn.disabled = true;
+    if (disconnectBtn) disconnectBtn.disabled = true;
+  }
+}
+
+function addLogEntry(type, message) {
+  const logElement = document.getElementById("testLog");
+  if (!logElement) return;
+
+  const now = new Date();
+  const time = now.toLocaleTimeString("de-DE");
+
+  const entry = document.createElement("div");
+  entry.className = `log-entry log-${type}`;
+  entry.innerHTML = `
+    <span class="log-time">${time}</span>
+    <span class="log-message">${message}</span>
+  `;
+
+  logElement.appendChild(entry);
+  logElement.scrollTop = logElement.scrollHeight;
+}
+
+function updateLastPing() {
+  const lastPingElement = document.getElementById("lastPing");
+  if (!lastPingElement) return;
+
+  const now = new Date();
+  lastPingElement.textContent = `Letzter Ping: ${now.toLocaleTimeString("de-DE")}`;
+}
+
+// ========================================
+// HELPER API FÜR CUSTOM CODE
+// ========================================
+
+window.AppSocket = {
+  appName: APP_NAME,
+
+  emit: (eventName, data) => {
+    if (socket && socket.connected) {
+      socket.emit(`${APP_NAME}_${eventName}`, data);
+      console.log(`📤 ${APP_NAME}_${eventName}:`, data);
+    } else {
+      console.warn("⚠️ Socket nicht verbunden");
     }
+  },
 
-    // 2. Warte auf Verbindung
-    try {
-      await waitForSocketConnection();
-      console.log("✅ Socket verbunden, registriere App-Events");
-
-      // 3. Setup App-spezifische Events
-      setupAppSocketEvents(globalSocket);
-    } catch (error) {
-      console.warn(`⚠️ ${APP_NAME}: ${error.message}`);
+  on: (eventName, callback) => {
+    if (socket) {
+      socket.on(`${APP_NAME}_${eventName}`, callback);
     }
-  });
+  },
 
-  // ========================================
-  // GLOBAL EXPORT
-  // ========================================
+  sendPing: () => {
+    if (socket && socket.connected) {
+      socket.emit(`${APP_NAME}_ping`);
+      console.log("🏓 Ping gesendet");
+    } else {
+      console.warn("⚠️ Socket nicht verbunden");
+    }
+  },
 
-  window.AppSocket = {
-    appName: APP_NAME,
+  isConnected: () => socket && socket.connected,
 
-    /**
-     * Sendet App-spezifisches Event
-     */
-    emit: (eventName, data) => {
-      if (socket && socket.connected) {
-        socket.emit(`${APP_NAME}_${eventName}`, data);
-        console.log(`📤 ${APP_NAME}_${eventName}:`, data);
-      } else {
-        console.warn("⚠️ Socket nicht verbunden");
-      }
-    },
+  getSocket: () => socket,
+};
 
-    /**
-     * Hört auf App-spezifisches Event
-     */
-    on: (eventName, callback) => {
-      if (socket) {
-        socket.on(`${APP_NAME}_${eventName}`, callback);
-      }
-    },
+// ========================================
+// AUTO-INITIALISIERUNG
+// ========================================
 
-    /**
-     * Sendet Ping
-     */
-    sendPing: () => {
-      if (socket && socket.connected) {
-        socket.emit(`${APP_NAME}_ping`);
-        console.log("🏓 Ping gesendet");
-      } else {
-        console.warn("⚠️ Socket nicht verbunden, kann kein Ping senden");
-      }
-    },
+document.addEventListener("DOMContentLoaded", function () {
+  console.log(`🏁 ${APP_NAME}: Socket Client wird initialisiert`);
+  initializeSocket();
+});
 
-    /**
-     * Prüft Verbindungsstatus
-     */
-    isConnected: () => socket && socket.connected,
+window.addEventListener("beforeunload", () => {
+  if (socket && socket.connected) {
+    console.log("👋 Seite wird geschlossen - trenne Socket");
+    socket.emit(`${APP_NAME}_disconnect`);
+  }
+});
 
-    /**
-     * Gibt Socket-Instanz zurück
-     */
-    getSocket: () => socket,
-  };
-
-  console.log(`✅ ${APP_NAME} Socket Integration bereit`);
-})();
+console.log(`✅ ${APP_NAME} Socket Integration bereit`);

@@ -1,5 +1,5 @@
 Meilen Steine
-- Integration der SocketIO Events
+- Anzeige aktueller Socket-Verbindungen
 - Integration der Task Scheduler
 - Korrekte anzeige App config
 - Kontrolle JS

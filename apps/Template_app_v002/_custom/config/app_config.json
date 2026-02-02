@@ -17,8 +17,8 @@
     "app_keep_alive_log": 200
   },
   "features": {
+    "socketio_enabled": true,
     "scheduler_enabled": true,
-    "socketio_enabled": false,
     "admin_panel_enabled": false
   }
 }

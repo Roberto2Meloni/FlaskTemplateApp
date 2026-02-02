@@ -54,7 +54,7 @@ def app_info():
 
     if is_ajax_request():
         return render_template(
-            "admin/Template_app_v002_admin_info.html",
+            "_base/admin/Template_app_v002_admin_info.html",
             user=current_user,
             config=app_config,
             app_config=app_config,
@@ -79,7 +79,7 @@ def app_settings_config():
 
     if is_ajax_request():
         return render_template(
-            "admin/Template_app_v002_admin_config.html",
+            "_base/admin/Template_app_v002_admin_config.html",
             user=current_user,
             config=app_config,
             app_config_dict=app_config_dict,
@@ -111,10 +111,11 @@ def app_settings_sockets():
 
     # Hole aktive Sockets aus socketio_events
     app_sockets = get_active_sockets()
+    print(f"🔌 Socket-Liste: {app_sockets}")
 
     if is_ajax_request():
         return render_template(
-            "admin/Template_app_v002_admin_sockets.html",
+            "_base/admin/Template_app_v002_admin_sockets.html",
             user=current_user,
             config=app_config,
             app_config=app_config,
@@ -143,7 +144,7 @@ def app_settings_tasks():
 
     if is_ajax_request():
         return render_template(
-            "admin/Template_app_v002_admin_task.html",
+            "_base/admin/Template_app_v002_admin_task.html",
             user=current_user,
             config=app_config,
             app_config=app_config,
@@ -184,7 +185,7 @@ def app_settings_logs():
 
     if is_ajax_request():
         return render_template(
-            "admin/Template_app_v002_admin_logs.html",
+            "_base/admin/Template_app_v002_admin_logs.html",
             user=current_user,
             config=app_config,
             app_infos=app_infos,
@@ -219,7 +220,7 @@ def app_settings_backup_and_restore():
 
     if is_ajax_request():
         return render_template(
-            "admin/Template_app_v002_admin_backup_and_restore.html",
+            "_base/admin/Template_app_v002_admin_backup_and_restore.html",
             user=current_user,
             config=app_config,
             app_config=app_config,

@@ -42,20 +42,17 @@
 />
 
 <!-- Socket-Verwaltung (nur auf Socket-Seite) -->
-{% if 'sockets' in request.path %}
 <link
   rel="stylesheet"
   href="{{ url_for('Template_app_v002.static', filename='_base/css/Template_app_v002_admin_sockets.css') }}"
 />
-{% endif %}
 
 <!-- Log-Viewer (nur auf Log-Seite) -->
-{% if 'logs' in request.path %}
 <link
   rel="stylesheet"
   href="{{ url_for('Template_app_v002.static', filename='_base/css/Template_app_v002_admin_logview.css') }}"
 />
-{% endif %} {% endif %}
+{% endif %}
 
 <!-- ========================================
      CUSTOM STYLES (optional - Overrides)

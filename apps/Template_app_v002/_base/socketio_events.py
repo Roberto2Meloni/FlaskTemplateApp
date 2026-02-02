@@ -46,6 +46,7 @@ def get_active_sockets():
     """
     Gibt alle aktiven Socket-Verbindungen zurück
     """
+    print(f"🔌 Socket-Liste original: {active_sockets}")
     return active_sockets.copy()
 
 
@@ -93,14 +94,17 @@ def register_socket_events():
     Registriert app-spezifische Socket-Events
     """
 
-    # NEU: Dynamische Event-Namen
+    # Dynamische Event-Namen
     connect_event = f"{app_config.app_name}_connect"
     connected_event = f"{app_config.app_name}_connected"
     ping_event = f"{app_config.app_name}_ping"
     pong_event = f"{app_config.app_name}_pong"
     disconnect_event = f"{app_config.app_name}_disconnect"
 
-    @socketio.on(connect_event)
+    # ========================================
+    # CONNECT EVENT
+    # ========================================
+    @socketio.on(connect_event)  # ← RICHTIG: connect_event
     def handle_app_connect(data=None):
         """
         App-spezifisches Connect Event
@@ -124,8 +128,11 @@ def register_socket_events():
         track_socket_connection(sid, user_info)
 
         app_logger.info(
-            f"App-Socket verbunden: {user_info['username']} (SID: {sid}) "
+            f"[{app_config.app_name}] App-Socket verbunden: {user_info['username']} (SID: {sid}) "
             f"[{get_socket_count()} aktive Verbindungen]"
+        )
+        print(
+            f"✅[{app_config.app_name}] App-Socket verbunden: {user_info['username']} (SID: {sid})"
         )
 
         # Sende Bestätigung an Client
@@ -140,21 +147,31 @@ def register_socket_events():
             },
         )
 
-    @socketio.on(connect_event)
+    # ========================================
+    # PING EVENT
+    # ========================================
+    @socketio.on(ping_event)  # ← GEÄNDERT: ping_event statt connect_event!
     def handle_app_ping():
         """
         App-spezifischer Ping für Connection-Health-Check
         """
+        print(f"🏓 Ping empfangen von: {request.sid}")
+        app_logger.debug(f"Ping empfangen von: {request.sid}")
+
         emit(
-            connected_event,
+            pong_event,  # ← GEÄNDERT: pong_event statt connected_event!
             {
                 "timestamp": datetime.now().isoformat(),
                 "app": app_config.app_name,
                 "active_connections": get_socket_count(),
+                "message": "Pong!",
             },
         )
 
-    @socketio.on(connect_event)
+    # ========================================
+    # DISCONNECT EVENT
+    # ========================================
+    @socketio.on(disconnect_event)  # ← GEÄNDERT: disconnect_event statt connect_event!
     def handle_app_disconnect():
         """
         App-spezifisches Disconnect Event
@@ -164,34 +181,37 @@ def register_socket_events():
         remove_socket_connection(sid)
 
         app_logger.info(
-            f"App-Socket getrennt: {sid} " f"[{get_socket_count()} aktive Verbindungen]"
+            f"[{app_config.app_name}] App-Socket getrennt: {sid} [{get_socket_count()} aktive Verbindungen]"
         )
+        print(f"👋 [{app_config.app_name}] App-Socket getrennt: {sid}")
 
     # ===== BEISPIEL: Weitere App-spezifische Events =====
 
-    # @socketio.on('Template_app_v001_custom_event')
+    # @socketio.on(f'{app_config.app_name}_custom_event')
     # def handle_custom_event(data):
     #     """
     #     Beispiel für ein eigenes Socket-Event
     #     """
     #     app_logger.info(f"Custom Event empfangen: {data}")
     #
-    #     # Verarbeite Event...
-    #
-    #     emit(connected_event, {
+    #     emit(f'{app_config.app_name}_custom_response', {
     #         'status': 'ok',
     #         'data': data
     #     })
 
     app_logger.info(f"✅ {app_config.app_name} Socket-Events registriert")
+    print(f"✅ Registrierte Events:")
+    print(f"   - {connect_event}")
+    print(f"   - {ping_event}")
+    print(f"   - {disconnect_event}")
+
     return {
-        connect_event: handle_app_connect,
-        ping_event: handle_app_ping,
-        disconnect_event: handle_app_disconnect,
+        "connect": handle_app_connect,
+        "ping": handle_app_ping,
+        "disconnect": handle_app_disconnect,
     }
 
 
-# Registriere Events beim Import
 # Registriere Events beim Import und speichere sie
 SOCKETIO_EVENTS = register_socket_events()
 
