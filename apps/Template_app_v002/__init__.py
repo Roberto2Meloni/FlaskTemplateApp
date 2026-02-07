@@ -42,13 +42,7 @@ def _register_routes():
     """Importiere Routes (intern, nach Blueprint-Erstellung)"""
     from ._base.routes import api_routes, admin_routes, admin_api_routes
 
-    from ._custom.routes import routes
-
-    # Optional: Custom Routes
-    try:
-        from ._custom.routes import api_routes as custom_api
-    except ImportError:
-        pass
+    from ._custom.routes import routes, admin_routes
 
     app_logger.info("Routes registriert")
 

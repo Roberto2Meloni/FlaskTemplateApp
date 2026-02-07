@@ -139,10 +139,58 @@ window.clearTestLog = function () {
   `;
 };
 
-window.refreshSocketList = function () {
+// ========================================
+// DYNAMISCHER SOCKET-REFRESH (GEÄNDERT!)
+// ========================================
+
+window.refreshSocketList = async function () {
   console.log("🔄 Lade Socket-Liste neu...");
   addLogEntry("info", "Socket-Liste wird aktualisiert...");
-  location.reload();
+
+  // Prüfe ob API URL definiert ist
+  if (typeof API_GET_SOCKETS === "undefined") {
+    console.warn("⚠️ API_GET_SOCKETS nicht definiert - verwende Reload");
+    location.reload();
+    return;
+  }
+
+  try {
+    const response = await fetch(API_GET_SOCKETS, {
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data.success) {
+      console.log("✅ Socket-Daten:", data);
+
+      // Aktualisiere Tabelle wenn Funktion existiert
+      if (typeof window.updateSocketTable === "function") {
+        window.updateSocketTable(data);
+      }
+
+      // Aktualisiere Statistiken wenn Funktion existiert
+      if (typeof window.updateStatistics === "function") {
+        window.updateStatistics(data);
+      }
+
+      addLogEntry("success", `${data.total || 0} Sockets geladen`);
+    } else {
+      throw new Error(data.message || "Unbekannter Fehler");
+    }
+  } catch (error) {
+    console.error("❌ Fehler beim Laden:", error);
+    addLogEntry("error", "Fehler - lade Seite neu...");
+
+    // Fallback: Reload nach kurzer Verzögerung
+    setTimeout(() => location.reload(), 1500);
+  }
 };
 
 window.disconnectAllSockets = function () {

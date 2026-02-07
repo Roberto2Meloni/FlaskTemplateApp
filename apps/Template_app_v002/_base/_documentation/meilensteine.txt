@@ -1,12 +1,9 @@
 Meilen Steine
-- Anzeige aktueller Socket-Verbindungen
 - Integration der Task Scheduler
 - Korrekte anzeige App config
 - Kontrolle JS
 - kontrolle CS Elemente
-- Dynamische Sidbar
 - entfneren app_info
 - Wo wird der Anzeigename der App verwendet?
-- App spezfisches Config für Admin-Bereich
 - Warnung meldung, wenn SocketIO nicht aktiviert ist muss meldugn ersechenne, dass die app neugestartet werden muss!
 - custom socketio events js datei

@@ -1,14 +1,9 @@
-from . import blueprint, app_logger
-from app.decorators import admin_required, enabled_required
+from flask import jsonify
 from flask_login import current_user
-from app.config import Config
-from .app_config import AppConfig
+from app.decorators import admin_required, enabled_required
 
+# Import aus Parent Package (Template_app_v002)
+from ... import blueprint, app_logger, app_config
 
-config = Config()
-app_config = AppConfig()
-
-app_logger.info(f"Starte App-{app_config.app_name} API")
-
-
-app_logger.info(f"Ende App-{app_config.app_name} API")
+app_logger.info(f"Starte CUSTOM API Routes für {app_config.app_name}")
+app_logger.info(f"Ende CUSTOM API Routes für {app_config.app_name}")

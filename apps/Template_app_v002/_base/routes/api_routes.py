@@ -45,6 +45,4 @@ def api_info():
     )
 
 
-# Weitere API Routes hier...
-
 app_logger.info(f"Ende API Routes für {app_config.app_name}")

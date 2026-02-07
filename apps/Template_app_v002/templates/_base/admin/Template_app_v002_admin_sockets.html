@@ -5,7 +5,7 @@
       {% if not app_config.socketio_enabled %}
       <h2 style="color: red">SocketIO nicht aktiviert</h2>
       {% else %}
-      <h4><i class="bi bi-plug-fill"></i>!! Socket Verbindungen !!</h4>
+      <h4><i class="bi bi-plug-fill"></i> Socket Verbindungen</h4>
       <p class="sockets-subtitle">
         Aktive WebSocket-Verbindungen für {{ app_config.app_name }}
       </p>
@@ -96,11 +96,11 @@
     </div>
   </div>
 
-  <!-- Statistics -->
+  <!-- Statistics Cards -->
   <div class="sockets-stats">
-    <div class="stat-card">
+    <div class="stat-card stat-primary">
       <div class="stat-icon">
-        <i class="bi bi-link-45deg"></i>
+        <i class="bi bi-broadcast"></i>
       </div>
       <div class="stat-content">
         <div class="stat-value" id="totalConnections">
@@ -110,9 +110,9 @@
       </div>
     </div>
 
-    <div class="stat-card">
+    <div class="stat-card stat-success">
       <div class="stat-icon">
-        <i class="bi bi-people"></i>
+        <i class="bi bi-people-fill"></i>
       </div>
       <div class="stat-content">
         <div class="stat-value" id="onlineUsers">
@@ -121,79 +121,203 @@
         <div class="stat-label">Online Benutzer</div>
       </div>
     </div>
+
+    <div class="stat-card stat-info">
+      <div class="stat-icon">
+        <i class="bi bi-graph-up"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">
+          {% if online_users_count and online_users_count > 0 %} {{
+          (active_sockets|length / online_users_count) | round(1) }} {% else %}
+          {{ active_sockets|length }} {% endif %}S
+        </div>
+        <div class="stat-label">Ø Verbindungen/User</div>
+      </div>
+    </div>
   </div>
 
   <!-- Sockets Table -->
   <div class="sockets-content">
     {% if active_sockets %}
-    <div class="sockets-table-wrapper">
-      <table class="sockets-table" id="socketsTable">
-        <thead>
-          <tr>
-            <th><i class="bi bi-person"></i> Benutzer</th>
-            <th><i class="bi bi-fingerprint"></i> Socket ID</th>
-            <th><i class="bi bi-clock"></i> Verbunden seit</th>
-            <th><i class="bi bi-gear"></i> Aktionen</th>
-          </tr>
-        </thead>
-        <tbody id="socketsTableBody">
-          {% for sid, socket in active_sockets.items() %}
-          <tr data-sid="{{ sid }}">
-            <td>
-              <div class="user-info">
-                <i class="bi bi-person-circle user-icon"></i>
-                <span class="username">{{ socket.username }}</span>
-                {% if socket.user_id %}
-                <span class="user-badge authenticated">Auth</span>
-                {% else %}
-                <span class="user-badge guest">Gast</span>
-                {% endif %}
-              </div>
-            </td>
-            <td>
-              <code class="socket-id">{{ sid[:16] }}...</code>
-            </td>
-            <td>
-              <span class="timestamp">{{ socket.connected_at }}</span>
-            </td>
-            <td>
-              <button
-                class="btn-icon btn-disconnect"
-                onclick="disconnectSocket('{{ sid }}')"
-                title="Verbindung trennen"
-              >
-                <i class="bi bi-x-circle"></i>
-              </button>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <div class="sockets-table-card">
+      <div class="table-header">
+        <h5><i class="bi bi-table"></i> Verbindungsdetails</h5>
+        <div class="table-actions">
+          <input
+            type="text"
+            id="searchInput"
+            class="search-input"
+            placeholder="Suchen..."
+            onkeyup="filterTable()"
+          />
+          <select
+            id="filterSelect"
+            class="filter-select"
+            onchange="filterTable()"
+          >
+            <option value="all">Alle</option>
+            <option value="auth">Authentifiziert</option>
+            <option value="guest">Gäste</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sockets-table-wrapper">
+        <table class="sockets-table" id="socketsTable">
+          <thead>
+            <tr>
+              <th class="sortable" onclick="sortTable(0)">
+                <i class="bi bi-person-fill"></i> Benutzer
+                <i class="bi bi-chevron-expand sort-icon"></i>
+              </th>
+              <th class="sortable" onclick="sortTable(1)">
+                <i class="bi bi-fingerprint"></i> Socket ID
+                <i class="bi bi-chevron-expand sort-icon"></i>
+              </th>
+              <th class="sortable" onclick="sortTable(2)">
+                <i class="bi bi-clock-history"></i> Verbunden seit
+                <i class="bi bi-chevron-expand sort-icon"></i>
+              </th>
+              <th class="sortable" onclick="sortTable(3)">
+                <i class="bi bi-hourglass-split"></i> Dauer
+                <i class="bi bi-chevron-expand sort-icon"></i>
+              </th>
+              <th class="text-center">
+                <i class="bi bi-gear-fill"></i> Aktionen
+              </th>
+            </tr>
+          </thead>
+          <tbody id="socketsTableBody">
+            {% for sid, socket in active_sockets.items() %}
+            <tr
+              data-sid="{{ sid }}"
+              data-type="{% if socket.user_id %}auth{% else %}guest{% endif %}"
+            >
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar">
+                    {% if socket.user_id %}
+                    <i class="bi bi-person-circle text-primary"></i>
+                    {% else %}
+                    <i class="bi bi-person-circle text-secondary"></i>
+                    {% endif %}
+                  </div>
+                  <div class="user-info">
+                    <div class="username">{{ socket.username }}</div>
+                    <div class="user-meta">
+                      {% if socket.user_id %}
+                      <span class="badge badge-success">
+                        <i class="bi bi-shield-check"></i> Authentifiziert
+                      </span>
+                      <span class="user-id">ID: {{ socket.user_id }}</span>
+                      {% else %}
+                      <span class="badge badge-secondary">
+                        <i class="bi bi-incognito"></i> Gast
+                      </span>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="socket-id-cell">
+                  <code class="socket-id">{{ sid[:12] }}...</code>
+                  <button
+                    class="copy-btn"
+                    onclick="copyToClipboard('{{ sid }}')"
+                    title="Kopieren"
+                  >
+                    <i class="bi bi-clipboard"></i>
+                  </button>
+                </div>
+              </td>
+              <td>
+                <div class="timestamp-cell">
+                  <i class="bi bi-calendar3"></i>
+                  <span
+                    class="timestamp"
+                    data-timestamp="{{ socket.connected_at }}"
+                  >
+                    {{ socket.connected_at }}
+                  </span>
+                </div>
+              </td>
+              <td>
+                <div class="duration-cell">
+                  <i class="bi bi-stopwatch"></i>
+                  <span
+                    class="duration"
+                    data-connected="{{ socket.connected_at }}"
+                  >
+                    Berechne...
+                  </span>
+                </div>
+              </td>
+              <td class="text-center">
+                <div class="action-buttons">
+                  <button
+                    class="btn-action btn-info"
+                    onclick="showSocketDetails('{{ sid }}')"
+                    title="Details"
+                  >
+                    <i class="bi bi-info-circle"></i>
+                  </button>
+                  <button
+                    class="btn-action btn-danger"
+                    onclick="disconnectSocket('{{ sid }}')"
+                    title="Trennen"
+                  >
+                    <i class="bi bi-x-circle"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-footer">
+        <div class="showing-info">
+          Zeige
+          <strong id="visibleCount">{{ active_sockets|length }}</strong> von
+          <strong>{{ active_sockets|length }}</strong> Verbindungen
+        </div>
+      </div>
     </div>
     {% else %}
     <div class="empty-state">
-      <i class="bi bi-plug"></i>
+      <div class="empty-icon">
+        <i class="bi bi-plug"></i>
+      </div>
       <h5>Keine aktiven Verbindungen</h5>
       <p>Aktuell sind keine Socket-Verbindungen für diese App aktiv.</p>
+      <button class="btn btn-primary" onclick="refreshSocketList()">
+        <i class="bi bi-arrow-clockwise"></i> Aktualisieren
+      </button>
     </div>
     {% endif %}
   </div>
 
-  <!-- Status Messages -->
-  <div id="statusMessage" class="status-message" style="display: none"></div>
-</div>
-{% else %}
-
-<!-- Socket Status & Test Section -->
-<div class="socket-test-section">
-  <div class="test-card">
-    <div class="test-card-header">
-      <h5>SocketIO nicht aktiviert</h5>
-      <p>
-        SocketIO ist für diese App nicht aktiviert. Aktiviere Socketio in den
-        Konfigurationen.
-      </p>
+  {% else %}
+  <div class="socket-test-section">
+    <div class="test-card">
+      <div
+        class="test-card-header"
+        style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)"
+      >
+        <h5>
+          <i class="bi bi-exclamation-triangle"></i> SocketIO nicht aktiviert
+        </h5>
+      </div>
+      <div class="test-card-body">
+        <p>
+          SocketIO ist für diese App nicht aktiviert. Aktiviere SocketIO in den
+          Konfigurationen um Echtzeit-Verbindungen zu nutzen.
+        </p>
+      </div>
     </div>
   </div>
+  {% endif %}
 </div>
-{% endif %}
