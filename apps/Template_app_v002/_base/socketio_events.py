@@ -1,34 +1,168 @@
+"""
+Base SocketIO Events für Template_app_v002
+"""
+
 from app import socketio
-from flask_socketio import emit
+from flask_socketio import emit, disconnect
 from flask_login import current_user
 from flask import request
 from datetime import datetime
-from .. import app_logger, app_config
+from .. import app_logger, app_config, APP_NAME
 from app.socketio_manager import get_socketio_manager
 
-app_logger.info(f"Starte App-{app_config.app_name} SocketIO Events")
+app_logger.info(f"Starte App-{APP_NAME} SocketIO Events")
 
-# ========================================
-# SOCKET TRACKING
-# ========================================
 
-# Globales Dictionary für alle aktiven Socket-Verbindungen dieser App
 active_sockets = {}
 
 
-def track_socket_connection(sid, user_info):
-    """
-    Tracke Socket-Verbindung
-    Wird aufgerufen wenn ein Client sich mit der App verbindet
-    """
+def get_active_sockets():
+    """Gibt alle Base Sockets zurück"""
+    return active_sockets
+
+
+def get_socket_count():
+    """Gibt Anzahl aktiver Base Sockets zurück"""
+    return len(active_sockets)
+
+
+# ========================================
+# VERBINDUNGS-EVENTS
+# ========================================
+
+
+@socketio.on("connect", namespace=f"/{APP_NAME}")
+def handle_connect():
+    """Wird ausgelöst wenn ein Client sich verbindet"""
+    sid = request.sid
+    username = current_user.username if current_user.is_authenticated else "Gast"
+
+    # Speichere Socket-Info
     active_sockets[sid] = {
         "sid": sid,
-        "user_id": user_info.get("user_id"),
-        "username": user_info.get("username"),
-        "connected_at": user_info.get("connected_at"),
-        "app_name": user_info.get("app_name", app_config.app_name),
+        "username": username,
+        "connected_at": datetime.now().isoformat(),
+        "user_id": current_user.id if current_user.is_authenticated else None,
     }
-    app_logger.debug(f"Socket tracked: {sid} - {user_info.get('username')}")
+
+    # Registriere beim globalen SocketIO-Manager
+    try:
+        socket_manager = get_socketio_manager()
+        socket_manager.register_socket(sid, username, APP_NAME)
+        app_logger.debug(f"Socket tracked: {sid} - {username}")
+    except RuntimeError:
+        pass
+
+    app_logger.info(
+        f"[{APP_NAME}] App-Socket verbunden: {username} (SID: {sid}) "
+        f"[{len(active_sockets)} aktive Verbindungen]"
+    )
+
+
+@socketio.on("disconnect", namespace=f"/{APP_NAME}")
+def handle_disconnect():
+    """Wird ausgelöst wenn ein Client die Verbindung trennt"""
+    sid = request.sid
+
+    # ========================================
+    # WICHTIG: Custom Socket Cleanup
+    # ========================================
+    try:
+        # Dynamischer Import um Zirkular-Import zu vermeiden
+        import sys
+
+        module_name = f"apps.{APP_NAME}._custom.socketio_events"
+
+        if module_name in sys.modules:
+            custom_socketio_module = sys.modules[module_name]
+            if hasattr(custom_socketio_module, "cleanup_custom_socket"):
+                custom_socketio_module.cleanup_custom_socket(sid)
+                app_logger.debug(f"Custom Socket cleanup für {sid}")
+    except Exception as e:
+        app_logger.debug(f"Custom Socket Cleanup: {e}")
+
+    # Base Socket entfernen
+    if sid in active_sockets:
+        socket_info = active_sockets.pop(sid)
+        app_logger.debug(f"Socket removed: {sid} - {socket_info['username']}")
+
+    # Vom globalen Manager entfernen
+    try:
+        socket_manager = get_socketio_manager()
+        socket_manager.unregister_socket(sid)
+    except RuntimeError:
+        pass
+
+    app_logger.info(
+        f"[{APP_NAME}] App-Socket getrennt: {sid} "
+        f"[{len(active_sockets)} aktive Verbindungen]"
+    )
+
+
+# ========================================
+# STANDARD EVENTS
+# ========================================
+
+
+@socketio.on("ping", namespace=f"/{APP_NAME}")
+def handle_ping(data=None):
+    emit(
+        "pong",
+        {
+            "client_sent": (
+                data.get("client_sent") if data else None
+            ),  # JS Zeit zurückschicken
+            "server_time": datetime.now().isoformat(),  # Server Zeit
+            "active_connections": len(active_sockets),
+        },
+    )
+
+
+@socketio.on("get_socket_info", namespace=f"/{APP_NAME}")
+def handle_get_socket_info():
+    """Sendet Info über aktuelle Verbindung"""
+    sid = request.sid
+    socket_info = active_sockets.get(sid, {})
+
+    emit(
+        "socket_info_reply",
+        {
+            "sid": sid,
+            "username": socket_info.get("username", "Unbekannt"),
+            "connected_at": socket_info.get("connected_at"),
+            "total_connections": len(active_sockets),
+        },
+    )
+
+
+# ========================================
+# DISCONNECT HOOK (für andere Module)
+# ========================================
+
+
+def register_disconnect_hook():
+    """
+    Registriert einen Disconnect-Hook der auch Custom-Events berücksichtigt
+    """
+
+    @socketio.on("disconnect")
+    def disconnect_hook():
+        """Globaler Disconnect-Hook"""
+        sid = request.sid
+        app_logger.debug(f"Disconnect hook called for {sid}")
+
+        # Cleanup Custom Sockets
+        try:
+            import sys
+
+            module_name = f"apps.{APP_NAME}._custom.socketio_events"
+
+            if module_name in sys.modules:
+                custom_socketio_module = sys.modules[module_name]
+                if hasattr(custom_socketio_module, "cleanup_custom_socket"):
+                    custom_socketio_module.cleanup_custom_socket(sid)
+        except Exception as e:
+            app_logger.debug(f"Custom socket cleanup in hook: {e}")
 
 
 def remove_socket_connection(sid):
@@ -42,177 +176,9 @@ def remove_socket_connection(sid):
         app_logger.debug(f"Socket removed: {sid} - {username}")
 
 
-def get_active_sockets():
-    """
-    Gibt alle aktiven Socket-Verbindungen zurück
-    """
-    print(f"🔌 Socket-Liste original: {active_sockets}")
-    return active_sockets.copy()
+# Registriere Hook
+register_disconnect_hook()
 
-
-def get_socket_count():
-    """
-    Gibt die Anzahl aktiver Sockets zurück
-    """
-    return len(active_sockets)
-
-
-# ========================================
-# DISCONNECT HOOK FÜR SOCKETIO MANAGER
-# ========================================
-
-
-def disconnect_hook_handler(request_sid, user_data):
-    """
-    Disconnect Hook für SocketIOManager
-    Wird automatisch aufgerufen wenn eine Verbindung getrennt wird
-    """
-    remove_socket_connection(request_sid)
-    app_logger.debug(f"Disconnect hook called for {request_sid}")
-
-
-# Registriere Disconnect Hook beim SocketIOManager
-try:
-    socket_manager = get_socketio_manager()
-    socket_manager.register_disconnect_hook(
-        app_name=app_config.app_name, hook_function=disconnect_hook_handler
-    )
-    app_logger.info(f"✅ Disconnect-Hook für {app_config.app_name} registriert")
-except RuntimeError:
-    app_logger.warning(
-        "⚠️ SocketIOManager noch nicht initialisiert - Hook wird später registriert"
-    )
-
-
-# ========================================
-# SOCKET EVENT HANDLER
-# ========================================
-
-
-def register_socket_events():
-    """
-    Registriert app-spezifische Socket-Events
-    """
-
-    # Dynamische Event-Namen
-    connect_event = f"{app_config.app_name}_connect"
-    connected_event = f"{app_config.app_name}_connected"
-    ping_event = f"{app_config.app_name}_ping"
-    pong_event = f"{app_config.app_name}_pong"
-    disconnect_event = f"{app_config.app_name}_disconnect"
-
-    # ========================================
-    # CONNECT EVENT
-    # ========================================
-    @socketio.on(connect_event)  # ← RICHTIG: connect_event
-    def handle_app_connect(data=None):
-        """
-        App-spezifisches Connect Event
-        Wird vom Client gesendet wenn er sich mit der App verbindet
-        """
-        sid = request.sid
-
-        user_info = {
-            "sid": sid,
-            "user_id": current_user.id if current_user.is_authenticated else None,
-            "username": (
-                current_user.username
-                if current_user.is_authenticated
-                else f"Guest_{sid[:6]}"
-            ),
-            "connected_at": datetime.now().isoformat(),
-            "app_name": app_config.app_name,
-        }
-
-        # Tracke die Verbindung
-        track_socket_connection(sid, user_info)
-
-        app_logger.info(
-            f"[{app_config.app_name}] App-Socket verbunden: {user_info['username']} (SID: {sid}) "
-            f"[{get_socket_count()} aktive Verbindungen]"
-        )
-        print(
-            f"✅[{app_config.app_name}] App-Socket verbunden: {user_info['username']} (SID: {sid})"
-        )
-
-        # Sende Bestätigung an Client
-        emit(
-            connected_event,
-            {
-                "sid": sid,
-                "username": user_info["username"],
-                "app": app_config.app_name,
-                "message": f"Verbunden mit {app_config.app_name}",
-                "active_connections": get_socket_count(),
-            },
-        )
-
-    # ========================================
-    # PING EVENT
-    # ========================================
-    @socketio.on(ping_event)  # ← GEÄNDERT: ping_event statt connect_event!
-    def handle_app_ping():
-        """
-        App-spezifischer Ping für Connection-Health-Check
-        """
-        print(f"🏓 Ping empfangen von: {request.sid}")
-        app_logger.debug(f"Ping empfangen von: {request.sid}")
-
-        emit(
-            pong_event,  # ← GEÄNDERT: pong_event statt connected_event!
-            {
-                "timestamp": datetime.now().isoformat(),
-                "app": app_config.app_name,
-                "active_connections": get_socket_count(),
-                "message": "Pong!",
-            },
-        )
-
-    # ========================================
-    # DISCONNECT EVENT
-    # ========================================
-    @socketio.on(disconnect_event)  # ← GEÄNDERT: disconnect_event statt connect_event!
-    def handle_app_disconnect():
-        """
-        App-spezifisches Disconnect Event
-        Optional: Explizites Disconnect vom Client
-        """
-        sid = request.sid
-        remove_socket_connection(sid)
-
-        app_logger.info(
-            f"[{app_config.app_name}] App-Socket getrennt: {sid} [{get_socket_count()} aktive Verbindungen]"
-        )
-        print(f"👋 [{app_config.app_name}] App-Socket getrennt: {sid}")
-
-    # ===== BEISPIEL: Weitere App-spezifische Events =====
-
-    # @socketio.on(f'{app_config.app_name}_custom_event')
-    # def handle_custom_event(data):
-    #     """
-    #     Beispiel für ein eigenes Socket-Event
-    #     """
-    #     app_logger.info(f"Custom Event empfangen: {data}")
-    #
-    #     emit(f'{app_config.app_name}_custom_response', {
-    #         'status': 'ok',
-    #         'data': data
-    #     })
-
-    app_logger.info(f"✅ {app_config.app_name} Socket-Events registriert")
-    print(f"✅ Registrierte Events:")
-    print(f"   - {connect_event}")
-    print(f"   - {ping_event}")
-    print(f"   - {disconnect_event}")
-
-    return {
-        "connect": handle_app_connect,
-        "ping": handle_app_ping,
-        "disconnect": handle_app_disconnect,
-    }
-
-
-# Registriere Events beim Import und speichere sie
-SOCKETIO_EVENTS = register_socket_events()
-
-app_logger.info(f"Ende App-{app_config.app_name} SocketIO Events")
+app_logger.info(f"✅ Disconnect-Hook für {APP_NAME} registriert")
+app_logger.info(f"✅ {APP_NAME} Socket-Events registriert")
+app_logger.info(f"Ende App-{APP_NAME} SocketIO Events")

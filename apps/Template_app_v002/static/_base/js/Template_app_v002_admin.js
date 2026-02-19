@@ -1,227 +1,171 @@
 /**
- * App Admin Functions
- * Dynamisch - Config, Sockets, Tasks, Logs
+ * Template_app_v002 - Admin Core
+ *
+ * Zuständig NUR für:
+ * - Toast Notifications (global)
+ * - Socket-Tabelle (Refresh, Disconnect, Accordion)
+ *
+ * Ausgelagert:
+ * - Socket Verbindung / Ping / Pong → socketio.js
+ * - Config                          → admin_config.js
+ * - Tasks                           → admin_task.js
+ * - Logs                            → admin_logview.js
  */
 
 (function () {
   "use strict";
 
-  // App-Name aus URL
   const APP_NAME = window.location.pathname.split("/")[1] || "app";
   const API_BASE = `/${APP_NAME}/admin`;
 
-  console.log(`📋 ${APP_NAME} Admin Functions geladen`);
+  console.log(`📋 ${APP_NAME} Admin Core geladen`);
 
   // ========================================
-  // UTILITIES
+  // TOAST (Global)
   // ========================================
 
   function showToast(message, type = "info") {
-    const toast =
-      document.getElementById("statusMessage") ||
-      document.getElementById("toast-notification");
-
+    const toast = document.getElementById("toast-notification");
     if (!toast) {
-      console.warn("Toast-Element nicht gefunden");
+      console.warn("Toast nicht gefunden");
       return;
     }
 
     const icons = {
-      success: "check-circle",
-      error: "exclamation-circle",
-      info: "info-circle",
+      success:
+        '<i class="bi bi-check-circle-fill" style="color:#28a745;font-size:20px;"></i>',
+      error:
+        '<i class="bi bi-x-circle-fill" style="color:#dc3545;font-size:20px;"></i>',
+      info: '<i class="bi bi-info-circle-fill" style="color:#3498db;font-size:20px;"></i>',
     };
-
-    toast.innerHTML = `<i class="bi bi-${icons[type]}"></i>${message}`;
-    toast.className = `status-message ${type}`;
-    toast.style.display = "flex";
-
-    setTimeout(() => {
-      toast.style.display = "none";
-    }, 3000);
+    toast.innerHTML = `${icons[type]}<span>${message}</span>`;
+    toast.className = `toast-notification ${type} show`;
+    setTimeout(() => toast.classList.remove("show"), 3000);
   }
 
   // ========================================
-  // CONFIG FUNCTIONS
+  // ACCORDION
   // ========================================
 
-  function initConfigForm() {
-    const form = document.getElementById("configForm");
-    if (!form) return;
+  function initSocketTestAccordion() {
+    const header = document.querySelector(".test-card-header");
+    const body = document.getElementById("testSectionBody");
+    const icon = document.getElementById("testSectionChevron");
 
-    const resetBtn = document.getElementById("resetBtn");
-    const saveBtn = document.getElementById("saveBtn");
+    if (!header || !body) return;
 
-    // Store original values
-    const originalValues = {};
-    form.querySelectorAll("input:not([readonly])").forEach((input) => {
-      originalValues[input.id] =
-        input.type === "checkbox" ? input.checked : input.value;
+    body.style.display = "none";
+    header.style.cursor = "pointer";
+    header.style.userSelect = "none";
+
+    header.addEventListener("click", function () {
+      const isOpen = body.style.display !== "none";
+      body.style.display = isOpen ? "none" : "block";
+      if (icon)
+        icon.className = isOpen ? "bi bi-chevron-down" : "bi bi-chevron-up";
     });
 
-    // Reset
-    if (resetBtn) {
-      resetBtn.addEventListener("click", function () {
-        Object.keys(originalValues).forEach((id) => {
-          const input = document.getElementById(id);
-          if (input) {
-            if (input.type === "checkbox") {
-              input.checked = originalValues[id];
-            } else {
-              input.value = originalValues[id];
-            }
-          }
-        });
-        showToast("Änderungen zurückgesetzt", "success");
-      });
-    }
-
-    // Submit
-    form.addEventListener("submit", async function (e) {
-      e.preventDefault();
-
-      saveBtn.disabled = true;
-      saveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Speichert...';
-
-      try {
-        const formData = new FormData(form);
-        const response = await fetch(form.action, {
-          method: "POST",
-          body: formData,
-          headers: { "X-Requested-With": "XMLHttpRequest" },
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-          showToast("Konfiguration erfolgreich gespeichert!", "success");
-
-          // Update original values
-          form.querySelectorAll("input:not([readonly])").forEach((input) => {
-            originalValues[input.id] =
-              input.type === "checkbox" ? input.checked : input.value;
-          });
-        } else {
-          showToast(
-            "Fehler: " + (result.message || "Unbekannter Fehler"),
-            "error",
-          );
-        }
-      } catch (error) {
-        showToast("Fehler beim Speichern: " + error.message, "error");
-      } finally {
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = '<i class="bi bi-save"></i> Speichern';
-      }
-    });
+    console.log("✓ Accordion initialisiert");
   }
 
   // ========================================
-  // SOCKET FUNCTIONS
+  // SOCKET ADMIN
   // ========================================
 
   async function refreshSocketList() {
-    const refreshBtn = document.getElementById("refreshBtn");
-    if (!refreshBtn) return;
-
-    refreshBtn.disabled = true;
-    const originalHTML = refreshBtn.innerHTML;
-    refreshBtn.innerHTML =
-      '<i class="bi bi-arrow-clockwise loading"></i> Lädt...';
+    const btn = document.getElementById("refreshBtn");
+    const origHTML = btn ? btn.innerHTML : null;
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Lädt...';
+    }
 
     try {
-      const response = await fetch(`${API_BASE}/api_get_sockets`, {
+      const res = await fetch(`${API_BASE}/api_get_sockets`, {
         headers: { "X-Requested-With": "XMLHttpRequest" },
       });
-
-      const result = await response.json();
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const result = await res.json();
 
       if (result.success) {
         updateSocketTable(result.sockets);
-
-        const totalElement = document.getElementById("totalConnections");
-        if (totalElement) totalElement.textContent = result.total;
-
+        const totalEl = document.getElementById("totalConnections");
+        if (totalEl) totalEl.textContent = result.total;
         showToast("Socket-Liste aktualisiert", "success");
       } else {
         showToast("Fehler: " + result.message, "error");
       }
-    } catch (error) {
-      showToast("Fehler beim Aktualisieren: " + error.message, "error");
+    } catch (e) {
+      showToast("Fehler: " + e.message, "error");
     } finally {
-      refreshBtn.disabled = false;
-      refreshBtn.innerHTML = originalHTML;
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = origHTML;
+      }
     }
   }
 
   async function disconnectAllSockets() {
-    if (!confirm("Möchten Sie wirklich ALLE Socket-Verbindungen trennen?")) {
+    if (!confirm("Möchten Sie wirklich ALLE Socket-Verbindungen trennen?"))
       return;
-    }
 
     const btn = document.getElementById("disconnectAllBtn");
-    if (!btn) return;
-
-    btn.disabled = true;
-    const originalHTML = btn.innerHTML;
-    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Trenne...';
+    const origHTML = btn ? btn.innerHTML : null;
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Trenne...';
+    }
 
     try {
-      const response = await fetch(`${API_BASE}/api_disconnect_all_sockets`, {
+      const res = await fetch(`${API_BASE}/api_disconnect_all_sockets`, {
         method: "POST",
         headers: { "X-Requested-With": "XMLHttpRequest" },
       });
-
-      const result = await response.json();
-
+      const result = await res.json();
       if (result.success) {
         showToast(result.message, "success");
         setTimeout(() => refreshSocketList(), 1000);
       } else {
         showToast("Fehler: " + result.message, "error");
       }
-    } catch (error) {
-      showToast("Fehler: " + error.message, "error");
+    } catch (e) {
+      showToast("Fehler: " + e.message, "error");
     } finally {
-      btn.disabled = false;
-      btn.innerHTML = originalHTML;
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = origHTML;
+      }
     }
   }
 
   async function disconnectSocket(sid, btnElement) {
-    if (!confirm("Diese Socket-Verbindung trennen?")) {
-      return;
-    }
+    if (!confirm("Diese Socket-Verbindung trennen?")) return;
 
     const row = document.querySelector(`tr[data-sid="${sid}"]`);
-
+    const origHTML = btnElement.innerHTML;
     btnElement.disabled = true;
-    const originalHTML = btnElement.innerHTML;
     btnElement.innerHTML = '<i class="bi bi-hourglass-split"></i>';
 
     try {
-      const response = await fetch(`${API_BASE}/api_disconnect_socket/${sid}`, {
+      const res = await fetch(`${API_BASE}/api_disconnect_socket/${sid}`, {
         method: "POST",
         headers: { "X-Requested-With": "XMLHttpRequest" },
       });
-
-      const result = await response.json();
+      const result = await res.json();
 
       if (result.success) {
         showToast("Verbindung getrennt", "success");
-
         if (row) {
           row.style.opacity = "0";
+          row.style.transition = "opacity 0.3s";
           setTimeout(() => {
             row.remove();
-
-            const totalElement = document.getElementById("totalConnections");
-            if (totalElement) {
-              const currentTotal = parseInt(totalElement.textContent);
-              totalElement.textContent = currentTotal - 1;
-            }
-
-            // Empty State check
+            const totalEl = document.getElementById("totalConnections");
+            if (totalEl)
+              totalEl.textContent = Math.max(
+                0,
+                parseInt(totalEl.textContent) - 1,
+              );
             if (
               document.querySelectorAll("#socketsTableBody tr").length === 0
             ) {
@@ -232,290 +176,116 @@
       } else {
         showToast("Fehler: " + result.message, "error");
         btnElement.disabled = false;
-        btnElement.innerHTML = originalHTML;
+        btnElement.innerHTML = origHTML;
       }
-    } catch (error) {
-      showToast("Fehler: " + error.message, "error");
+    } catch (e) {
+      showToast("Fehler: " + e.message, "error");
       btnElement.disabled = false;
-      btnElement.innerHTML = originalHTML;
+      btnElement.innerHTML = origHTML;
     }
   }
 
   function updateSocketTable(sockets) {
-    const tbody = document.getElementById("socketsTableBody");
     const container = document.querySelector(".sockets-content");
+    if (!container) return;
 
-    if (sockets.length === 0) {
-      if (container) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <i class="bi bi-plug"></i>
-            <h5>Keine aktiven Verbindungen</h5>
-            <p>Aktuell sind keine Socket-Verbindungen für diese App aktiv.</p>
-          </div>
-        `;
-      }
+    if (!sockets || sockets.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon"><i class="bi bi-plug"></i></div>
+          <h5>Keine aktiven Verbindungen</h5>
+          <p>Aktuell sind keine Socket-Verbindungen für diese App aktiv.</p>
+          <button class="btn btn-primary" onclick="AppAdmin.refreshSocketList()">
+            <i class="bi bi-arrow-clockwise"></i> Aktualisieren
+          </button>
+        </div>`;
       return;
     }
 
+    let tbody = document.getElementById("socketsTableBody");
     if (!tbody) {
-      // Erstelle Tabelle
-      if (container) {
-        container.innerHTML = `
+      container.innerHTML = `
+        <div class="sockets-table-card">
+          <div class="table-header">
+            <h5><i class="bi bi-table"></i> Verbindungsdetails</h5>
+          </div>
           <div class="sockets-table-wrapper">
-            <table class="sockets-table">
+            <table class="sockets-table" id="socketsTable">
               <thead>
                 <tr>
-                  <th><i class="bi bi-person"></i> Benutzer</th>
+                  <th><i class="bi bi-person-fill"></i> Benutzer</th>
                   <th><i class="bi bi-fingerprint"></i> Socket ID</th>
-                  <th><i class="bi bi-clock"></i> Verbunden seit</th>
-                  <th><i class="bi bi-gear"></i> Aktionen</th>
+                  <th><i class="bi bi-clock-history"></i> Verbunden seit</th>
+                  <th class="text-center"><i class="bi bi-gear-fill"></i> Aktionen</th>
                 </tr>
               </thead>
               <tbody id="socketsTableBody"></tbody>
             </table>
           </div>
-        `;
-      }
-    }
-
-    const newTbody = document.getElementById("socketsTableBody");
-    if (newTbody) {
-      newTbody.innerHTML = generateSocketRows(sockets);
-    }
-  }
-
-  function generateSocketRows(sockets) {
-    return sockets
-      .map(
-        (socket) => `
-      <tr data-sid="${socket.sid}">
-        <td>
-          <div class="user-info">
-            <i class="bi bi-person-circle user-icon"></i>
-            <span class="username">${socket.username}</span>
-            ${
-              socket.user_id
-                ? '<span class="user-badge authenticated">Auth</span>'
-                : '<span class="user-badge guest">Gast</span>'
-            }
+          <div class="table-footer">
+            <div class="showing-info">
+              Zeige <strong id="visibleCount">0</strong> Verbindungen
+            </div>
           </div>
-        </td>
-        <td><code class="socket-id">${socket.sid.substring(0, 16)}...</code></td>
-        <td><span class="timestamp">${socket.connected_at}</span></td>
-        <td>
-          <button 
-            class="btn-icon btn-disconnect" 
-            onclick="AppAdmin.disconnectSocket('${socket.sid}', this)"
-            title="Verbindung trennen">
-            <i class="bi bi-x-circle"></i>
-          </button>
-        </td>
-      </tr>
-    `,
-      )
-      .join("");
-  }
-
-  function initSocketAdmin() {
-    const refreshBtn = document.getElementById("refreshBtn");
-    const disconnectAllBtn = document.getElementById("disconnectAllBtn");
-
-    if (refreshBtn) {
-      refreshBtn.addEventListener("click", refreshSocketList);
+        </div>`;
+      tbody = document.getElementById("socketsTableBody");
     }
 
-    if (disconnectAllBtn) {
-      disconnectAllBtn.addEventListener("click", disconnectAllSockets);
-    }
+    if (tbody) {
+      tbody.innerHTML = sockets
+        .map(
+          (s) => `
+        <tr data-sid="${s.sid}" data-type="${s.user_id ? "auth" : "guest"}">
+          <td>
+            <div class="user-cell">
+              <div class="user-avatar">
+                <i class="bi bi-person-circle ${s.user_id ? "text-primary" : "text-secondary"}"></i>
+              </div>
+              <div class="user-info">
+                <div class="username">${s.username}</div>
+                <div class="user-meta">
+                  ${
+                    s.user_id
+                      ? `<span class="badge badge-success"><i class="bi bi-shield-check"></i> Auth</span>
+                       <span class="user-id">ID: ${s.user_id}</span>`
+                      : `<span class="badge badge-secondary"><i class="bi bi-person"></i> Gast</span>`
+                  }
+                </div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="socket-id-cell">
+              <code class="socket-id">${s.sid.substring(0, 12)}...</code>
+              <button class="copy-btn"
+                onclick="navigator.clipboard.writeText('${s.sid}').then(() => AppAdmin.showToast('SID kopiert', 'success'))"
+                title="Kopieren">
+                <i class="bi bi-clipboard"></i>
+              </button>
+            </div>
+          </td>
+          <td>
+            <div class="timestamp-cell">
+              <i class="bi bi-calendar3"></i>
+              <span>${s.connected_at}</span>
+            </div>
+          </td>
+          <td class="text-center">
+            <div class="action-buttons">
+              <button class="btn-action btn-danger"
+                onclick="AppAdmin.disconnectSocket('${s.sid}', this)"
+                title="Verbindung trennen">
+                <i class="bi bi-x-circle"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `,
+        )
+        .join("");
 
-    // Auto-refresh (30 Sekunden)
-    const socketsContainer = document.querySelector(".sockets-container");
-    if (socketsContainer) {
-      setInterval(() => {
-        if (!document.hidden) {
-          refreshSocketList();
-        }
-      }, 30000);
-    }
-  }
-
-  // ========================================
-  // TASK FUNCTIONS
-  // ========================================
-
-  async function pauseTask(taskId) {
-    try {
-      const response = await fetch(`${API_BASE}/api_pause_task/${taskId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        showToast(data.message, "success");
-        updateTaskUI(taskId, false);
-      } else {
-        showToast(data.message, "error");
-      }
-    } catch (error) {
-      showToast("Fehler beim Pausieren des Tasks", "error");
-    }
-  }
-
-  async function resumeTask(taskId) {
-    try {
-      const response = await fetch(`${API_BASE}/api_resume_task/${taskId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        showToast(data.message, "success");
-        updateTaskUI(taskId, true);
-      } else {
-        showToast(data.message, "error");
-      }
-    } catch (error) {
-      showToast("Fehler beim Fortsetzen des Tasks", "error");
-    }
-  }
-
-  async function runTask(taskId) {
-    try {
-      showToast("Task wird ausgeführt...", "info");
-
-      const response = await fetch(`${API_BASE}/api_run_task/${taskId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        showToast(data.message, "success");
-      } else {
-        showToast(data.message, "error");
-      }
-    } catch (error) {
-      showToast("Fehler beim Ausführen des Tasks", "error");
-    }
-  }
-
-  function updateTaskUI(taskId, isActive) {
-    const row = document.querySelector(`tr[data-task-id="${taskId}"]`);
-    if (!row) return;
-
-    const statusCell = row.querySelector(".task-status");
-    if (statusCell) {
-      statusCell.innerHTML = isActive
-        ? '<span class="status-badge status-active"><i class="bi bi-check-circle-fill"></i> Aktiv</span>'
-        : '<span class="status-badge status-paused"><i class="bi bi-pause-circle-fill"></i> Pausiert</span>';
-    }
-
-    const btnPause = row.querySelector(".btn-pause");
-    const btnResume = row.querySelector(".btn-resume");
-
-    if (btnPause) btnPause.style.display = isActive ? "inline-block" : "none";
-    if (btnResume) btnResume.style.display = isActive ? "none" : "inline-block";
-  }
-
-  async function refreshTasks() {
-    showToast("Tasks werden aktualisiert...", "info");
-    window.location.reload();
-  }
-
-  function initTaskManagement() {
-    const taskTable = document.querySelector(".task-table");
-    if (!taskTable) return;
-
-    // Auto-refresh (30 Sekunden)
-    setInterval(async () => {
-      try {
-        const response = await fetch(`${API_BASE}/api_get_tasks`);
-        const data = await response.json();
-
-        if (data.success) {
-          data.tasks.forEach((task) => {
-            const row = document.querySelector(`tr[data-task-id="${task.id}"]`);
-            if (row) {
-              const nextRunCell = row.querySelector(".task-next-run");
-              if (nextRunCell) nextRunCell.textContent = task.next_run;
-            }
-          });
-        }
-      } catch (error) {
-        console.error("Auto-refresh error:", error);
-      }
-    }, 30000);
-  }
-
-  // ========================================
-  // LOG FUNCTIONS
-  // ========================================
-
-  function applyLogFilters() {
-    const level = document.getElementById("level-filter")?.value;
-    const limit = document.getElementById("limit-filter")?.value;
-    const search = document.getElementById("search-filter")?.value;
-
-    const params = new URLSearchParams();
-    if (level) params.append("level", level);
-    if (limit) params.append("limit", limit);
-    if (search) params.append("search", search);
-
-    window.location.href = `${window.location.pathname}?${params.toString()}`;
-  }
-
-  function resetLogFilters() {
-    window.location.href = window.location.pathname;
-  }
-
-  function quickLogFilter(level) {
-    const levelFilter = document.getElementById("level-filter");
-    if (levelFilter) {
-      levelFilter.value = level;
-      applyLogFilters();
-    }
-  }
-
-  function downloadLogs() {
-    showToast("Logs werden vorbereitet...", "info");
-
-    const logRows = document.querySelectorAll(".log-row");
-    let content = "";
-
-    logRows.forEach((row) => {
-      const timestamp = row.querySelector(".log-timestamp")?.textContent || "";
-      const level = row.querySelector(".level-badge")?.textContent.trim() || "";
-      const logger = row.querySelector(".log-logger")?.textContent || "";
-      const message = row.querySelector(".log-message")?.textContent || "";
-
-      content += `${timestamp} - ${logger} - ${level} - ${message}\n`;
-    });
-
-    const blob = new Blob([content], { type: "text/plain" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${APP_NAME}_logs_${new Date().toISOString().slice(0, 10)}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-
-    showToast("Logs heruntergeladen!", "success");
-  }
-
-  function initLogViewer() {
-    const searchFilter = document.getElementById("search-filter");
-    if (searchFilter) {
-      searchFilter.addEventListener("keypress", function (e) {
-        if (e.key === "Enter") applyLogFilters();
-      });
+      const countEl = document.getElementById("visibleCount");
+      if (countEl) countEl.textContent = sockets.length;
     }
   }
 
@@ -523,16 +293,33 @@
   // INITIALISIERUNG
   // ========================================
 
+  function initSocketAdmin() {
+    const socketsContainer = document.querySelector(".sockets-container");
+    if (!socketsContainer) return;
+
+    initSocketTestAccordion();
+
+    const refreshBtn = document.getElementById("refreshBtn");
+    const disconnectAllBtn = document.getElementById("disconnectAllBtn");
+    if (refreshBtn) refreshBtn.addEventListener("click", refreshSocketList);
+    if (disconnectAllBtn)
+      disconnectAllBtn.addEventListener("click", disconnectAllSockets);
+
+    // Beim Laden sofort aktualisieren
+    setTimeout(() => refreshSocketList(), 800);
+
+    // Auto-Refresh alle 30s
+    setInterval(() => {
+      if (!document.hidden) refreshSocketList();
+    }, 30000);
+
+    console.log("✓ Socket Admin initialisiert");
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
-    console.log(`🏁 ${APP_NAME}: Admin Functions initialisiert`);
-
-    // Init basierend auf Seite
-    initConfigForm();
+    console.log(`🏁 ${APP_NAME}: Admin Core initialisiert`);
     initSocketAdmin();
-    initTaskManagement();
-    initLogViewer();
-
-    console.log("✓ Admin Functions bereit");
+    console.log("✓ Admin Core bereit");
   });
 
   // ========================================
@@ -540,24 +327,10 @@
   // ========================================
 
   window.AppAdmin = {
-    // Config
     showToast,
-
-    // Sockets
     refreshSocketList,
     disconnectAllSockets,
     disconnectSocket,
-
-    // Tasks
-    pauseTask,
-    resumeTask,
-    runTask,
-    refreshTasks,
-
-    // Logs
-    applyLogFilters,
-    resetLogFilters,
-    quickLogFilter,
-    downloadLogs,
+    updateSocketTable,
   };
 })();

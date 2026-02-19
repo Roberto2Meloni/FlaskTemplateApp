@@ -1,33 +1,67 @@
 """
-Base Admin API Routes
+Base Admin API Routes - Erweitert um Custom Tasks Support
 """
 
 from flask import jsonify, request
 from flask_login import current_user
-from flask_socketio import disconnect as socketio_disconnect
 from app.decorators import admin_required
-from app.socketio_manager import get_socketio_manager
 import threading
+from app.socketio_manager import get_socketio_manager
+from ..socketio_events import active_sockets, remove_socket_connection
 
-# Import aus Parent Package (Template_app_v002)
+# Import aus Parent Package
 from ... import blueprint, app_logger, app_config, APP_ROOT
+
 
 # Import Helper (nur AdminHelper-Klasse und convert_value!)
 from ..helper_app_function.helper_admin_app import AdminHelper, convert_value
 
-# Import Socket-Management aus socketio_events
-from ..socketio_events import active_sockets, remove_socket_connection
 
 app_logger.info(f"Starte Admin API Routes für {app_config.app_name}")
+
 
 # ============================================
 # INITIALISIERE ADMIN HELPER
 # ============================================
 admin_helper = AdminHelper(app_config, APP_ROOT)
 
+# ========================================
+# HELPER FUNCTIONS
+# ========================================
+
+
+def get_scheduler_for_task(task_id):
+    """
+    Ermittelt den richtigen Scheduler für einen Task
+
+    Returns:
+        tuple: (scheduler, scheduler_name) oder (None, None)
+    """
+    try:
+        # Versuche Base Scheduler
+        from ..tasks import app_scheduler
+
+        job = app_scheduler.get_job(task_id)
+        if job:
+            return (app_scheduler, "Base")
+    except Exception as e:
+        app_logger.debug(f"Task {task_id} nicht im Base Scheduler: {e}")
+
+    try:
+        # Versuche Custom Scheduler
+        from ..._custom.tasks import app_custom_scheduler
+
+        job = app_custom_scheduler.get_job(task_id)
+        if job:
+            return (app_custom_scheduler, "Custom")
+    except Exception as e:
+        app_logger.debug(f"Task {task_id} nicht im Custom Scheduler: {e}")
+
+    return (None, None)
+
 
 # ========================================
-# SOCKET MANAGEMENT API ROUTES
+# Socket MANAGEMETN API
 # ========================================
 
 
@@ -134,50 +168,88 @@ def api_disconnect_all_sockets():
 
 
 # ========================================
-# TASK MANAGEMENT API ROUTES
+# TASK MANAGEMENT API
 # ========================================
 
 
 @blueprint.route("/admin/api_get_tasks", methods=["GET"])
 @admin_required
 def api_get_tasks():
-    """API: Hole alle Tasks der App"""
+    """API: Hole alle Tasks (Base + Custom)"""
     try:
-        from ..tasks import app_scheduler
-
         tasks = []
-        jobs = app_scheduler.get_jobs()
 
-        for job in jobs:
-            # Filtere nur Jobs dieser App
-            if job.id.startswith(app_config.app_name):
-                is_paused = False
-                if hasattr(job, "next_run_time") and job.next_run_time is None:
-                    is_paused = True
+        # Base Tasks
+        try:
+            from ..tasks import app_scheduler
 
-                task_info = {
-                    "id": job.id,
-                    "name": job.name if job.name else job.id,
-                    "next_run": (
-                        job.next_run_time.strftime("%Y-%m-%d %H:%M:%S")
-                        if job.next_run_time
-                        else "Pausiert" if is_paused else "Nicht geplant"
-                    ),
-                    "trigger": str(job.trigger),
-                    "func": (
-                        job.func.__name__
-                        if hasattr(job.func, "__name__")
-                        else "Unbekannt"
-                    ),
-                    "active": not is_paused,
-                }
-                tasks.append(task_info)
+            jobs = app_scheduler.get_jobs()
+            for job in jobs:
+                if job.id.startswith(app_config.app_name):
+                    is_paused = False
+                    if hasattr(job, "next_run_time") and job.next_run_time is None:
+                        is_paused = True
+
+                    task_info = {
+                        "id": job.id,
+                        "name": job.name if job.name else job.id,
+                        "scheduler": "Base",
+                        "next_run": (
+                            job.next_run_time.strftime("%Y-%m-%d %H:%M:%S")
+                            if job.next_run_time
+                            else "Pausiert" if is_paused else "Nicht geplant"
+                        ),
+                        "trigger": str(job.trigger),
+                        "func": (
+                            job.func.__name__
+                            if hasattr(job.func, "__name__")
+                            else "Unbekannt"
+                        ),
+                        "active": not is_paused,
+                    }
+                    tasks.append(task_info)
+
+        except Exception as e:
+            app_logger.warning(f"Konnte Base Tasks nicht laden: {e}")
+
+        # Custom Tasks
+        try:
+            from ..._custom.tasks import app_custom_scheduler
+
+            custom_jobs = app_custom_scheduler.get_jobs()
+            for job in custom_jobs:
+                if job.id.startswith(app_config.app_name):
+                    is_paused = False
+                    if hasattr(job, "next_run_time") and job.next_run_time is None:
+                        is_paused = True
+
+                    task_info = {
+                        "id": job.id,
+                        "name": job.name if job.name else job.id,
+                        "scheduler": "Custom",
+                        "next_run": (
+                            job.next_run_time.strftime("%Y-%m-%d %H:%M:%S")
+                            if job.next_run_time
+                            else "Pausiert" if is_paused else "Nicht geplant"
+                        ),
+                        "trigger": str(job.trigger),
+                        "func": (
+                            job.func.__name__
+                            if hasattr(job.func, "__name__")
+                            else "Unbekannt"
+                        ),
+                        "active": not is_paused,
+                    }
+                    tasks.append(task_info)
+
+        except Exception as e:
+            app_logger.warning(f"Konnte Custom Tasks nicht laden: {e}")
 
         app_logger.debug(f"API: {len(tasks)} Tasks gefunden")
         return jsonify({"success": True, "tasks": tasks, "count": len(tasks)})
 
     except Exception as e:
-        app_logger.error(f"Fehler beim Abrufen der Tasks: {str(e)}")
+        app_logger.error(f"❌ Fehler beim Abrufen der Tasks: {str(e)}")
         return jsonify({"success": False, "message": str(e)}), 500
 
 
@@ -186,23 +258,26 @@ def api_get_tasks():
 def api_pause_task(task_id):
     """API: Pausiere einen Task"""
     try:
-        from ..tasks import app_scheduler
+        scheduler, scheduler_name = get_scheduler_for_task(task_id)
 
-        job = app_scheduler.get_job(task_id)
-        if job:
-            app_scheduler.pause_job(task_id)
+        if scheduler:
+            scheduler.pause_job(task_id)
             app_logger.info(
-                f"Task {task_id} wurde pausiert von Admin {current_user.username}"
+                f"✅ Task {task_id} ({scheduler_name}) wurde pausiert von {current_user.username}"
             )
             return jsonify(
-                {"success": True, "message": "Task wurde pausiert", "status": "paused"}
+                {
+                    "success": True,
+                    "message": f"Task wurde pausiert ({scheduler_name})",
+                    "status": "paused",
+                }
             )
         else:
-            app_logger.warning(f"Task {task_id} nicht gefunden")
+            app_logger.warning(f"⚠️  Task {task_id} nicht gefunden")
             return jsonify({"success": False, "message": "Task nicht gefunden"}), 404
 
     except Exception as e:
-        app_logger.error(f"Fehler beim Pausieren von Task {task_id}: {str(e)}")
+        app_logger.error(f"❌ Fehler beim Pausieren von Task {task_id}: {str(e)}")
         return jsonify({"success": False, "message": f"Fehler: {str(e)}"}), 500
 
 
@@ -211,27 +286,26 @@ def api_pause_task(task_id):
 def api_resume_task(task_id):
     """API: Setze einen pausierten Task fort"""
     try:
-        from ..tasks import app_scheduler
+        scheduler, scheduler_name = get_scheduler_for_task(task_id)
 
-        job = app_scheduler.get_job(task_id)
-        if job:
-            app_scheduler.resume_job(task_id)
+        if scheduler:
+            scheduler.resume_job(task_id)
             app_logger.info(
-                f"Task {task_id} wurde fortgesetzt von Admin {current_user.username}"
+                f"✅ Task {task_id} ({scheduler_name}) wurde fortgesetzt von {current_user.username}"
             )
             return jsonify(
                 {
                     "success": True,
-                    "message": "Task wurde fortgesetzt",
+                    "message": f"Task wurde fortgesetzt ({scheduler_name})",
                     "status": "active",
                 }
             )
         else:
-            app_logger.warning(f"Task {task_id} nicht gefunden")
+            app_logger.warning(f"⚠️  Task {task_id} nicht gefunden")
             return jsonify({"success": False, "message": "Task nicht gefunden"}), 404
 
     except Exception as e:
-        app_logger.error(f"Fehler beim Fortsetzen von Task {task_id}: {str(e)}")
+        app_logger.error(f"❌ Fehler beim Fortsetzen von Task {task_id}: {str(e)}")
         return jsonify({"success": False, "message": f"Fehler: {str(e)}"}), 500
 
 
@@ -240,15 +314,16 @@ def api_resume_task(task_id):
 def api_run_task(task_id):
     """API: Führe einen Task sofort aus"""
     try:
-        from ..tasks import app_scheduler
+        scheduler, scheduler_name = get_scheduler_for_task(task_id)
 
-        job = app_scheduler.get_job(task_id)
-        if job:
-            app_logger.info(
-                f"Task {task_id} wird manuell ausgeführt von Admin {current_user.username}"
-            )
+        if scheduler:
+            job = scheduler.get_job(task_id)
 
-            if hasattr(job, "func"):
+            if job and hasattr(job, "func"):
+                app_logger.info(
+                    f"🚀 Task {task_id} ({scheduler_name}) wird manuell ausgeführt von {current_user.username}"
+                )
+
                 thread = threading.Thread(
                     target=job.func,
                     args=job.args if hasattr(job, "args") else (),
@@ -257,7 +332,13 @@ def api_run_task(task_id):
                     name=f"Manual_{task_id}",
                 )
                 thread.start()
-                return jsonify({"success": True, "message": "Task wird ausgeführt"})
+
+                return jsonify(
+                    {
+                        "success": True,
+                        "message": f"Task wird ausgeführt ({scheduler_name})",
+                    }
+                )
             else:
                 return (
                     jsonify(
@@ -266,11 +347,11 @@ def api_run_task(task_id):
                     500,
                 )
         else:
-            app_logger.warning(f"Task {task_id} nicht gefunden")
+            app_logger.warning(f"⚠️  Task {task_id} nicht gefunden")
             return jsonify({"success": False, "message": "Task nicht gefunden"}), 404
 
     except Exception as e:
-        app_logger.error(f"Fehler beim Ausführen von Task {task_id}: {str(e)}")
+        app_logger.error(f"❌ Fehler beim Ausführen von Task {task_id}: {str(e)}")
         return jsonify({"success": False, "message": f"Fehler: {str(e)}"}), 500
 
 
@@ -279,10 +360,11 @@ def api_run_task(task_id):
 def api_task_info(task_id):
     """API: Hole detaillierte Task-Informationen"""
     try:
-        from ..tasks import app_scheduler
+        scheduler, scheduler_name = get_scheduler_for_task(task_id)
 
-        job = app_scheduler.get_job(task_id)
-        if job:
+        if scheduler:
+            job = scheduler.get_job(task_id)
+
             is_paused = False
             if hasattr(job, "next_run_time") and job.next_run_time is None:
                 is_paused = True
@@ -290,6 +372,7 @@ def api_task_info(task_id):
             task_info = {
                 "id": job.id,
                 "name": job.name if job.name else job.id,
+                "scheduler": scheduler_name,
                 "next_run": (
                     job.next_run_time.strftime("%Y-%m-%d %H:%M:%S")
                     if job.next_run_time
@@ -303,19 +386,13 @@ def api_task_info(task_id):
                 "args": str(job.args) if hasattr(job, "args") else "",
                 "kwargs": str(job.kwargs) if hasattr(job, "kwargs") else "",
             }
-
             return jsonify({"success": True, "task": task_info})
         else:
             return jsonify({"success": False, "message": "Task nicht gefunden"}), 404
 
     except Exception as e:
-        app_logger.error(f"Fehler beim Abrufen der Task-Info {task_id}: {str(e)}")
+        app_logger.error(f"❌ Fehler beim Abrufen der Task-Info {task_id}: {str(e)}")
         return jsonify({"success": False, "message": f"Fehler: {str(e)}"}), 500
-
-
-# ========================================
-# CONFIG MANAGEMENT API
-# ========================================
 
 
 @blueprint.route("/admin/api_save_config", methods=["POST"])
@@ -429,4 +506,4 @@ def api_get_log_stats():
         return jsonify({"success": False, "message": str(e)}), 500
 
 
-app_logger.info(f"Ende Admin API Routes für {app_config.app_name}")
+app_logger.info(f"✅ Admin API Routes für {app_config.app_name} geladen")

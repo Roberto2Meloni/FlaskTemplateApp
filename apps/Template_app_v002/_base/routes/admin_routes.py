@@ -1,5 +1,5 @@
 """
-Base Admin Routes
+Base Admin Routes - Erweitert um Custom Tasks Support
 """
 
 from flask import render_template, request
@@ -17,9 +17,6 @@ from app.socketio_manager import get_socketio_manager
 
 # Import Socket-Funktionen
 from ..socketio_events import get_active_sockets, get_socket_count
-
-# Import Tasks
-from ..tasks import get_all_tasks
 
 app_logger.info(f"Starte Admin Routes für {app_config.app_name}")
 
@@ -138,27 +135,112 @@ def app_settings_sockets():
 @blueprint.route("/app_settings/tasks", methods=["GET"])
 @admin_required
 def app_settings_tasks():
-    """Task-Verwaltung - Zeigt alle aktiven Tasks"""
+    """
+    Task-Verwaltungsseite
+    Lädt Tasks aus BEIDEN Schedulern (Base + Custom)
+    """
+    tasks = []
 
-    tasks = get_all_tasks()
+    try:
+        # ✅ Lade Base Tasks
+        app_logger.debug("Lade Base Tasks...")
+        try:
+            from ..tasks import app_scheduler
+
+            jobs = app_scheduler.get_jobs()
+            for job in jobs:
+                # Filtere nur Jobs dieser App
+                if job.id.startswith(app_config.app_name):
+                    is_paused = False
+                    if hasattr(job, "next_run_time") and job.next_run_time is None:
+                        is_paused = True
+
+                    task_info = {
+                        "id": job.id,
+                        "name": job.name if job.name else job.id,
+                        "scheduler": "Base",  # ✅ Kennzeichnung
+                        "next_run": (
+                            job.next_run_time.strftime("%Y-%m-%d %H:%M:%S")
+                            if job.next_run_time
+                            else "Pausiert" if is_paused else "Nicht geplant"
+                        ),
+                        "trigger": str(job.trigger),
+                        "func": (
+                            job.func.__name__
+                            if hasattr(job.func, "__name__")
+                            else "Unbekannt"
+                        ),
+                        "active": not is_paused,
+                    }
+                    tasks.append(task_info)
+
+            app_logger.debug(
+                f"   └─ {len([t for t in tasks if t['scheduler'] == 'Base'])} Base Tasks geladen"
+            )
+
+        except Exception as e:
+            app_logger.warning(f"Konnte Base Tasks nicht laden: {e}")
+
+        # ✅ Lade Custom Tasks
+        app_logger.debug("Lade Custom Tasks...")
+        try:
+            # Importiere aus _custom Ordner
+            from ..._custom.tasks import app_custom_scheduler
+
+            custom_jobs = app_custom_scheduler.get_jobs()
+            for job in custom_jobs:
+                # Filtere nur Jobs dieser App
+                if job.id.startswith(app_config.app_name):
+                    is_paused = False
+                    if hasattr(job, "next_run_time") and job.next_run_time is None:
+                        is_paused = True
+
+                    task_info = {
+                        "id": job.id,
+                        "name": job.name if job.name else job.id,
+                        "scheduler": "Custom",  # ✅ Kennzeichnung
+                        "next_run": (
+                            job.next_run_time.strftime("%Y-%m-%d %H:%M:%S")
+                            if job.next_run_time
+                            else "Pausiert" if is_paused else "Nicht geplant"
+                        ),
+                        "trigger": str(job.trigger),
+                        "func": (
+                            job.func.__name__
+                            if hasattr(job.func, "__name__")
+                            else "Unbekannt"
+                        ),
+                        "active": not is_paused,
+                    }
+                    tasks.append(task_info)
+
+            app_logger.debug(
+                f"   └─ {len([t for t in tasks if t['scheduler'] == 'Custom'])} Custom Tasks geladen"
+            )
+
+        except Exception as e:
+            app_logger.warning(f"Konnte Custom Tasks nicht laden: {e}")
+
+        app_logger.info(f"✅ Gesamt Tasks geladen: {len(tasks)}")
+
+    except Exception as e:
+        app_logger.error(f"❌ Fehler beim Laden der Tasks: {str(e)}")
 
     if is_ajax_request():
         return render_template(
             "_base/admin/Template_app_v002_admin_task.html",
             user=current_user,
-            config=app_config,
-            app_config=app_config,
             tasks=tasks,
+            app_config=app_config,
         )
 
     return render_template(
         "Template_app_v002.html",
         user=current_user,
-        config=app_config,
         content="app_settings",
         settings="tasks",
-        app_config=app_config,
         tasks=tasks,
+        app_config=app_config,
     )
 
 
@@ -177,7 +259,6 @@ def app_settings_logs():
         limit = 2000
 
     # Nutze AdminHelper (dynamisch!)
-    app_infos = admin_helper.get_app_info()
     app_logs = admin_helper.get_app_logs(
         limit=limit, level_filter=level_filter, search_term=search_term
     )
@@ -188,7 +269,6 @@ def app_settings_logs():
             "_base/admin/Template_app_v002_admin_logs.html",
             user=current_user,
             config=app_config,
-            app_infos=app_infos,
             app_logs=app_logs,
             log_stats=log_stats,
             app_config=app_config,
@@ -203,7 +283,6 @@ def app_settings_logs():
         config=app_config,
         content="app_settings",
         settings="logs",
-        app_infos=app_infos,
         app_logs=app_logs,
         log_stats=log_stats,
         app_config=app_config,

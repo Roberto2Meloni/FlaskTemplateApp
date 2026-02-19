@@ -1,7 +1,98 @@
-/* Socket Test Section Styles */
+/* ========================================
+   SOCKETS ADMIN - KOMPLETTES CSS
+   ======================================== */
+
+/* ========================================
+   CONTAINER & HEADER
+   ======================================== */
+
+.sockets-container {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.sockets-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sockets-header h4 {
+    margin: 0;
+    color: #212529;
+}
+
+.sockets-subtitle {
+    margin: 0.25rem 0 0 0;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.header-right {
+    display: flex;
+    gap: 0.75rem;
+}
+
+/* ========================================
+   BUTTONS
+   ======================================== */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+/* ========================================
+   SOCKET STATUS & TEST CARD
+   ======================================== */
 
 .socket-test-section {
-    margin-bottom: 2rem;
+    /* kein extra margin nötig, gap vom container übernimmt das */
 }
 
 .test-card {
@@ -58,12 +149,12 @@
 }
 
 .status-badge.online {
-    background-color: #d4edda;
+    background: #d4edda;
     color: #155724;
 }
 
 .status-badge.offline {
-    background-color: #f8d7da;
+    background: #f8d7da;
     color: #721c24;
 }
 
@@ -75,12 +166,12 @@
 }
 
 .status-badge.online .status-dot {
-    background-color: #28a745;
+    background: #28a745;
     animation: pulse 2s infinite;
 }
 
 .status-badge.offline .status-dot {
-    background-color: #dc3545;
+    background: #dc3545;
 }
 
 @keyframes pulse {
@@ -113,44 +204,11 @@
 
 .test-buttons .btn {
     flex: 1;
-    display: flex;
-    align-items: center;
     justify-content: center;
-    gap: 0.5rem;
     padding: 0.75rem 1rem;
-    border: none;
-    border-radius: 6px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
 }
 
-.test-buttons .btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.test-buttons .btn:not(:disabled):hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.btn-success {
-    background: #28a745;
-    color: white;
-}
-
-.btn-primary {
-    background: #007bff;
-    color: white;
-}
-
-.btn-warning {
-    background: #ffc107;
-    color: #212529;
-}
-
-/* Test Log Section */
+/* Test Log */
 .test-log-section {
     background: #1e1e1e;
     border-radius: 6px;
@@ -196,7 +254,7 @@
     display: flex;
     gap: 1rem;
     margin-bottom: 0.5rem;
-    padding: 0.5rem;
+    padding: 0.25rem 0.5rem;
     border-radius: 4px;
 }
 
@@ -229,7 +287,6 @@
     color: #c678dd;
 }
 
-/* Scrollbar für Log */
 .test-log::-webkit-scrollbar {
     width: 8px;
 }
@@ -247,21 +304,82 @@
     background: #777;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .connection-status {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-    }
+/* ========================================
+   STATISTICS CARDS  ← DAS WAR DAS PROBLEM
+   ======================================== */
 
-    .test-buttons {
-        flex-direction: column;
-    }
+.sockets-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
 }
 
+.stat-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
 
-/* Erweiterte Tabellen-Styles */
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.stat-card.stat-primary .stat-icon {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card.stat-success .stat-icon {
+    background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+}
+
+.stat-card.stat-info .stat-icon {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #212529;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* ========================================
+   SOCKETS TABLE
+   ======================================== */
+
+.sockets-content {
+    /* kein extra margin nötig */
+}
+
 .sockets-table-card {
     background: white;
     border-radius: 8px;
@@ -309,7 +427,11 @@
     border-color: rgba(255, 255, 255, 0.5);
 }
 
-/* Tabelle */
+.filter-select option {
+    color: #212529;
+    background: white;
+}
+
 .sockets-table {
     width: 100%;
     border-collapse: collapse;
@@ -344,6 +466,10 @@
     padding: 1rem;
     border-bottom: 1px solid #dee2e6;
     vertical-align: middle;
+}
+
+.sockets-table tbody tr:last-child td {
+    border-bottom: none;
 }
 
 .sockets-table tbody tr:hover {
@@ -411,6 +537,7 @@
 .user-id {
     color: #6c757d;
     font-family: monospace;
+    font-size: 0.8rem;
 }
 
 /* Socket ID Cell */
@@ -444,7 +571,7 @@
     color: #495057;
 }
 
-/* Timestamp & Duration Cells */
+/* Timestamp & Duration */
 .timestamp-cell,
 .duration-cell {
     display: flex;
@@ -472,12 +599,13 @@
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s;
-    font-size: 1.1rem;
+    font-size: 1rem;
     width: 36px;
     height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
+    line-height: 1;
 }
 
 .btn-action.btn-info {
@@ -516,20 +644,18 @@
     color: #495057;
 }
 
-/* Stat Cards - Farbvarianten */
-.stat-card.stat-primary .stat-icon {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+/* ========================================
+   EMPTY STATE
+   ======================================== */
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.stat-card.stat-success .stat-icon {
-    background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
-}
-
-.stat-card.stat-info .stat-icon {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-}
-
-/* Empty State verbesserungen */
 .empty-icon {
     font-size: 4rem;
     color: #dee2e6;
@@ -546,7 +672,10 @@
     margin-bottom: 1.5rem;
 }
 
-/* Responsive */
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
 @media (max-width: 1200px) {
     .sockets-stats {
         grid-template-columns: repeat(2, 1fr);
@@ -558,6 +687,38 @@
 }
 
 @media (max-width: 768px) {
+    .sockets-container {
+        padding: 1rem;
+    }
+
+    .sockets-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .header-right {
+        width: 100%;
+    }
+
+    .sockets-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-card:last-child {
+        grid-column: auto;
+    }
+
+    .connection-status {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .test-buttons {
+        flex-direction: column;
+    }
+
     .table-header {
         flex-direction: column;
         gap: 1rem;
@@ -603,4 +764,13 @@
         margin-bottom: 0.25rem;
         color: #495057;
     }
+}
+
+.float-end {
+    float: right;
+}
+
+.test-card-header {
+    /* bestehend + */
+    position: relative;
 }

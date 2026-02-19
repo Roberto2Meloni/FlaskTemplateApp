@@ -37,7 +37,7 @@ def Template_app_v002_index():
     app_logger.info(f"{APP_NAME} Index-Seite aufgerufen")
 
     return render_template(
-        "_base/Template_app_v002.html",  # ✅ Nutzt dynamisches Template-System
+        "Template_app_v002.html",
         user=current_user,
         config=config,
         content="dashboard",  # ✅ Lädt Dashboard-Content

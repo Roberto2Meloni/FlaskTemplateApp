@@ -2,7 +2,6 @@
 console.log("Socket IO JS geladen");
 
 // === GLOBALE VARIABLEN ===
-let socket = null;
 let isConnected = false;
 let currentChatRoom = null;
 
@@ -88,7 +87,7 @@ async function refreshSocketList(apiUrl) {
       console.log(
         "✅ Socket-Liste aktualisiert:",
         result.total,
-        "Verbindungen"
+        "Verbindungen",
       );
     } else {
       showStatus("Fehler: " + result.message, "error");
@@ -205,7 +204,7 @@ async function disconnectSocket(apiUrlTemplate, sid, btnElement) {
 
           // Prüfe ob noch Verbindungen da sind
           const remainingRows = document.querySelectorAll(
-            "#socketsTableBody tr"
+            "#socketsTableBody tr",
           );
           if (remainingRows.length === 0) {
             // Lade Liste neu für Empty State
@@ -213,7 +212,7 @@ async function disconnectSocket(apiUrlTemplate, sid, btnElement) {
             if (container && container.dataset.apiList) {
               setTimeout(
                 () => refreshSocketList(container.dataset.apiList),
-                500
+                500,
               );
             }
           }
@@ -314,15 +313,15 @@ function generateSocketRows(sockets) {
           <button 
             class="btn-icon btn-disconnect" 
             onclick="disconnectSocket('${apiDisconnect}', '${
-        socket.sid
-      }', this)"
+              socket.sid
+            }', this)"
             title="Verbindung trennen"
           >
             <i class="bi bi-x-circle"></i>
           </button>
         </td>
       </tr>
-    `
+    `,
     )
     .join("");
 }

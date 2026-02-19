@@ -200,26 +200,6 @@ class AdminHelper:
             print(f"ERROR beim Erstellen der Statistiken: {e}")
             return stats
 
-    def get_app_info(self):
-        """
-        Hole App-Informationen aus app_config
-
-        Returns:
-            dict: App-Informationen
-        """
-        return {
-            "app_name": self.app_config.app_name,
-            "app_display_name": self.app_config.app_display_name,
-            "version": self.app_config.app_version,
-            "author": self.app_config.app_author,
-            "description": self.app_config.app_description,
-            "logger_name": self.app_config.logger_name,
-            "logger_level": self.app_config.logger_level,
-            "socketio_enabled": self.app_config.socketio_enabled,
-            "scheduler_enabled": self.app_config.scheduler_enabled,
-            "admin_panel_enabled": self.app_config.admin_panel_enabled,
-        }
-
 
 # ============================================
 # STANDALONE HELPER FUNCTIONS

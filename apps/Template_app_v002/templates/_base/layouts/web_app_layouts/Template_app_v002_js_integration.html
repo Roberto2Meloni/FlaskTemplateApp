@@ -32,12 +32,15 @@ endif %}
 <!-- 3. Admin Functions -->
 <script src="{{ url_for('Template_app_v002.static', filename='_base/js/Template_app_v002_admin.js') }}"></script>
 
-<!-- ========================================
-     CUSTOM SCRIPTS (optional)
-     ======================================== -->
+<!-- 4. Task Functions -->
+<script src="{{ url_for('Template_app_v002.static', filename='_base/js/Template_app_v002_admin_task.js') }}"></script>
+
+<!-- 5. config Functions -->
+<script src="{{ url_for('Template_app_v002.static', filename='_base/js/Template_app_v002_admin_config.js') }}"></script>
 
 {% if config.TEMPLATE_APP_CUSTOM_JS %}
 <script src="{{ url_for('Template_app_v002.static', filename='_custom/js/Template_app_v002.js') }}"></script>
+
 <script src="{{ url_for('Template_app_v002.static', filename='_custom/js/Template_app_v002_sidebar_vertical.js') }}"></script>
 {% endif %}
 
@@ -45,3 +48,6 @@ endif %}
 {% if 'logs' in request.path %}
 <script src="{{ url_for('Template_app_v002.static', filename='_base/js/Template_app_v002_admin_logview.js') }}"></script>
 {% endif %}
+
+<!-- Intergration Cusotm JS -->
+{% include "_custom/layout/Template_app_v002_integrate_js.html" %}

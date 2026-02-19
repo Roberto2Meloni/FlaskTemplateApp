@@ -1,7 +1,14 @@
 /**
  * Template_app_v002 - Log Viewer JavaScript (HIERARCHISCH)
- * Mit hierarchischem Log-Level Filter
+ * Mit hierarchischem Log-Level Filter (rein client-seitig)
  */
+
+// ========================================
+// AUTO-REFRESH STATE
+// ========================================
+
+let autoRefreshInterval = null;
+const AUTO_REFRESH_MS = 5000; // 5 Sekunden
 
 (function () {
   "use strict";
@@ -25,136 +32,8 @@
   // ========================================
 
   /**
-   * Wendet alle Filter an und lädt die Seite neu
-   */
-  window.applyFilters = function () {
-    const level = document.getElementById("level-filter")?.value || "";
-    const limit = document.getElementById("limit-filter")?.value || "500";
-    const search = document.getElementById("search-filter")?.value || "";
-
-    console.log("🔍 Filter anwenden:", { level, limit, search });
-
-    const params = new URLSearchParams();
-
-    if (level) params.append("level", level);
-    if (limit) params.append("limit", limit);
-    if (search) params.append("search", search);
-
-    const url = `${window.location.pathname}?${params.toString()}`;
-    console.log("📍 Neue URL:", url);
-    window.location.href = url;
-  };
-
-  /**
-   * Filtert Logs hierarchisch basierend auf Level
-   */
-  function filterLogsHierarchically(selectedLevel) {
-    if (!selectedLevel) {
-      // Alle anzeigen
-      showAllLogs();
-      return;
-    }
-
-    const selectedLevelValue = LOG_LEVELS[selectedLevel];
-    console.log(
-      `🔽 Filter hierarchisch: ${selectedLevel} (>= ${selectedLevelValue})`,
-    );
-
-    const logRows = document.querySelectorAll(".log-row");
-    let visibleCount = 0;
-
-    logRows.forEach((row) => {
-      // Finde Level aus der Zeile
-      const levelBadge = row.querySelector(".level-badge");
-      if (!levelBadge) return;
-
-      const rowLevel = levelBadge.textContent.trim();
-      const rowLevelValue = LOG_LEVELS[rowLevel] || 0;
-
-      // Zeige wenn Level >= selectedLevel
-      if (rowLevelValue >= selectedLevelValue) {
-        row.style.display = "";
-        visibleCount++;
-      } else {
-        row.style.display = "none";
-      }
-    });
-
-    console.log(`✓ ${visibleCount} von ${logRows.length} Logs sichtbar`);
-    updateEmptyState(visibleCount);
-  }
-
-  /**
-   * Zeigt alle Logs
-   */
-  function showAllLogs() {
-    console.log("👁️ Zeige alle Logs");
-    const logRows = document.querySelectorAll(".log-row");
-    logRows.forEach((row) => {
-      row.style.display = "";
-    });
-    updateEmptyState(logRows.length);
-  }
-
-  /**
-   * Aktualisiert "Keine Logs" Nachricht
-   */
-  function updateEmptyState(visibleCount) {
-    const logDisplay = document.querySelector(".log-display");
-    const noLogsMessage = document.querySelector(".no-logs-message");
-    const logTableContainer = document.querySelector(".log-table-container");
-
-    if (visibleCount === 0) {
-      // Zeige "Keine Logs"
-      if (logTableContainer) logTableContainer.style.display = "none";
-      if (!noLogsMessage) {
-        const emptyDiv = document.createElement("div");
-        emptyDiv.className = "no-logs-message";
-        emptyDiv.innerHTML = `
-          <i class="bi bi-inbox"></i>
-          <p>Keine Logs gefunden</p>
-          <small>Mit diesem Filter wurden keine Logs gefunden.</small>
-        `;
-        logDisplay.appendChild(emptyDiv);
-      }
-    } else {
-      // Verstecke "Keine Logs"
-      if (logTableContainer) logTableContainer.style.display = "";
-      if (noLogsMessage) noLogsMessage.remove();
-    }
-  }
-
-  /**
-   * Filtert Logs basierend auf Suchtext
-   */
-  function filterLogsBySearch(searchText) {
-    if (!searchText) {
-      showAllLogs();
-      return;
-    }
-
-    console.log(`🔍 Suche nach: "${searchText}"`);
-    const logRows = document.querySelectorAll(".log-row");
-    let visibleCount = 0;
-
-    logRows.forEach((row) => {
-      const rowText = row.textContent.toLowerCase();
-      const matches = rowText.includes(searchText.toLowerCase());
-
-      if (matches) {
-        row.style.display = "";
-        visibleCount++;
-      } else {
-        row.style.display = "none";
-      }
-    });
-
-    console.log(`✓ ${visibleCount} von ${logRows.length} Logs gefunden`);
-    updateEmptyState(visibleCount);
-  }
-
-  /**
    * Kombinierter Filter (Level + Suche)
+   * Filtert nur im DOM - kein Server-Request
    */
   function applyClientSideFilters() {
     const levelFilter = document.getElementById("level-filter");
@@ -203,32 +82,184 @@
   }
 
   /**
-   * Live-Filter beim Ändern des Dropdowns
+   * Aktualisiert "Keine Logs" Nachricht
    */
-  function setupLiveFiltering() {
-    const levelFilter = document.getElementById("level-filter");
-    const searchFilter = document.getElementById("search-filter");
+  function updateEmptyState(visibleCount) {
+    const logDisplay = document.querySelector(".log-display");
+    const noLogsMessage = document.querySelector(".no-logs-message");
+    const logTableContainer = document.querySelector(".log-table-container");
 
-    if (levelFilter) {
-      levelFilter.addEventListener("change", function () {
-        console.log("🔄 Level-Filter geändert:", this.value);
-        applyClientSideFilters();
-      });
-      console.log("✓ Live-Filtering für Level aktiviert");
+    if (visibleCount === 0) {
+      if (logTableContainer) logTableContainer.style.display = "none";
+      if (!noLogsMessage) {
+        const emptyDiv = document.createElement("div");
+        emptyDiv.className = "no-logs-message";
+        emptyDiv.innerHTML = `
+          <i class="bi bi-inbox"></i>
+          <p>Keine Logs gefunden</p>
+          <small>Mit diesem Filter wurden keine Logs gefunden.</small>
+        `;
+        logDisplay.appendChild(emptyDiv);
+      }
+    } else {
+      if (logTableContainer) logTableContainer.style.display = "";
+      if (noLogsMessage) noLogsMessage.remove();
     }
+  }
 
-    if (searchFilter) {
-      // Live-Suche beim Tippen
-      searchFilter.addEventListener("input", function () {
-        applyClientSideFilters();
+  // ========================================
+  // REFRESH LOGS (API Call)
+  // ========================================
+  // ========================================
+  // AUTO-REFRESH TOGGLE
+  // ========================================
+
+  function toggleAutoRefresh() {
+    const button = document.getElementById("auto-refresh-btn");
+    const icon = button?.querySelector("i");
+    const statusText = button?.querySelector("span");
+
+    if (autoRefreshInterval) {
+      // --- AUS ---
+      clearInterval(autoRefreshInterval);
+      autoRefreshInterval = null;
+
+      if (icon) icon.className = "bi bi-play-circle";
+      if (statusText) statusText.textContent = "Aus";
+      if (button) button.classList.remove("auto-refresh-active");
+
+      console.log("⏸️ Auto-Refresh gestoppt");
+      window.showLogToast("Auto-Refresh gestoppt", "info");
+    } else {
+      // --- EIN ---
+      refreshLogs(); // Sofort einmal laden
+      autoRefreshInterval = setInterval(refreshLogs, AUTO_REFRESH_MS);
+
+      if (icon) icon.className = "bi bi-pause-circle";
+      if (statusText) statusText.textContent = "Ein";
+      if (button) button.classList.add("auto-refresh-active");
+
+      console.log("▶️ Auto-Refresh gestartet (alle 5s)");
+      window.showLogToast("Auto-Refresh aktiv (5s)", "success");
+    }
+  }
+
+  async function refreshLogs() {
+    const limitFilter = document.getElementById("limit-filter");
+    const limit = limitFilter?.value || "500";
+
+    console.log("🔄 Logs neu laden, Limit:", limit);
+
+    // URL mit Limit-Parameter bauen
+    const url = `${API_GET_LOGS}?limit=${limit}`;
+
+    try {
+      const response = await fetch(url, {
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+        },
       });
-      console.log("✓ Live-Filtering für Suche aktiviert");
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || "Unbekannter Fehler");
+      }
+
+      console.log(`✓ ${data.count} Logs empfangen`);
+
+      // Tabelle neu aufbauen
+      rebuildLogTable(data.logs);
+
+      // Statistik-Anzeige aktualisieren
+      updateLogStats(data);
+
+      // Client-Filter erneut anwenden
+      applyClientSideFilters();
+
+      // Row-Highlighting neu installieren
+      setupRowHighlighting();
+
+      window.showLogToast(`${data.count} Logs geladen`, "success");
+    } catch (error) {
+      console.error("❌ Fehler beim Laden:", error);
+      window.showLogToast("Fehler beim Laden der Logs", "error");
     }
   }
 
   /**
-   * Setzt alle Filter zurück
+   * Baut die Log-Tabelle mit neuen Daten neu auf
    */
+  function rebuildLogTable(logs) {
+    const tbody = document.querySelector(".log-table tbody");
+
+    if (!tbody) {
+      console.error("❌ tbody nicht gefunden");
+      return;
+    }
+
+    // Leeren
+    tbody.innerHTML = "";
+
+    // Neue Zeilen bauen
+    logs.forEach((log) => {
+      const level = log.level || "UNKNOWN";
+      const levelLower = level.toLowerCase();
+
+      // Icon je nach Level
+      let icon = '<i class="bi bi-question-circle-fill"></i>';
+      if (level === "ERROR" || level === "CRITICAL") {
+        icon = '<i class="bi bi-exclamation-triangle-fill"></i>';
+      } else if (level === "WARNING") {
+        icon = '<i class="bi bi-exclamation-circle-fill"></i>';
+      } else if (level === "INFO") {
+        icon = '<i class="bi bi-info-circle-fill"></i>';
+      } else if (level === "DEBUG") {
+        icon = '<i class="bi bi-bug-fill"></i>';
+      }
+
+      const tr = document.createElement("tr");
+      tr.className = `log-row log-level-${levelLower}`;
+      tr.innerHTML = `
+        <td class="log-timestamp">${log.timestamp || "N/A"}</td>
+        <td class="log-level">
+          <span class="level-badge level-${levelLower}">
+            ${icon} ${level}
+          </span>
+        </td>
+        <td class="log-logger">${log.logger || "N/A"}</td>
+        <td class="log-message" onclick="copyLogMessage(this)" 
+            style="cursor: pointer" title="Klicken zum Kopieren">
+          ${log.message || "Keine Nachricht"}
+        </td>
+      `;
+
+      tbody.appendChild(tr);
+    });
+
+    console.log(`✓ ${logs.length} Zeilen in Tabelle eingefügt`);
+  }
+
+  /**
+   * Aktualisiert die Statistik-Anzeige im Header
+   */
+  function updateLogStats(data) {
+    const filteredLines = document.querySelector(
+      ".stat-item:nth-child(2) .stat-value",
+    );
+    if (filteredLines) {
+      filteredLines.textContent = data.filtered_lines || data.count;
+    }
+  }
+
+  // ========================================
+  // RESET & QUICK FILTER
+  // ========================================
+
   window.resetFilters = function () {
     console.log("🔄 Filter zurücksetzen");
 
@@ -240,13 +271,9 @@
     if (limitFilter) limitFilter.value = "500";
     if (searchFilter) searchFilter.value = "";
 
-    // Zeige alle Logs wieder
-    showAllLogs();
+    applyClientSideFilters();
   };
 
-  /**
-   * Schnellfilter für bestimmtes Log-Level
-   */
   window.quickFilter = function (level) {
     console.log("⚡ Schnellfilter:", level);
 
@@ -375,20 +402,24 @@
   document.addEventListener("DOMContentLoaded", function () {
     console.log("🏁 Log-Viewer wird initialisiert (Hierarchisch)...");
 
-    // Setup Features
-    setupLiveFiltering();
     setupKeyboardShortcuts();
     setupRowHighlighting();
-
-    // Show Statistics
     showLogStatistics();
 
+    // Auto-Refresh standardmässig starten
+    toggleAutoRefresh();
+
     console.log("✅ Log-Viewer bereit (Hierarchisch)");
-    console.log("ℹ️  Level-Filter ist hierarchisch:");
-    console.log("   - INFO zeigt: CRITICAL, ERROR, WARNING, INFO");
-    console.log("   - WARNING zeigt: CRITICAL, ERROR, WARNING");
-    console.log("   - ERROR zeigt: CRITICAL, ERROR");
   });
+
+  function initLogViewer() {
+    const searchFilter = document.getElementById("search-filter");
+    if (searchFilter) {
+      searchFilter.addEventListener("keypress", function (e) {
+        if (e.key === "Enter") applyLogFilters();
+      });
+    }
+  }
 
   // ========================================
   // GLOBAL EXPORT
@@ -401,6 +432,8 @@
     showToast: window.showLogToast,
     copyLogMessage: window.copyLogMessage,
     showStatistics: showLogStatistics,
+    refreshLogs: refreshLogs,
+    toggleAutoRefresh: toggleAutoRefresh,
   };
 
   console.log("✅ LogViewer API verfügbar");

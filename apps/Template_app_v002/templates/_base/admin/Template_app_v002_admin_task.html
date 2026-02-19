@@ -1,7 +1,7 @@
 <div class="task-management-container">
   <div class="task-header">
     <h2><i class="bi bi-list-task"></i> Task Verwaltung</h2>
-    <button class="btn-refresh" onclick="refreshTasks()">
+    <button class="btn-refresh" onclick="window.location.reload()">
       <i class="bi bi-arrow-clockwise"></i> Aktualisieren
     </button>
   </div>
@@ -13,7 +13,7 @@
     </div>
     <div class="info-item">
       <span class="info-label">Aktive Tasks:</span>
-      <span class="info-value" id="active-task-count">{{ tasks|length }}</span>
+      <span class="info-value">{{ tasks|length }}</span>
     </div>
   </div>
 
@@ -31,20 +31,29 @@
           <th>Aktionen</th>
         </tr>
       </thead>
-      <tbody id="task-table-body">
+
+      <tbody>
         {% for task in tasks %}
         <tr data-task-id="{{ task.id }}">
-          <td class="task-id">{{ task.id }}</td>
-          <td class="task-name">{{ task.name }}</td>
-          <td class="task-func">{{ task.func }}</td>
-          <td class="task-next-run">{{ task.next_run }}</td>
-          <td class="task-trigger">{{ task.trigger }}</td>
-          <td class="task-status">
+          <td class="task-id" data-label="Task ID">{{ task.id }}</td>
+          <td class="task-name" data-label="Name">{{ task.name }}</td>
+          <td class="task-func" data-label="Funktion">{{ task.func }}</td>
+          <td class="task-next-run" data-label="Nächster Lauf">
+            {{ task.next_run }}
+          </td>
+          <td class="task-trigger" data-label="Trigger">{{ task.trigger }}</td>
+          <td class="task-status" data-label="Status">
+            {% if task.active %}
             <span class="status-badge status-active">
               <i class="bi bi-check-circle-fill"></i> Aktiv
             </span>
+            {% else %}
+            <span class="status-badge status-paused">
+              <i class="bi bi-pause-circle-fill"></i> Pausiert
+            </span>
+            {% endif %}
           </td>
-          <td class="task-actions">
+          <td class="task-actions" data-label="Aktionen">
             <button
               class="btn-action btn-run"
               onclick="runTask('{{ task.id }}')"
@@ -52,6 +61,7 @@
             >
               <i class="bi bi-play-fill"></i>
             </button>
+            {% if task.active %}
             <button
               class="btn-action btn-pause"
               onclick="pauseTask('{{ task.id }}')"
@@ -59,14 +69,15 @@
             >
               <i class="bi bi-pause-fill"></i>
             </button>
+            {% else %}
             <button
               class="btn-action btn-resume"
               onclick="resumeTask('{{ task.id }}')"
               title="Fortsetzen"
-              style="display: none"
             >
               <i class="bi bi-play-circle-fill"></i>
             </button>
+            {% endif %}
           </td>
         </tr>
         {% endfor %}
@@ -80,7 +91,4 @@
     </div>
     {% endif %}
   </div>
-
-  <!-- Toast Notification -->
-  <div id="toast-notification" class="toast-notification"></div>
 </div>

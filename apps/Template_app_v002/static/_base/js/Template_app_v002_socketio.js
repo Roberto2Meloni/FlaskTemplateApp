@@ -1,6 +1,17 @@
 /**
  * Template_app_v002 - Socket.IO Integration
- * EINFACHE VERSION - Funktionen im globalen Scope für onclick
+ *
+ * Zuständig NUR für:
+ * - Socket Verbindung (connect / disconnect)
+ * - Ping / Pong Tests
+ * - UI Status Badge (Verbunden / Getrennt)
+ * - Event Log Einträge
+ *
+ * NICHT zuständig für (→ admin.js):
+ * - Socket-Tabelle
+ * - refreshSocketList
+ * - disconnectSocket / disconnectAllSockets
+ * - Accordion
  */
 
 console.log("🔌 Template_app_v002 Socket.IO wird initialisiert");
@@ -12,12 +23,6 @@ console.log("🔌 Template_app_v002 Socket.IO wird initialisiert");
 let socket = null;
 let isConnected = false;
 
-// App-Name aus Meta-Tag oder Attribut
-// const APP_NAME =
-//   document.querySelector('meta[name="app-name"]')?.content ||
-//   document.querySelector("[data-app-name]")?.dataset.appName ||
-//   "Template_app_v002";
-
 console.log(`📱 Socket App: ${APP_NAME}`);
 
 // ========================================
@@ -25,27 +30,18 @@ console.log(`📱 Socket App: ${APP_NAME}`);
 // ========================================
 
 function initializeSocket() {
-  console.log("🔌 Initialisiere globale Socket.IO Verbindung...");
-
   if (typeof io === "undefined") {
     console.error("❌ Socket.IO Library nicht gefunden!");
     return null;
   }
 
   try {
-    socket = io();
+    socket = io(`/${APP_NAME}`);
 
-    // Basis Events
     socket.on("connect", () => {
-      console.log("✅ Socket.IO verbunden! (SID:", socket.id + ")");
+      console.log("✅ Socket.IO verbunden! SID:", socket.id);
       isConnected = true;
       updateConnectionStatus(true, socket.id);
-
-      // Bei App registrieren
-      socket.emit(`${APP_NAME}_connect`, {
-        timestamp: new Date().toISOString(),
-        page: window.location.pathname,
-      });
     });
 
     socket.on("disconnect", (reason) => {
@@ -59,27 +55,34 @@ function initializeSocket() {
       updateConnectionStatus(false, null);
     });
 
-    // App-spezifische Events
     socket.on(`${APP_NAME}_connected`, (data) => {
-      console.log("✅ Bei App registriert:", data);
       addLogEntry("success", `Verbunden: ${data.message || "Erfolgreich"}`);
     });
 
-    socket.on(`${APP_NAME}_pong`, (data) => {
-      console.log("🏓 Pong empfangen:", data);
+    socket.on("pong", (data) => {
+      const receiveTime = Date.now();
+      const totalMs = receiveTime - data.client_sent;
+
+      const sentStr = new Date(data.client_sent).toLocaleTimeString("de-DE");
+      const sentMs = data.client_sent % 1000;
+      const serverDate = new Date(data.server_time);
+      const serverStr = serverDate.toLocaleTimeString("de-DE");
+      const serverMs = serverDate.getMilliseconds();
+      const receiveStr = new Date(receiveTime).toLocaleTimeString("de-DE");
+      const receiveMs = receiveTime % 1000;
+
+      addLogEntry("info", `📤 Gesendet:  ${sentStr}:${sentMs}ms`);
+      addLogEntry("info", `🖥️ Server:    ${serverStr}:${serverMs}ms`);
       addLogEntry(
         "info",
-        `Pong empfangen - ${data.active_connections || "?"} Verbindungen`,
+        `📥 Empfangen: ${receiveStr}:${receiveMs}ms | Gesamt: ${totalMs}ms`,
       );
       updateLastPing();
     });
 
-    console.log(`✅ ${APP_NAME}: Registriere Socket-Events`);
-
-    // Socket global verfügbar machen
     window.socket = socket;
     window.isSocketConnected = () => isConnected;
-
+    console.log(`✅ ${APP_NAME}: Socket-Events registriert`);
     return socket;
   } catch (error) {
     console.error("❌ Socket Initialisierung fehlgeschlagen:", error);
@@ -88,13 +91,11 @@ function initializeSocket() {
 }
 
 // ========================================
-// TEST-FUNKTIONEN - GLOBAL FÜR onclick
+// TEST-FUNKTIONEN (für onclick im HTML)
 // ========================================
 
 window.testSocketConnect = function () {
-  console.log("🔌 Teste Verbindung...");
   addLogEntry("info", "Verbinde mit Socket...");
-
   if (!socket) {
     initializeSocket();
   } else if (!socket.connected) {
@@ -109,10 +110,11 @@ window.testSocketPing = function () {
     addLogEntry("error", "Nicht verbunden!");
     return;
   }
-
-  console.log("🏓 Sende Ping...");
-  addLogEntry("info", "Sende Ping...");
-  socket.emit(`${APP_NAME}_ping`);
+  const sendTime = Date.now();
+  const sendTimeStr = new Date(sendTime).toLocaleTimeString("de-DE");
+  const sendMs = sendTime % 1000;
+  addLogEntry("info", `Ping gesendet um ${sendTimeStr}:${sendMs}ms`);
+  socket.emit("ping", { client_sent: sendTime });
 };
 
 window.testSocketDisconnect = function () {
@@ -120,87 +122,18 @@ window.testSocketDisconnect = function () {
     addLogEntry("warning", "Bereits getrennt!");
     return;
   }
-
-  console.log("👋 Trenne Verbindung...");
   addLogEntry("info", "Trenne Verbindung...");
-  socket.emit(`${APP_NAME}_disconnect`);
   socket.disconnect();
 };
 
 window.clearTestLog = function () {
   const logElement = document.getElementById("testLog");
   if (!logElement) return;
-
   logElement.innerHTML = `
     <div class="log-entry log-info">
       <span class="log-time">--:--:--</span>
       <span class="log-message">Log gelöscht - Bereit für Tests...</span>
-    </div>
-  `;
-};
-
-// ========================================
-// DYNAMISCHER SOCKET-REFRESH (GEÄNDERT!)
-// ========================================
-
-window.refreshSocketList = async function () {
-  console.log("🔄 Lade Socket-Liste neu...");
-  addLogEntry("info", "Socket-Liste wird aktualisiert...");
-
-  // Prüfe ob API URL definiert ist
-  if (typeof API_GET_SOCKETS === "undefined") {
-    console.warn("⚠️ API_GET_SOCKETS nicht definiert - verwende Reload");
-    location.reload();
-    return;
-  }
-
-  try {
-    const response = await fetch(API_GET_SOCKETS, {
-      headers: {
-        "X-Requested-With": "XMLHttpRequest",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.success) {
-      console.log("✅ Socket-Daten:", data);
-
-      // Aktualisiere Tabelle wenn Funktion existiert
-      if (typeof window.updateSocketTable === "function") {
-        window.updateSocketTable(data);
-      }
-
-      // Aktualisiere Statistiken wenn Funktion existiert
-      if (typeof window.updateStatistics === "function") {
-        window.updateStatistics(data);
-      }
-
-      addLogEntry("success", `${data.total || 0} Sockets geladen`);
-    } else {
-      throw new Error(data.message || "Unbekannter Fehler");
-    }
-  } catch (error) {
-    console.error("❌ Fehler beim Laden:", error);
-    addLogEntry("error", "Fehler - lade Seite neu...");
-
-    // Fallback: Reload nach kurzer Verzögerung
-    setTimeout(() => location.reload(), 1500);
-  }
-};
-
-window.disconnectAllSockets = function () {
-  console.log("⚠️ Trenne alle Sockets...");
-  alert("Diese Funktion wird in einer späteren Version implementiert");
-};
-
-window.disconnectSocket = function (sid) {
-  console.log("⚠️ Trenne Socket:", sid);
-  alert(`Socket ${sid} trennen - wird in einer späteren Version implementiert`);
+    </div>`;
 };
 
 // ========================================
@@ -208,33 +141,25 @@ window.disconnectSocket = function (sid) {
 // ========================================
 
 function updateConnectionStatus(connected, socketId) {
-  const statusElement = document.getElementById("socketStatus");
-  const socketIdElement = document.getElementById("socketId");
+  const statusEl = document.getElementById("socketStatus");
+  const socketIdEl = document.getElementById("socketId");
   const connectBtn = document.getElementById("connectBtn");
   const pingBtn = document.getElementById("pingBtn");
   const disconnectBtn = document.getElementById("disconnectBtn");
 
-  if (!statusElement) return;
+  if (!statusEl) return;
 
   if (connected) {
-    statusElement.className = "status-badge online";
-    statusElement.innerHTML = `
-      <span class="status-dot"></span>
-      <span class="status-text">Verbunden</span>
-    `;
-    socketIdElement.textContent = `Socket ID: ${socketId}`;
-
+    statusEl.className = "status-badge online";
+    statusEl.innerHTML = `<span class="status-dot"></span><span class="status-text">Verbunden</span>`;
+    if (socketIdEl) socketIdEl.textContent = `Socket ID: ${socketId}`;
     if (connectBtn) connectBtn.disabled = true;
     if (pingBtn) pingBtn.disabled = false;
     if (disconnectBtn) disconnectBtn.disabled = false;
   } else {
-    statusElement.className = "status-badge offline";
-    statusElement.innerHTML = `
-      <span class="status-dot"></span>
-      <span class="status-text">Getrennt</span>
-    `;
-    socketIdElement.textContent = "Socket ID: -";
-
+    statusEl.className = "status-badge offline";
+    statusEl.innerHTML = `<span class="status-dot"></span><span class="status-text">Getrennt</span>`;
+    if (socketIdEl) socketIdEl.textContent = "Socket ID: -";
     if (connectBtn) connectBtn.disabled = false;
     if (pingBtn) pingBtn.disabled = true;
     if (disconnectBtn) disconnectBtn.disabled = true;
@@ -244,27 +169,18 @@ function updateConnectionStatus(connected, socketId) {
 function addLogEntry(type, message) {
   const logElement = document.getElementById("testLog");
   if (!logElement) return;
-
-  const now = new Date();
-  const time = now.toLocaleTimeString("de-DE");
-
+  const time = new Date().toLocaleTimeString("de-DE");
   const entry = document.createElement("div");
   entry.className = `log-entry log-${type}`;
-  entry.innerHTML = `
-    <span class="log-time">${time}</span>
-    <span class="log-message">${message}</span>
-  `;
-
+  entry.innerHTML = `<span class="log-time">${time}</span><span class="log-message">${message}</span>`;
   logElement.appendChild(entry);
   logElement.scrollTop = logElement.scrollHeight;
 }
 
 function updateLastPing() {
-  const lastPingElement = document.getElementById("lastPing");
-  if (!lastPingElement) return;
-
-  const now = new Date();
-  lastPingElement.textContent = `Letzter Ping: ${now.toLocaleTimeString("de-DE")}`;
+  const el = document.getElementById("lastPing");
+  if (el)
+    el.textContent = `Letzter Ping: ${new Date().toLocaleTimeString("de-DE")}`;
 }
 
 // ========================================
@@ -273,33 +189,13 @@ function updateLastPing() {
 
 window.AppSocket = {
   appName: APP_NAME,
-
   emit: (eventName, data) => {
-    if (socket && socket.connected) {
-      socket.emit(`${APP_NAME}_${eventName}`, data);
-      console.log(`📤 ${APP_NAME}_${eventName}:`, data);
-    } else {
-      console.warn("⚠️ Socket nicht verbunden");
-    }
+    if (socket?.connected) socket.emit(`${APP_NAME}_${eventName}`, data);
   },
-
-  on: (eventName, callback) => {
-    if (socket) {
-      socket.on(`${APP_NAME}_${eventName}`, callback);
-    }
+  on: (eventName, cb) => {
+    if (socket) socket.on(`${APP_NAME}_${eventName}`, cb);
   },
-
-  sendPing: () => {
-    if (socket && socket.connected) {
-      socket.emit(`${APP_NAME}_ping`);
-      console.log("🏓 Ping gesendet");
-    } else {
-      console.warn("⚠️ Socket nicht verbunden");
-    }
-  },
-
-  isConnected: () => socket && socket.connected,
-
+  isConnected: () => socket?.connected ?? false,
   getSocket: () => socket,
 };
 
@@ -313,10 +209,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 window.addEventListener("beforeunload", () => {
-  if (socket && socket.connected) {
-    console.log("👋 Seite wird geschlossen - trenne Socket");
-    socket.emit(`${APP_NAME}_disconnect`);
-  }
+  if (socket?.connected) socket.disconnect();
 });
 
-console.log(`✅ ${APP_NAME} Socket Integration bereit`);
+console.log(`✅ ${APP_NAME} socketio.js bereit`);

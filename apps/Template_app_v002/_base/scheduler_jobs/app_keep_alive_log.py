@@ -1,8 +1,18 @@
-from ... import app_logger, app_config  # ✅ Beide aus Haupt-__init__.py
+"""
+Keep Alive Log Job
+"""
+
+from ... import app_logger, app_config, APP_NAME
 
 
 def app_keep_alive_log():
     """
-    Hauptfunktion zur Synchronisation des Dateisystems mit der Datenbank
+    Keep Alive Log - zeigt an dass die App läuft
     """
-    app_logger.info(f"Keep Alive Log für die App {app_config.app_name}")
+    try:
+        app_logger.info(f"💓 Keep Alive | App: {APP_NAME} v{app_config.app_version}")
+        return True
+
+    except Exception as e:
+        app_logger.error(f"❌ Fehler in Keep Alive Log: {str(e)}")
+        return False

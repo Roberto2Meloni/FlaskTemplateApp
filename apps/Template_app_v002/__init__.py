@@ -27,6 +27,7 @@ blueprint = Blueprint(
     static_url_path=app_config.blueprint_static_url_path,
 )
 
+
 app_logger.info(f"Blueprint '{blueprint.name}' registriert")
 
 # Exportiere alles
@@ -41,7 +42,6 @@ __all__ = ["blueprint", "app_logger", "app_config", "APP_NAME", "APP_ROOT", "ini
 def _register_routes():
     """Importiere Routes (intern, nach Blueprint-Erstellung)"""
     from ._base.routes import api_routes, admin_routes, admin_api_routes
-
     from ._custom.routes import routes, admin_routes
 
     app_logger.info("Routes registriert")
@@ -49,28 +49,52 @@ def _register_routes():
 
 def _register_extensions():
     """Importiere optionale Extensions"""
+
+    # ========================================
+    # SOCKETIO
+    # ========================================
     if app_config.socketio_enabled:
         try:
-            app_logger.debug(
-                f"{app_config.app_name}: starte base socketio_events import"
-            )
+            app_logger.debug(f"{app_config.app_name}: starte socketio_events import")
+
+            # Base SocketIO Events
             from ._base import socketio_events
 
-            app_logger.debug(f"{app_config.app_name}: ende base socketio_events import")
+            app_logger.debug(f"{app_config.app_name}: base socketio_events geladen")
 
-            app_logger.info("SocketIO registriert")
-        except ImportError:
-            pass
+            # Custom SocketIO Events
+            try:
+                from ._custom import socketio_events as custom_socketio_events
+
+                app_logger.debug(
+                    f"{app_config.app_name}: custom socketio_events geladen"
+                )
+            except ImportError as e:
+                app_logger.debug(
+                    f"{app_config.app_name}: keine custom socketio_events: {e}"
+                )
+
+            app_logger.info("SocketIO registriert (Base + Custom)")
+
+        except ImportError as e:
+            app_logger.warning(f"SocketIO konnte nicht geladen werden: {e}")
     else:
         app_logger.debug(f"{app_config.app_name}: socketio_disabled")
 
+    # ========================================
+    # SCHEDULER
+    # ========================================
+    # ⚠️ WICHTIG: Nur Module importieren, NICHT initialisieren!
+    # Die Initialisierung erfolgt in init_app()
     if app_config.scheduler_enabled:
         try:
+            # Importiere Module (damit Funktionen verfügbar sind)
             from ._base import tasks
+            from ._custom import tasks as custom_tasks  # ✅ Alias wegen Namenskonflikt
 
-            app_logger.info("Scheduler registriert")
-        except ImportError:
-            pass
+            app_logger.info("Scheduler Module geladen (Base + Custom)")
+        except ImportError as e:
+            app_logger.warning(f"Scheduler Module nicht gefunden: {e}")
 
 
 # Registriere alles beim Import
@@ -97,7 +121,36 @@ def init_app(flask_app, db):
 
     # Blueprint registrieren
     flask_app.register_blueprint(blueprint)
-
     app_logger.info(f"Blueprint '{blueprint.name}' in Flask App registriert")
+
+    # ========================================
+    # WICHTIG: Scheduler initialisieren
+    # ========================================
+    if app_config.scheduler_enabled:
+        try:
+            # Base Scheduler initialisieren
+            from ._base.tasks import init_scheduler
+
+            init_scheduler(flask_app)
+            app_logger.info("✅ Base Scheduler initialisiert")
+        except Exception as e:
+            app_logger.error(f"❌ Fehler beim Initialisieren des Base Schedulers: {e}")
+            import traceback
+
+            app_logger.error(traceback.format_exc())
+
+        try:
+            # Custom Scheduler initialisieren
+            from ._custom.tasks import init_custom_scheduler
+
+            init_custom_scheduler(flask_app)
+            app_logger.info("✅ Custom Scheduler initialisiert")
+        except Exception as e:
+            app_logger.error(
+                f"❌ Fehler beim Initialisieren des Custom Schedulers: {e}"
+            )
+            import traceback
+
+            app_logger.error(traceback.format_exc())
 
     return blueprint

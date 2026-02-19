@@ -1,35 +1,40 @@
 """
-Template_app_v002 Tasks & Scheduler
+Template_app_v002 Base Tasks & Scheduler
 """
 
 import threading
-from .. import app_logger, app_config, APP_NAME  # ✅ Aus Haupt-__init__.py
+from .. import app_logger, app_config, APP_NAME
 from flask_apscheduler import APScheduler
 from app.scheduler_manager import register_scheduler
 from .scheduler_jobs.app_keep_alive_log import app_keep_alive_log
+from app import app
 
-app_logger.info(f"Starte App-{APP_NAME} Tasks")
+app_logger.info(f"📦 Lade Base Tasks für {APP_NAME}")
 
-# Lokaler App-Scheduler
+# Lokaler App-Scheduler für Base Tasks
 app_scheduler = APScheduler()
 
 
 def init_scheduler(flask_app):
     """
-    Initialisiert den Scheduler für diese App
+    Initialisiert den Base-Scheduler für diese App
 
     Args:
         flask_app: Flask application instance
     """
     try:
+        app_logger.info(f"🔧 Initialisiere Base-Scheduler für {APP_NAME}...")
+
         # Definition der Timer
         timer_app_keep_alive_log = app_config.get_task_interval("app_keep_alive_log")
 
+        # Task hinzufügen
         app_scheduler.add_job(
             id=f"{APP_NAME}_app_keep_alive_log",
             func=app_keep_alive_log,
             trigger="interval",
             minutes=timer_app_keep_alive_log,
+            name="Keep Alive Log",
         )
 
         app_scheduler.init_app(flask_app)
@@ -38,19 +43,26 @@ def init_scheduler(flask_app):
         # Registriere Scheduler im globalen Manager
         register_scheduler(APP_NAME, app_scheduler)
 
-        app_logger.info(f"✅ Scheduler für {APP_NAME} initialisiert")
+        app_logger.info(
+            f"✅ Base-Scheduler: '{APP_NAME}_app_keep_alive_log' ({timer_app_keep_alive_log}min)"
+        )
 
         # Initiale Ausführung in separatem Thread
         thread_app_keep_alive_log = threading.Thread(
-            target=run_initial_app_keep_alive_log,  # ✅ Korrigiert
-            args=(flask_app,),  # ✅ App-Kontext übergeben
+            target=run_initial_app_keep_alive_log,
+            args=(flask_app,),
             daemon=True,
-            name=f"Init_{APP_NAME}_keep_alive_log",
+            name=f"Init_{APP_NAME}_keep_alive",
         )
         thread_app_keep_alive_log.start()
 
     except Exception as e:
-        app_logger.error(f"Fehler beim Initialisieren von {APP_NAME} Tasks: {e}")
+        app_logger.error(
+            f"❌ Fehler beim Initialisieren von {APP_NAME} Base Tasks: {e}"
+        )
+        import traceback
+
+        app_logger.error(traceback.format_exc())
 
 
 def run_initial_app_keep_alive_log(flask_app):
@@ -66,16 +78,15 @@ def run_initial_app_keep_alive_log(flask_app):
 
     try:
         with flask_app.app_context():
-            app_logger.info(f"Initiale Keep Alive Log für {APP_NAME} gestartet")
-            app_keep_alive_log()  # ✅ Korrigiert - war rekursiv!
-            app_logger.info("Initiale Keep Alive Log erfolgreich abgeschlossen")
+            app_logger.info(f"🚀 Initiale Keep Alive Log für {APP_NAME}")
+            app_keep_alive_log()
     except Exception as e:
-        app_logger.error(f"Fehler bei initialer Keep Alive Log: {str(e)}")
+        app_logger.error(f"❌ Fehler bei initialer Keep Alive Log: {str(e)}")
 
 
 def get_all_tasks():
     """
-    Holt alle registrierten Tasks aus dem App-Scheduler
+    Holt alle registrierten Tasks aus dem Base-Scheduler
 
     Returns:
         list: Liste mit Task-Informationen
@@ -110,16 +121,15 @@ def get_all_tasks():
                 }
                 tasks.append(task_info)
 
-        app_logger.debug(f"Gefundene Tasks: {len(tasks)}")
+        app_logger.debug(f"Base Tasks: {len(tasks)} gefunden")
         return tasks
 
     except Exception as e:
-        app_logger.error(f"Fehler beim Laden der Tasks: {e}")
+        app_logger.error(f"❌ Fehler beim Laden der Base Tasks: {e}")
         return []
 
 
-# ❌ ENTFERNEN - wird von init_app() aufgerufen!
+# ❌ NICHT HIER AUFRUFEN - wird von init_app() aufgerufen!
 # init_scheduler(app)
-# app_logger.info(f"Ende App-{app_config.app_name} Tasks")
 
-app_logger.info(f"Ende App-{APP_NAME} Tasks Modul geladen")
+app_logger.info(f"✓ Base Tasks Modul geladen")

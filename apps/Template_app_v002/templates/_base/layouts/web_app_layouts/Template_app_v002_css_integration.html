@@ -44,7 +44,13 @@
 <!-- Socket-Verwaltung (nur auf Socket-Seite) -->
 <link
   rel="stylesheet"
-  href="{{ url_for('Template_app_v002.static', filename='_base/css/Template_app_v002_admin_sockets.css') }}"
+  href="{{ url_for('Template_app_v002.static', filename='_base/css/Template_app_v002_admin_socket.css') }}"
+/>
+
+<!-- Task-Verwaltung -->
+<link
+  rel="stylesheet"
+  href="{{ url_for('Template_app_v002.static', filename='_base/css/Template_app_v002_admin_task.css') }}"
 />
 
 <!-- Log-Viewer (nur auf Log-Seite) -->
@@ -94,3 +100,6 @@
   href="{{ url_for('Template_app_v002.static', filename='_custom/css/Template_app_v002_admin_logview.css') }}"
 />
 {% endif %} {% endif %} {% endif %}
+
+<!-- Integriere custom css Files HTML-->
+{% include "_custom/layout/Template_app_v002_integrate_css.html" %}

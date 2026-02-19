@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     let matchingLink = linksInfo.find(
-      (linkInfo) => linkInfo.href === currentURL
+      (linkInfo) => linkInfo.href === currentURL,
     );
 
     // Spezialfall: Root → Dashboard
@@ -49,13 +49,13 @@ document.addEventListener("DOMContentLoaded", function () {
       (currentURL === "/" || currentURL.endsWith("/Template_app_v001"))
     ) {
       matchingLink = linksInfo.find(
-        (linkInfo) => linkInfo.page === "dashboard"
+        (linkInfo) => linkInfo.page === "dashboard",
       );
     }
 
     if (matchingLink) {
       linksInfo.forEach((linkInfo) =>
-        linkInfo.parentLi.classList.remove("active")
+        linkInfo.parentLi.classList.remove("active"),
       );
       matchingLink.parentLi.classList.add("active");
       console.log(`✓ Hauptnav: "${matchingLink.text}" aktiv`);
@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // NUR Admin-Button aktivieren
     const adminButton = mainLinksInfo.find(
-      (linkInfo) => linkInfo.page === "app_settings"
+      (linkInfo) => linkInfo.page === "app_settings",
     );
     if (adminButton) {
       adminButton.parentLi.classList.add("active");
@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     const adminNavLinks = document.querySelectorAll(
-      "#navigation-admin .nav-link-admin"
+      "#navigation-admin .nav-link-admin",
     );
     const adminLinksInfo = [];
 
@@ -114,7 +114,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     const matchingAdminLink = adminLinksInfo.find(
-      (linkInfo) => linkInfo.href === currentURL
+      (linkInfo) => linkInfo.href === currentURL,
     );
 
     if (matchingAdminLink) {
@@ -126,7 +126,7 @@ document.addEventListener("DOMContentLoaded", function () {
     } else {
       if (adminLinksInfo.length > 0) {
         adminLinksInfo.forEach((linkInfo) =>
-          linkInfo.parentLi.classList.remove("active")
+          linkInfo.parentLi.classList.remove("active"),
         );
         adminLinksInfo[0].parentLi.classList.add("active");
       }
@@ -141,7 +141,7 @@ document.addEventListener("DOMContentLoaded", function () {
     console.log("\n→ Installiere Admin Event Listeners");
 
     const adminNavLinks = document.querySelectorAll(
-      "#navigation-admin .nav-link-admin"
+      "#navigation-admin .nav-link-admin",
     );
 
     if (adminNavLinks.length === 0) {
@@ -259,7 +259,7 @@ document.addEventListener("DOMContentLoaded", function () {
       contentArea.innerHTML = html;
 
       const adminNavLinks = document.querySelectorAll(
-        "#navigation-admin .nav-link-admin"
+        "#navigation-admin .nav-link-admin",
       );
       adminNavLinks.forEach((link) => {
         const parentLi = link.closest(".list");
@@ -418,7 +418,7 @@ document.addEventListener("DOMContentLoaded", function () {
       } else {
         showStatus(
           "Fehler: " + (result.message || "Unbekannter Fehler"),
-          "error"
+          "error",
         );
       }
     } catch (error) {
@@ -499,7 +499,7 @@ document.addEventListener("DOMContentLoaded", function () {
           headers: {
             "X-Requested-With": "XMLHttpRequest",
           },
-        }
+        },
       );
 
       const result = await response.json();
@@ -538,14 +538,14 @@ document.addEventListener("DOMContentLoaded", function () {
       const response = await fetch(
         `{{ url_for('Template_app_v001.api_disconnect_socket', sid='SID_PLACEHOLDER') }}`.replace(
           "SID_PLACEHOLDER",
-          sid
+          sid,
         ),
         {
           method: "POST",
           headers: {
             "X-Requested-With": "XMLHttpRequest",
           },
-        }
+        },
       );
 
       const result = await response.json();
@@ -599,7 +599,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 <td>
                     <code class="socket-id">${socket.sid.substring(
                       0,
-                      16
+                      16,
                     )}...</code>
                 </td>
                 <td>
@@ -615,7 +615,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     </button>
                 </td>
             </tr>
-        `
+        `,
       )
       .join("");
   }
@@ -665,7 +665,7 @@ async function pauseTask(taskId) {
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     const data = await response.json();
@@ -704,7 +704,7 @@ async function resumeTask(taskId) {
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     const data = await response.json();

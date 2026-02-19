@@ -14,7 +14,8 @@
     "level": "DEBUG"
   },
   "tasks_intervall": {
-    "app_keep_alive_log": 200
+    "app_keep_alive_log": 200,
+    "app_custom_keep_alive_log": 10
   },
   "features": {
     "socketio_enabled": true,

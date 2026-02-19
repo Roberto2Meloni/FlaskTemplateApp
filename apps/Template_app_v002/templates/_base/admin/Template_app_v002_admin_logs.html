@@ -65,13 +65,14 @@
           id="search-filter"
           class="form-control"
           placeholder="Nach Text suchen..."
+          oninput="LogViewer.applyFilters()"
         />
       </div>
 
-      <!-- Buttons (ohne Download) -->
+      <!-- Buttons -->
       <div class="filter-actions">
-        <button class="btn btn-primary" onclick="applyFilters()">
-          <i class="bi bi-check-circle"></i> Filter anwenden
+        <button class="btn btn-primary" onclick="LogViewer.refreshLogs()">
+          <i class="bi bi-arrow-clockwise"></i>
         </button>
         <button class="btn btn-secondary" onclick="resetFilters()">
           <i class="bi bi-arrow-clockwise"></i> Zurücksetzen
@@ -90,6 +91,18 @@
       </button>
       <button class="btn-quick-filter" onclick="quickFilter('INFO')">
         <i class="bi bi-info-circle-fill"></i> Nur Info
+      </button>
+      <button class="btn-quick-filter">
+        <i class="bi bi-info-circle-fill"></i> Log Level: {{
+        app_config.logger_level }}
+      </button>
+      <button
+        class="btn-quick-filter"
+        id="auto-refresh-btn"
+        onclick="LogViewer.toggleAutoRefresh()"
+      >
+        <i class="bi bi-play-circle"></i> Auto Refresh:
+        <span>Aus</span>
       </button>
     </div>
   </div>

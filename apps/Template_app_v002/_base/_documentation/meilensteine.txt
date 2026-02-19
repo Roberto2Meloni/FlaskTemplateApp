@@ -1,9 +1,10 @@
 Meilen Steine
-- Integration der Task Scheduler
-- Korrekte anzeige App config
-- Kontrolle JS
-- kontrolle CS Elemente
-- entfneren app_info
-- Wo wird der Anzeigename der App verwendet?
+- Import custom socket
 - Warnung meldung, wenn SocketIO nicht aktiviert ist muss meldugn ersechenne, dass die app neugestartet werden muss!
 - custom socketio events js datei
+
+
+
+
+{% include "_custom/admin/include/Template_app_v002_include_info.html" %}
+<!-- Wird via _base/admin/xxx_admin_info.html integriert -->
