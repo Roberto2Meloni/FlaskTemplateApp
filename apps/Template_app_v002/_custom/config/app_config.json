@@ -1,6 +1,7 @@
 {
   "app_display_name": "Template_app_v002",
   "app_version": "0.0.0",
+  "admin_app_version": "0.0.1",
   "app_author": "Karatekit_123",
   "app_description": "Flask Application based on Template",
   "blueprint": {
@@ -20,6 +21,6 @@
   "features": {
     "socketio_enabled": true,
     "scheduler_enabled": true,
-    "admin_panel_enabled": false
+    "admin_panel_enabled": true
   }
 }

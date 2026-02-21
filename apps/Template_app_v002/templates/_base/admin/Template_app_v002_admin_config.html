@@ -56,6 +56,27 @@
         </div>
       </div>
 
+      <!-- Adimn App Version (Read-only) -->
+    <div class="config-section">
+       <h5 class="section-title"><i class="bi bi-box-seam"></i> Version</h5>
+      </h5>
+      <div class="config-item readonly">
+        <label for="app_name" class="config-label">
+          Admin App Version
+          <span class="readonly-badge">Schreibgeschützt</span>
+        </label>
+        <input
+          type="text"
+          id="admin_app_version"
+          class="config-input"
+          value="{{ app_config.admin_app_version }}"
+          readonly
+          title="Die Version kann nicht geändert werden"
+        />
+      </div>
+    </div>
+
+
       <!-- App Version -->
       <div class="config-section">
         <h5 class="section-title"><i class="bi bi-box-seam"></i> Version</h5>
