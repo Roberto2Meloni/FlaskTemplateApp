@@ -1,0 +1,523 @@
+/**
+ * ToDo_Ultimate - Log Viewer Styles (FIXED)
+ * Mit höherer Spezifität um admin.css zu überschreiben
+ */
+
+/* ========================================
+   LOG VIEWER CONTAINER
+   ======================================== */
+
+.log-viewer-container {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+/* ========================================
+   HEADER & STATISTICS
+   ======================================== */
+
+.log-viewer-container .log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e0e0e0;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.log-viewer-container .log-header h2 {
+    margin: 0;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 28px;
+}
+
+.log-viewer-container .log-header h2 i {
+    color: #3498db;
+}
+
+.log-viewer-container .log-stats {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.log-viewer-container .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.log-viewer-container .stat-item i {
+    color: #3498db;
+    font-size: 18px;
+}
+
+.log-viewer-container .stat-label {
+    color: #666;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.log-viewer-container .stat-value {
+    color: #2c3e50;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* ========================================
+   FILTER CONTROLS
+   ======================================== */
+
+.log-viewer-container .log-controls {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    margin-bottom: 20px;
+}
+
+.log-viewer-container .filter-row {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+
+.log-viewer-container .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 150px;
+}
+
+.log-viewer-container .filter-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.log-viewer-container .filter-group label i {
+    color: #3498db;
+}
+
+.log-viewer-container .filter-search {
+    flex: 1;
+    min-width: 250px;
+}
+
+.log-viewer-container .form-control {
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    background: white;
+    color: #333;
+}
+
+.log-viewer-container .form-control:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.log-viewer-container .form-control:hover {
+    border-color: #bbb;
+}
+
+.log-viewer-container .filter-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+/* ========================================
+   QUICK FILTERS
+   ======================================== */
+
+.log-viewer-container .quick-filters {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.log-viewer-container .quick-filter-label {
+    font-weight: 600;
+    color: #666;
+    font-size: 14px;
+}
+
+.log-viewer-container .btn-quick-filter {
+    padding: 8px 16px;
+    background: #ecf0f1;
+    border: 1px solid #bdc3c7;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    color: #555;
+}
+
+.log-viewer-container .btn-quick-filter:hover {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+}
+
+.log-viewer-container .btn-quick-filter i {
+    font-size: 14px;
+}
+
+/* ========================================
+   LOG WARNING
+   ======================================== */
+
+.log-viewer-container .log-warning {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffe8a1 100%);
+    border: 1px solid #ffc107;
+    border-left: 4px solid #ffc107;
+    color: #856404;
+    padding: 15px 20px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+}
+
+.log-viewer-container .log-warning i {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+/* ========================================
+   LOG DISPLAY (Terminal Style)
+   WICHTIG: Höchste Spezifität!
+   ======================================== */
+
+.log-viewer-container .log-display {
+    background: #1e1e1e !important;
+    /* Terminal-Hintergrund */
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.log-viewer-container .log-table-container {
+    overflow-x: auto;
+    max-height: calc(100vh - 450px);
+    overflow-y: auto;
+}
+
+/* Custom Scrollbar */
+.log-viewer-container .log-table-container::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+.log-viewer-container .log-table-container::-webkit-scrollbar-track {
+    background: #2c2c2c;
+}
+
+.log-viewer-container .log-table-container::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 6px;
+}
+
+.log-viewer-container .log-table-container::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
+
+/* ========================================
+   LOG TABLE (Terminal Style)
+   ======================================== */
+
+.log-viewer-container .log-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+    background: #1e1e1e;
+    /* WICHTIG */
+}
+
+.log-viewer-container .log-table thead {
+    background: #2c3e50 !important;
+    color: #ecf0f1 !important;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.log-viewer-container .log-table th {
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #ecf0f1 !important;
+}
+
+/* Column Widths */
+.log-viewer-container .col-timestamp {
+    width: 180px;
+    min-width: 180px;
+}
+
+.log-viewer-container .col-level {
+    width: 140px;
+    min-width: 140px;
+}
+
+.log-viewer-container .col-logger {
+    width: 220px;
+    min-width: 220px;
+}
+
+.log-viewer-container .col-message {
+    width: auto;
+    min-width: 400px;
+}
+
+/* ========================================
+   LOG ROWS (Terminal Style)
+   ======================================== */
+
+.log-viewer-container .log-row {
+    border-bottom: 1px solid #333 !important;
+    transition: background 0.2s ease;
+    background: #252525 !important;
+}
+
+.log-viewer-container .log-row:hover {
+    background: #2a2a2a !important;
+}
+
+.log-viewer-container .log-table td {
+    padding: 10px 15px;
+    vertical-align: top;
+    color: #e0e0e0 !important;
+}
+
+/* Zebra Striping */
+.log-viewer-container .log-row:nth-child(even) {
+    background: #222 !important;
+}
+
+.log-viewer-container .log-row:nth-child(even):hover {
+    background: #2a2a2a !important;
+}
+
+/* ========================================
+   LOG CELLS
+   ======================================== */
+
+.log-viewer-container .log-timestamp {
+    color: #95a5a6 !important;
+    white-space: nowrap;
+    font-size: 12px;
+}
+
+.log-viewer-container .log-level {
+    font-weight: 600;
+}
+
+.log-viewer-container .log-logger {
+    color: #3498db !important;
+    font-weight: 500;
+    word-break: break-word;
+}
+
+.log-viewer-container .log-message {
+    word-break: break-word;
+    line-height: 1.6;
+    color: #ecf0f1 !important;
+}
+
+/* ========================================
+   LEVEL BADGES
+   ======================================== */
+
+.log-viewer-container .level-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.log-viewer-container .level-badge i {
+    font-size: 12px;
+}
+
+.log-viewer-container .level-info {
+    background: #3498db;
+    color: white;
+}
+
+.log-viewer-container .level-warning {
+    background: #f39c12;
+    color: white;
+}
+
+.log-viewer-container .level-error {
+    background: #e74c3c;
+    color: white;
+}
+
+.log-viewer-container .level-critical {
+    background: #c0392b;
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+.log-viewer-container .level-debug {
+    background: #95a5a6;
+    color: white;
+}
+
+.log-viewer-container .level-unknown {
+    background: #7f8c8d;
+    color: white;
+}
+
+/* ========================================
+   ROW HIGHLIGHTING
+   ======================================== */
+
+.log-viewer-container .log-level-error,
+.log-viewer-container .log-level-critical {
+    background: rgba(231, 76, 60, 0.15) !important;
+    border-left: 3px solid #e74c3c !important;
+}
+
+.log-viewer-container .log-level-warning {
+    background: rgba(243, 156, 18, 0.12) !important;
+    border-left: 3px solid #f39c12 !important;
+}
+
+.log-viewer-container .log-level-info {
+    background: rgba(52, 152, 219, 0.08) !important;
+}
+
+.log-viewer-container .log-level-debug {
+    opacity: 0.8;
+}
+
+/* ========================================
+   EMPTY STATE
+   ======================================== */
+
+.log-viewer-container .no-logs-message {
+    text-align: center;
+    padding: 80px 20px;
+    color: #95a5a6;
+    background: #2c2c2c;
+}
+
+.log-viewer-container .no-logs-message i {
+    font-size: 64px;
+    margin-bottom: 20px;
+    opacity: 0.3;
+    color: #555;
+}
+
+.log-viewer-container .no-logs-message p {
+    margin: 10px 0;
+    color: #bbb;
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.log-viewer-container .no-logs-message small {
+    color: #888;
+    font-size: 14px;
+}
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 768px) {
+    .log-viewer-container .log-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .log-viewer-container .log-stats {
+        width: 100%;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .log-viewer-container .stat-item {
+        width: 100%;
+    }
+
+    .log-viewer-container .filter-row {
+        flex-direction: column;
+    }
+
+    .log-viewer-container .filter-group {
+        width: 100%;
+    }
+
+    .log-viewer-container .filter-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .log-viewer-container .quick-filters {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .log-viewer-container .btn-quick-filter {
+        width: 100%;
+        justify-content: center;
+    }
+}

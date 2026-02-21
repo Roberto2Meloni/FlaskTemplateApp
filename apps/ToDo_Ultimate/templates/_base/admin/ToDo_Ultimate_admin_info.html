@@ -1,0 +1,132 @@
+<!-- App Info - Moderne Card-Ansicht -->
+<div class="app-info-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1>
+        <i class="bi bi-info-circle-fill"></i>
+        App Information
+      </h1>
+      <p class="subtitle">
+        {{ app_config.app_display_name }} - Version {{ app_config.app_version }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Info Cards Grid -->
+  <div class="info-grid">
+    <!-- Card: Allgemein -->
+    <div class="info-card">
+      <div class="card-header">
+        <i class="bi bi-app-indicator"></i>
+        <h3>Allgemeine Informationen</h3>
+      </div>
+      <div class="card-body">
+        <div class="info-row">
+          <span class="label">App Name</span>
+          <span class="value">{{ app_config.app_name }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Display Name</span>
+          <span class="value">{{ app_config.app_display_name }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Beschreibung</span>
+          <span class="value"
+            >{{ app_config.app_description or 'Keine Beschreibung vorhanden'
+            }}</span
+          >
+        </div>
+      </div>
+    </div>
+
+    <!-- Card: Version & Konfiguration -->
+    <div class="info-card">
+      <div class="card-header">
+        <i class="bi bi-calendar-check"></i>
+        <h3>Version & Konfiguration</h3>
+      </div>
+      <div class="card-body">
+        <div class="info-row highlight">
+          <span class="label">Aktuelle Version</span>
+          <span class="value version">v{{ app_config.app_version }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Blueprint URL</span>
+          <span class="value">{{ app_config.blueprint_url_prefix }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Static URL</span>
+          <span class="value">{{ app_config.blueprint_static_url_path }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Logger Level</span>
+          <span class="badge badge-system">{{ app_config.logger_level }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card: Entwickler -->
+    <div class="info-card">
+      <div class="card-header">
+        <i class="bi bi-person-badge"></i>
+        <h3>Entwickler</h3>
+      </div>
+      <div class="card-body">
+        <div class="info-row">
+          <span class="label">Autor</span>
+          <span class="value">{{ app_config.app_author }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Logger Name</span>
+          <span class="value">{{ app_config.logger_name }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card: Features (volle Breite) -->
+    <div class="info-card full-width">
+      <div class="card-header">
+        <i class="bi bi-toggles"></i>
+        <h3>Aktivierte Features</h3>
+      </div>
+      <div class="card-body">
+        <div class="info-row">
+          <span class="label">SocketIO</span>
+          <span
+            class="badge {% if app_config.socketio_enabled %}badge-category{% else %}badge-tag{% endif %}"
+          >
+            {{ 'Aktiviert' if app_config.socketio_enabled else 'Deaktiviert' }}
+          </span>
+        </div>
+        <div class="info-row">
+          <span class="label">Scheduler</span>
+          <span
+            class="badge {% if app_config.scheduler_enabled %}badge-category{% else %}badge-tag{% endif %}"
+          >
+            {{ 'Aktiviert' if app_config.scheduler_enabled else 'Deaktiviert' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card: Task-Intervalle (falls vorhanden) -->
+    {% if app_config.tasks_intervals %}
+    <div class="info-card full-width">
+      <div class="card-header">
+        <i class="bi bi-list-task"></i>
+        <h3>Task-Intervalle</h3>
+      </div>
+      <div class="card-body">
+        {% for task_name, interval in app_config.tasks_intervals.items() %}
+        <div class="info-row">
+          <span class="label">{{ task_name }}</span>
+          <span class="value">{{ interval }} Minuten</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  {% include "_custom/admin/include/ToDo_Ultimate_include_info.html" %}
+</div>

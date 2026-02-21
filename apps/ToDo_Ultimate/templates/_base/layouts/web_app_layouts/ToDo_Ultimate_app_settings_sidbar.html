@@ -1,0 +1,80 @@
+<div class="navigation-admin" id="navigation-admin">
+  <ul>
+    <div class="upper_items">
+      <li class="list active admin-list">
+        <a
+          href="{{ url_for('ToDo_Ultimate.app_info') }}"
+          class="nav-link-admin"
+          data-page="app_info"
+        >
+          <span class="icon">
+            <i class="bi bi-info-circle-fill"></i>
+          </span>
+          <div class="list_element">App Info</div>
+        </a>
+      </li>
+      <li class="list admin-list">
+        <a
+          href="{{ url_for('ToDo_Ultimate.app_settings_config') }}"
+          class="nav-link-admin"
+          data-page="config"
+        >
+          <span class="icon">
+            <i class="sidebar-icon bi bi-sliders"></i>
+          </span>
+          <div class="list_element">App Konfiguration</div>
+        </a>
+      </li>
+      <li class="list">
+        <a
+          href="{{ url_for('ToDo_Ultimate.app_settings_sockets') }}"
+          class="nav-link-admin"
+          data-page="sockets"
+        >
+          <span class="icon">
+            <i class="bi bi-plug-fill"></i>
+          </span>
+          <div class="list_element">Sockets</div>
+        </a>
+      </li>
+      <li class="list">
+        <a
+          href="{{ url_for('ToDo_Ultimate.app_settings_tasks') }}"
+          class="nav-link-admin"
+          data-page="tasks"
+        >
+          <span class="icon">
+            <i class="bi bi-list-task"></i>
+          </span>
+          <div class="list_element">Task</div>
+        </a>
+      </li>
+      <li class="list">
+        <a
+          href="{{ url_for('ToDo_Ultimate.app_settings_logs') }}"
+          class="nav-link-admin"
+          data-page="logs"
+        >
+          <span class="icon">
+            <i class="bi bi-file-text-fill"></i>
+          </span>
+          <div class="list_element">Logs</div>
+        </a>
+      </li>
+      <li class="list">
+        <a
+          href="{{ url_for('ToDo_Ultimate.app_settings_backup_and_restore') }}"
+          class="nav-link-admin"
+          data-page="backup_and_restore"
+        >
+          <span class="icon">
+            <i class="bi bi-cloud-download"></i>
+          </span>
+          <div class="list_element">Backup & Restore</div>
+        </a>
+      </li>
+      {% include
+      '_custom/layout/ToDo_Ultimate_admin_vertical_sidbar_elements.html' %}
+    </div>
+  </ul>
+</div>

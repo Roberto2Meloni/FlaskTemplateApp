@@ -1,0 +1,86 @@
+{% extends "layouts/websites/base.html" %}
+
+<!-- ========================================
+     WINDOW TITLE & FAVICON
+     ======================================== -->
+{% block window_title_and_icon %}
+<title>{{ app_config.app_display_name }}</title>
+<link
+  rel="icon"
+  type="image/png"
+  href="{{ url_for('ToDo_Ultimate.static', filename='_base/img/icon.png') }}"
+/>
+<link
+  rel="icon"
+  type="image/png"
+  sizes="32x32"
+  href="{{ url_for('ToDo_Ultimate.static', filename='_base/img/icon.png') }}"
+/>
+<link
+  rel="icon"
+  type="image/png"
+  sizes="16x16"
+  href="{{ url_for('ToDo_Ultimate.static', filename='_base/img/icon.png') }}"
+/>
+<link
+  rel="apple-touch-icon"
+  href="{{ url_for('ToDo_Ultimate.static', filename='_base/img/icon.png') }}"
+/>
+{% endblock %}
+
+<!-- ========================================
+     HEAD (Meta Tags)
+     ======================================== -->
+{% block head %}
+<!-- App Name für JavaScript -->
+<meta name="app-name" content="{{ app_config.app_name }}" />
+{% endblock %}
+
+<!-- ========================================
+     STYLES
+     ======================================== -->
+{% block app_styles %} {% include
+"_base/layouts/web_app_layouts/ToDo_Ultimate_css_integration.html" %} {%
+endblock %}
+
+<!-- ========================================
+     NAVIGATION (entfernen)
+     ======================================== -->
+{% block navigation %}
+<!-- Standard Navigation deaktiviert -->
+{% endblock %}
+
+<!-- ========================================
+     FOOTER (entfernen)
+     ======================================== -->
+{% block footer %}
+<!-- Standard Footer deaktiviert -->
+{% endblock %}
+
+<!-- ========================================
+     MAIN CONTENT
+     ======================================== -->
+{% block content %}
+<!-- Toast Notification -->
+<div id="toast-notification" class="toast-notification"></div>
+
+<div class="main-content" data-app-name="{{ app_config.app_name }}">
+  <!-- Sidebar -->
+  {% include
+  "_base/layouts/web_app_layouts/ToDo_Ultimate_sidebar_vertical.html" %}
+
+  <!-- App Content Area -->
+  <div class="app-content">
+    {% block main_content %}
+    <!-- Spezifischer App-Content wird hier eingefügt -->
+    {% endblock %}
+  </div>
+</div>
+{% endblock %}
+
+<!-- ========================================
+     JAVASCRIPT
+     ======================================== -->
+{% block javascripts %} {% include
+"_base/layouts/web_app_layouts/ToDo_Ultimate_js_integration.html" %} {%
+endblock %}

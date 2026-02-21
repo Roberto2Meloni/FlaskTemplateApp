@@ -1,0 +1,25 @@
+{
+  "app_display_name": "ToDo_Ultimate",
+  "app_version": "0.0.0",
+  "app_author": "Karatekit_123",
+  "app_description": "Flask Application based on Template",
+  "blueprint": {
+    "url_prefix": "/ToDo_Ultimate",
+    "static_url_path": "/ToDo_Ultimate_static",
+    "template_folder": "templates",
+    "static_folder": "static"
+  },
+  "logger": {
+    "name": "APP-ToDo_Ultimate",
+    "level": "DEBUG"
+  },
+  "tasks_intervall": {
+    "app_keep_alive_log": 200,
+    "app_custom_keep_alive_log": 10
+  },
+  "features": {
+    "socketio_enabled": true,
+    "scheduler_enabled": true,
+    "admin_panel_enabled": false
+  }
+}

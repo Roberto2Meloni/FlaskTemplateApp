@@ -1,0 +1,18 @@
+<div class="admin-layout">
+  {% include
+  "_base/layouts/web_app_layouts/ToDo_Ultimate_app_settings_sidbar.html" %}
+
+  <div class="admin-content" id="admin-content-area">
+    {% if settings == 'app_info' %} {% include
+    '_base/admin/ToDo_Ultimate_admin_info.html' %} {% elif settings ==
+    'config' %} {% include '_base/admin/ToDo_Ultimate_admin_config.html' %}
+    {% elif settings == 'sockets' %} {% include
+    '_base/admin/ToDo_Ultimate_admin_sockets.html' %} {% elif settings ==
+    'tasks' %} {% include '_base/admin/ToDo_Ultimate_admin_task.html' %} {%
+    elif settings == 'logs' %} {% include
+    '_base/admin/ToDo_Ultimate_admin_logs.html' %} {% elif settings ==
+    'backup_and_restore' %} {% include
+    '_base/admin/ToDo_Ultimate_admin_backup_restore.html' %} {% else %} {%
+    include '_base/admin/ToDo_Ultimate_admin_info.html' %} {% endif %}
+  </div>
+</div>

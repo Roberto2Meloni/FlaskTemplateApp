@@ -2,3 +2,4 @@
 milestones.txt
 *.pyc
 __pycache__
+*_chache

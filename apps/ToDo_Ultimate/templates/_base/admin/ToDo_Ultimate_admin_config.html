@@ -1,0 +1,317 @@
+<div class="config-container">
+  <div class="config-header">
+    <h4>App Konfiguration</h4>
+    <p class="config-subtitle">
+      Bearbeite die Einstellungen für {{ app_config.app_display_name }}
+    </p>
+    <p class="config-subtitle">Die Integerwerte sind in Minuten programmiert</p>
+  </div>
+
+  <div class="config-content">
+    <!-- App Name (Read-only) -->
+    <div class="config-section">
+      <h5 class="section-title">
+        <i class="bi bi-info-circle"></i> Basis-Informationen
+      </h5>
+      <div class="config-item readonly">
+        <label for="app_name" class="config-label">
+          App Name
+          <span class="readonly-badge">Schreibgeschützt</span>
+        </label>
+        <input
+          type="text"
+          id="app_name"
+          class="config-input"
+          value="{{ app_config.app_name }}"
+          readonly
+          title="Der App-Name kann nicht geändert werden"
+        />
+      </div>
+    </div>
+
+    <!-- Editable Config Fields -->
+    <form
+      id="configForm"
+      method="POST"
+      action="{{ url_for('ToDo_Ultimate.api_save_config') }}"
+      onsubmit="return false;"
+    >
+
+      <!-- App Display Name -->
+      <div class="config-section">
+        <h5 class="section-title"><i class="bi bi-tag"></i> Anzeige</h5>
+        <div class="config-item">
+          <label for="app_display_name" class="config-label">
+            Anzeigename
+            <span class="config-type-badge">str</span>
+          </label>
+          <input
+            type="text"
+            id="app_display_name"
+            name="app_display_name"
+            class="config-input"
+            value="{{ app_config.app_display_name }}"
+          />
+          <small class="config-hint">Name der in der UI angezeigt wird</small>
+        </div>
+      </div>
+
+      <!-- App Version -->
+      <div class="config-section">
+        <h5 class="section-title"><i class="bi bi-box-seam"></i> Version</h5>
+        <div class="config-item">
+          <label for="app_version" class="config-label">
+            Version
+            <span class="config-type-badge">str</span>
+          </label>
+          <input
+            type="text"
+            id="app_version"
+            name="app_version"
+            class="config-input"
+            value="{{ app_config.app_version }}"
+            pattern="\d+\.\d+\.\d+"
+            placeholder="0.0.0"
+          />
+          <small class="config-hint">Format: Major.Minor.Patch (z.B. 1.2.3)</small>
+        </div>
+      </div>
+
+      <!-- App Author -->
+      <div class="config-section">
+        <h5 class="section-title"><i class="bi bi-person"></i> Autor</h5>
+        <div class="config-item">
+          <label for="app_author" class="config-label">
+            Autor
+            <span class="config-type-badge">str</span>
+          </label>
+          <input
+            type="text"
+            id="app_author"
+            name="app_author"
+            class="config-input"
+            value="{{ app_config.app_author }}"
+          />
+          <small class="config-hint">Name des App-Entwicklers</small>
+        </div>
+      </div>
+
+      <!-- App Description -->
+      <div class="config-section">
+        <h5 class="section-title">
+          <i class="bi bi-card-text"></i> Beschreibung
+        </h5>
+        <div class="config-item">
+          <label for="app_description" class="config-label">
+            Beschreibung
+            <span class="config-type-badge">str</span>
+          </label>
+          <textarea
+            id="app_description"
+            name="app_description"
+            class="config-input"
+            rows="3"
+          >{{ app_config.app_description }}</textarea>
+          <small class="config-hint">Kurze Beschreibung der App</small>
+        </div>
+      </div>
+
+      <!-- Blueprint Settings -->
+      <div class="config-section">
+        <h5 class="section-title">
+          <i class="bi bi-diagram-3"></i> Blueprint Einstellungen
+        </h5>
+
+        <div class="config-item">
+          <label for="blueprint_url_prefix" class="config-label">
+            URL Prefix
+            <span class="config-type-badge">str</span>
+          </label>
+          <input
+            type="text"
+            id="blueprint_url_prefix"
+            name="blueprint[url_prefix]"
+            class="config-input"
+            value="{{ app_config.blueprint_url_prefix }}"
+            pattern="/[a-zA-Z0-9_]+"
+          />
+          <small class="config-hint">URL-Pfad der App (z.B. /ToDo_Ultimate)</small>
+        </div>
+
+        <div class="config-item">
+          <label for="blueprint_static_url_path" class="config-label">
+            Static URL Path
+            <span class="config-type-badge">str</span>
+          </label>
+          <input
+            type="text"
+            id="blueprint_static_url_path"
+            name="blueprint[static_url_path]"
+            class="config-input"
+            value="{{ app_config.blueprint_static_url_path }}"
+          />
+          <small class="config-hint">URL-Pfad für statische Dateien</small>
+        </div>
+
+        <div class="config-item">
+          <label for="blueprint_template_folder" class="config-label">
+            Template Folder
+            <span class="config-type-badge">str</span>
+          </label>
+          <input
+            type="text"
+            id="blueprint_template_folder"
+            name="blueprint[template_folder]"
+            class="config-input"
+            value="{{ app_config.blueprint_template_folder }}"
+          />
+          <small class="config-hint">Ordner für Templates (Standard: templates)</small>
+        </div>
+
+        <div class="config-item">
+          <label for="blueprint_static_folder" class="config-label">
+            Static Folder
+            <span class="config-type-badge">str</span>
+          </label>
+          <input
+            type="text"
+            id="blueprint_static_folder"
+            name="blueprint[static_folder]"
+            class="config-input"
+            value="{{ app_config.blueprint_static_folder }}"
+          />
+          <small class="config-hint">Ordner für statische Dateien (Standard: static)</small>
+        </div>
+      </div>
+
+      <!-- Logger Settings -->
+      <div class="config-section">
+        <h5 class="section-title">
+          <i class="bi bi-journal-text"></i> Logger Einstellungen
+        </h5>
+
+        <div class="config-item">
+          <label for="logger_name" class="config-label">
+            Logger Name
+            <span class="config-type-badge">str</span>
+          </label>
+          <input
+            type="text"
+            id="logger_name"
+            name="logger[name]"
+            class="config-input"
+            value="{{ app_config.logger_name }}"
+          />
+          <small class="config-hint">Name des Loggers (z.B. APP-ToDo_Ultimate)</small>
+        </div>
+
+        <div class="config-item">
+          <label for="logger_level" class="config-label">
+            Log Level
+            <span class="config-type-badge">str</span>
+          </label>
+          <select id="logger_level" name="logger[level]" class="config-input">
+            <option value="DEBUG" {{ 'selected' if app_config.logger_level == 'DEBUG' else '' }}>DEBUG</option>
+            <option value="INFO" {{ 'selected' if app_config.logger_level == 'INFO' else '' }}>INFO</option>
+            <option value="WARNING" {{ 'selected' if app_config.logger_level == 'WARNING' else '' }}>WARNING</option>
+            <option value="ERROR" {{ 'selected' if app_config.logger_level == 'ERROR' else '' }}>ERROR</option>
+            <option value="CRITICAL" {{ 'selected' if app_config.logger_level == 'CRITICAL' else '' }}>CRITICAL</option>
+          </select>
+          <small class="config-hint">Log-Level bestimmt welche Meldungen aufgezeichnet werden</small>
+        </div>
+      </div>
+
+      <!-- Feature Flags -->
+      <div class="config-section">
+        <h5 class="section-title"><i class="bi bi-toggles"></i> Features</h5>
+
+        <div class="config-item">
+          <label for="socketio_enabled" class="config-label">
+            SocketIO aktiviert
+            <span class="config-type-badge">bool</span>
+          </label>
+          <div class="config-toggle">
+            <input
+              type="checkbox"
+              id="socketio_enabled"
+              name="features[socketio_enabled]"
+              class="config-checkbox"
+              {{ 'checked' if app_config.socketio_enabled else '' }}
+              value="true"
+            />
+            <label for="socketio_enabled" class="toggle-label">
+              <span class="toggle-switch"></span>
+            </label>
+          </div>
+          <small class="config-hint">WebSocket-Verbindungen aktivieren</small>
+        </div>
+
+        <div class="config-item">
+          <label for="scheduler_enabled" class="config-label">
+            Scheduler aktiviert
+            <span class="config-type-badge">bool</span>
+          </label>
+          <div class="config-toggle">
+            <input
+              type="checkbox"
+              id="scheduler_enabled"
+              name="features[scheduler_enabled]"
+              class="config-checkbox"
+              {{ 'checked' if app_config.scheduler_enabled else '' }}
+              value="true"
+            />
+            <label for="scheduler_enabled" class="toggle-label">
+              <span class="toggle-switch"></span>
+            </label>
+          </div>
+          <small class="config-hint">Geplante Tasks aktivieren</small>
+        </div>
+      </div>
+
+      <!-- Task Intervals -->
+      <div class="config-section">
+        <h5 class="section-title">
+          <i class="bi bi-clock-history"></i> Task-Intervalle (in Minuten)
+        </h5>
+
+        {% if app_config.tasks_intervals %}
+          {% for task_name, interval in app_config.tasks_intervals.items() %}
+          <div class="config-item">
+            <label for="task_{{ task_name }}" class="config-label">
+              {{ task_name|replace('_', ' ')|title }}
+              <span class="config-type-badge">int</span>
+            </label>
+            <input
+              type="number"
+              id="task_{{ task_name }}"
+              name="tasks_intervall[{{ task_name }}]"
+              class="config-input"
+              value="{{ interval }}"
+              min="1"
+              step="1"
+            />
+            <small class="config-hint">Intervall in Minuten (aktuell: {{ interval }})</small>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="config-hint">Keine Tasks konfiguriert</p>
+        {% endif %}
+      </div>
+
+      {% include "_custom/admin/include/ToDo_Ultimate_include_config.html" %}
+
+      <!-- Action Buttons -->
+      <div class="config-actions">
+        <button type="button" id="resetBtn" class="btn btn-secondary" onclick="resetConfig()">
+          <i class="bi bi-arrow-counterclockwise"></i> Zurücksetzen
+        </button>
+        <button type="button" id="saveBtn" class="btn btn-primary" onclick="saveConfig()">
+          <i class="bi bi-save"></i> Speichern
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Status Messages -->
+  <div id="statusMessage" class="status-message" style="display: none"></div>
+</div>
