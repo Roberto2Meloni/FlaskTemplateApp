@@ -1,7 +1,4 @@
-Meilen Steine
-- Import custom socket
-- Warnung meldung, wenn SocketIO nicht aktiviert ist muss meldugn ersechenne, dass die app neugestartet werden muss!
-- custom socketio events js datei
+
 
 
 

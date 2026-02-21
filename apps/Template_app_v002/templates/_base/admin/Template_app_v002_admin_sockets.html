@@ -152,24 +152,6 @@
     <div class="sockets-table-card">
       <div class="table-header">
         <h5><i class="bi bi-table"></i> Verbindungsdetails</h5>
-        <div class="table-actions">
-          <input
-            type="text"
-            id="searchInput"
-            class="search-input"
-            placeholder="Suchen..."
-            onkeyup="filterTable()"
-          />
-          <select
-            id="filterSelect"
-            class="filter-select"
-            onchange="filterTable()"
-          >
-            <option value="all">Alle</option>
-            <option value="auth">Authentifiziert</option>
-            <option value="guest">Gäste</option>
-          </select>
-        </div>
       </div>
 
       <div class="sockets-table-wrapper">
@@ -179,7 +161,6 @@
               <th><i class="bi bi-person-fill"></i> Benutzer</th>
               <th><i class="bi bi-fingerprint"></i> Socket ID</th>
               <th><i class="bi bi-clock-history"></i> Verbunden seit</th>
-              <th><i class="bi bi-hourglass-split"></i> Dauer</th>
               <th class="text-center">
                 <i class="bi bi-gear-fill"></i> Aktionen
               </th>
@@ -242,19 +223,6 @@
                     data-timestamp="{{ socket.connected_at }}"
                   >
                     {{ socket.connected_at }}
-                  </span>
-                </div>
-              </td>
-
-              <!-- Dauer -->
-              <td>
-                <div class="duration-cell">
-                  <i class="bi bi-stopwatch"></i>
-                  <span
-                    class="duration"
-                    data-connected="{{ socket.connected_at }}"
-                  >
-                    Berechne...
                   </span>
                 </div>
               </td>
