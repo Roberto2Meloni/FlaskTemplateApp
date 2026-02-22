@@ -1,6 +1,6 @@
 {
   "app_display_name": "ToDo_Ultimate",
-  "app_version": "0.0.0",
+  "app_version": "0.0.1",
   "app_author": "Karatekit_123",
   "app_description": "Flask Application based on Template",
   "blueprint": {

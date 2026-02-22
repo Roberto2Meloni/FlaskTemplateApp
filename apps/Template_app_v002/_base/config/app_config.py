@@ -2,14 +2,15 @@
 Minimale App Configuration
 Liest _base und _custom Config und merged sie
 
-Neues Attribut in Python hinzufügen:
+Neues Attribut hinzufügen:
   1. In _get_defaults() eintragen
   2. Property definieren
   → wird automatisch ins JSON geschrieben beim nächsten Start
 
 Readonly-Felder (können nicht vom JSON überschrieben werden):
   → In _READONLY_FIELDS eintragen
-  → Werden immer aus Python-Code gelesen, JSON-Wert wird ignoriert
+  → admin_app_version: kommt immer aus _BASE_VERSION (Update-Script)
+  → app_version: NICHT readonly, wird vom Update-Script im JSON erhöht
 """
 
 import json
@@ -21,15 +22,15 @@ class AppConfig:
     """Config die _base Defaults mit _custom JSON merged und synct"""
 
     # ========================================
-    # BASE VERSION — hardcoded, wird nie vom JSON überschrieben
-    # Update-Script setzt diese Version wenn es _base Dateien aktualisiert
+    # BASE VERSION — wird vom Update-Script gesetzt
+    # Zeigt welche _base Version diese App hat
     # ========================================
     _BASE_VERSION = "0.0.1"
 
     # ========================================
     # READONLY FIELDS
-    # Diese Felder werden IMMER aus Python gelesen — JSON-Werte werden ignoriert
-    # Nützlich für Versions-Tracking die nur das Update-Script ändern darf
+    # Nur admin_app_version ist readonly.
+    # app_version ist NICHT readonly — wird vom Update-Script im JSON erhöht.
     # ========================================
     _READONLY_FIELDS = {
         "admin_app_version": _BASE_VERSION,
@@ -43,8 +44,8 @@ class AppConfig:
         """Python-Defaults — neue Felder hier eintragen"""
         return {
             "app_display_name": self.app_name,
-            "app_version": "0.0.0",
-            "admin_app_version": self._BASE_VERSION,  # ← readonly, kommt immer aus _BASE_VERSION
+            "app_version": "0.0.0",  # ← vom Update-Script erhöht, NICHT readonly
+            "admin_app_version": self._BASE_VERSION,  # ← readonly, immer aus _BASE_VERSION
             "app_author": "Unknown",
             "app_description": "",
             "blueprint": {
@@ -75,13 +76,6 @@ class AppConfig:
     # ========================================
 
     def _load_config(self) -> Dict[str, Any]:
-        """
-        Lade Config:
-        1. Python-Defaults
-        2. Merge mit _custom JSON (JSON überschreibt Defaults)
-        3. Readonly-Felder erzwingen (überschreiben JSON-Werte)
-        4. Sync: neue Defaults ins JSON schreiben falls fehlend
-        """
         config = self._get_defaults()
         custom_config_path = self._find_custom_config()
 
@@ -89,13 +83,9 @@ class AppConfig:
             with open(custom_config_path, "r", encoding="utf-8") as f:
                 custom_data = json.load(f)
 
-            # JSON überschreibt Defaults
             self._deep_merge(config, custom_data)
-
-            # Readonly-Felder erzwingen — JSON-Werte werden ignoriert
             config = self._apply_readonly_fields(config)
 
-            # Sync: neue Python-Defaults + erzwungene Werte ins JSON schreiben
             needs_sync = self._find_missing_keys(custom_data, self._get_defaults())
             needs_version_update = self._check_readonly_changed(custom_data)
 
@@ -107,9 +97,7 @@ class AppConfig:
                         f"[AppConfig] Readonly-Felder aktualisiert: {needs_version_update}"
                     )
                 self._write_config(custom_config_path, config)
-
         else:
-            # Kein JSON → erstelle mit allen Defaults
             config = self._apply_readonly_fields(config)
             path = self._get_default_custom_config_path()
             self._write_config(path, config)
@@ -118,19 +106,11 @@ class AppConfig:
         return config
 
     def _apply_readonly_fields(self, config: dict) -> dict:
-        """
-        Überschreibt readonly Felder mit Python-Werten.
-        JSON-Werte für diese Felder werden ignoriert.
-        """
         for key, value in self._READONLY_FIELDS.items():
             config[key] = value
         return config
 
     def _check_readonly_changed(self, existing_json: dict) -> list:
-        """
-        Prüft ob readonly-Felder im JSON einen anderen Wert haben als in Python.
-        Gibt Liste der veränderten Felder zurück.
-        """
         changed = []
         for key, value in self._READONLY_FIELDS.items():
             if existing_json.get(key) != value:
@@ -179,8 +159,6 @@ class AppConfig:
             json.dump(config, f, ensure_ascii=False, indent=2)
 
     def _save_config(self) -> None:
-        """Speichere aktuelle Config — readonly Felder werden erzwungen"""
-        # Readonly nochmals sicherstellen bevor gespeichert wird
         self.config = self._apply_readonly_fields(self.config)
         path = self._find_custom_config() or self._get_default_custom_config_path()
         try:
@@ -204,7 +182,7 @@ class AppConfig:
 
     @property
     def admin_app_version(self) -> str:
-        """Readonly — kommt immer aus _BASE_VERSION, nicht aus JSON"""
+        """Readonly — kommt immer aus _BASE_VERSION"""
         return self._BASE_VERSION
 
     @property
