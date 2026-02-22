@@ -1,4 +1,11 @@
 <!-- Hier sind die customs URL-Definitionen -->
 <script>
-  const custom_variabel = "Jaaa ich bin custom";
+  const APP_URLS = {
+    index: "{{ url_for('Template_app_v002.Template_app_v002_index') }}",
+    app_settings: "{{ url_for('Template_app_v002.app_settings') }}",
+
+    {% for page in pages %}
+    {{ page.id }}: "{{ url_for('Template_app_v002.' + page.id) }}",
+    {% endfor %}
+  };
 </script>

@@ -1,13 +1,5 @@
-Meilen Steine
-- Log Angabe schneller machen
-
-zu integriern bei anderen apps
-- Config route
-- app_config.py
-- Safe option
-- css
-- veritacl JS
-- helpar_admin
-- admin_route
-- Socketio_veentt
-- tempalt socketio_events.html
+- To Do erstellen
+- To Do anzeigen
+- To Do bearbeiten
+- To Do archivieren
+- Löschen Testseinen

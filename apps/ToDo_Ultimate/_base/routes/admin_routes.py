@@ -16,7 +16,11 @@ from ..helper_app_function.helper_admin_app import AdminHelper, is_ajax_request
 from app.socketio_manager import get_socketio_manager
 
 # Import Socket-Funktionen
-from ..socketio_events import get_active_sockets, get_socket_count
+from ..socketio_events import get_active_sockets
+
+# Import Page-Config
+from ..._custom.page_config import PAGES
+
 
 app_logger.info(f"Starte Admin Routes für {app_config.app_name}")
 
@@ -41,6 +45,7 @@ def app_settings():
         # config=app_config, --> ersetzen durch config variable aus root?
         content="app_settings",
         app_config=app_config,
+        pages=PAGES,
     )
 
 
@@ -64,6 +69,7 @@ def app_info():
         content="app_settings",
         settings="app_info",
         app_config=app_config,
+        pages=PAGES,
     )
 
 
@@ -91,6 +97,7 @@ def app_settings_config():
         settings="config",
         app_config_dict=app_config_dict,
         app_config=app_config,
+        pages=PAGES,
     )
 
 
@@ -129,6 +136,7 @@ def app_settings_sockets():
         app_config=app_config,
         active_sockets=app_sockets,
         online_users_count=online_users_count,
+        pages=PAGES,
     )
 
 
@@ -241,6 +249,7 @@ def app_settings_tasks():
         settings="tasks",
         tasks=tasks,
         app_config=app_config,
+        pages=PAGES,
     )
 
 
@@ -289,6 +298,7 @@ def app_settings_logs():
         current_limit=limit,
         current_level=level_filter,
         current_search=search_term,
+        pages=PAGES,
     )
 
 
@@ -312,6 +322,7 @@ def app_settings_backup_and_restore():
         content="app_settings",
         settings="backup_and_restore",
         app_config=app_config,
+        pages=PAGES,
     )
 
 

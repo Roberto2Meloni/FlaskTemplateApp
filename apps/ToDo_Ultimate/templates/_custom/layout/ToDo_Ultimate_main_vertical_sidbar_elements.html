@@ -1,56 +1,33 @@
 <!-- Diese Datei wird in die _base/layouts/web_app_layouts/ToDo_Ultimate_sidebar_vertical.html eingebunden -->
-
 <ul>
   <div class="upper_items">
-    <li class="list active">
+    {% for page in pages %} {% if page.show_in_sidebar %}
+    <li class="list {% if page.placeholder %}disabled{% endif %}">
       <a
-        href="{{ url_for('ToDo_Ultimate.dashboard') }}"
-        class="nav-link"
-        data-page="dashboard"
+        href="{{ url_for('ToDo_Ultimate.' + page.id) }}"
+        class="nav-link {% if page.placeholder %}disabled{% endif %}"
+        data-page="{{ page.id }}"
+        {%
+        if
+        page.placeholder
+        %}style="opacity: 0.4; cursor: not-allowed; pointer-events: none;"
+        title="Noch nicht verfügbar"
+        {%
+        endif
+        %}
       >
         <span class="icon">
-          <i class="sidebar-icon bi bi-house-door-fill"></i>
+          <i class="sidebar-icon bi {{ page.icon }}"></i>
         </span>
-        <div class="list_element">Dashboard</div>
+        <div class="list_element">
+          {{ page.label }} {% if page.placeholder %}<small>(bald)</small>{%
+          endif %}
+        </div>
       </a>
     </li>
-    <li class="list">
-      <a
-        href="{{ url_for('ToDo_Ultimate.page_01') }}"
-        class="nav-link"
-        data-page="Page_01"
-      >
-        <span class="icon">
-          <i class="bi bi-cash-coin"></i>
-        </span>
-        <div class="list_element">Seite 01</div>
-      </a>
-    </li>
-    <li class="list">
-      <a
-        href="{{ url_for('ToDo_Ultimate.page_02') }}"
-        class="nav-link"
-        data-page="Page_02"
-      >
-        <span class="icon">
-          <i class="bi bi-controller"></i>
-        </span>
-        <div class="list_element">Seite 02</div>
-      </a>
-    </li>
-    <li class="list">
-      <a
-        href="{{ url_for('ToDo_Ultimate.page_03') }}"
-        class="nav-link"
-        data-page="Page_03"
-      >
-        <span class="icon">
-          <i class="bi bi-controller"></i>
-        </span>
-        <div class="list_element">Seite 03</div>
-      </a>
-    </li>
+    {% endif %} {% endfor %}
   </div>
+
   <div class="lower_items">
     <li class="list">
       <a href="{{ url_for('myapp.home') }}">

@@ -1,4 +1,11 @@
 <!-- Hier sind die customs URL-Definitionen -->
 <script>
-  const custom_variabel = "Jaaa ich bin custom";
+  const APP_URLS = {
+    index: "{{ url_for('ToDo_Ultimate.ToDo_Ultimate_index') }}",
+    app_settings: "{{ url_for('ToDo_Ultimate.app_settings') }}",
+
+    {% for page in pages %}
+    {{ page.id }}: "{{ url_for('ToDo_Ultimate.' + page.id) }}",
+    {% endfor %}
+  };
 </script>

@@ -1,6 +1,7 @@
 from flask import render_template, request
 from flask_login import current_user
 from app.decorators import admin_required, enabled_required
+from ..page_config import PAGES
 
 # # Import aus Parent Package (ToDo_Ultimate/__init__.py)
 from ... import blueprint, app_logger, app_config, APP_ROOT
@@ -43,6 +44,7 @@ def admin_custom_setting_01():
         content="admin_custom_setting_01",
         settings="app_info",
         app_config=app_config,
+        pages=PAGES,
     )
 
 
