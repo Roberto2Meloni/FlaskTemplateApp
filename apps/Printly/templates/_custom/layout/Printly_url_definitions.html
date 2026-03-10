@@ -1,0 +1,11 @@
+<!-- Hier sind die customs URL-Definitionen -->
+<script>
+  const APP_URLS = {
+    index: "{{ url_for('Printly.Printly_index') }}",
+    app_settings: "{{ url_for('Printly.app_settings') }}",
+
+    {% for page in pages %}
+    {{ page.id }}: "{{ url_for('Printly.' + page.id) }}",
+    {% endfor %}
+  };
+</script>

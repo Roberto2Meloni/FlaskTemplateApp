@@ -1,0 +1,133 @@
+<!-- 
+  Printly - CSS Integration
+  Lädt alle benötigten Stylesheets basierend auf aktuellem Kontext
+-->
+
+<!-- ========================================
+     EXTERNAL LIBRARIES
+     ======================================== -->
+
+<!-- Bootstrap Icons -->
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+/>
+
+<!-- ========================================
+     BASE STYLES (immer laden)
+     ======================================== -->
+
+<!-- Base Layout & Utilities -->
+<link
+  rel="stylesheet"
+  href="{{ url_for('Printly.static', filename='_base/css/Printly.css') }}"
+/>
+
+<!-- Sidebar Navigation -->
+<link
+  rel="stylesheet"
+  href="{{ url_for('Printly.static', filename='_base/css/Printly_VerticalSidbar.css') }}"
+/>
+
+<!-- ========================================
+     ADMIN STYLES (nur im Admin-Bereich)
+     ======================================== -->
+
+{% if 'app_settings' in request.path %}
+
+<!-- Admin Base (Config, Info, Tasks, Backup) -->
+<link
+  rel="stylesheet"
+  href="{{ url_for('Printly.static', filename='_base/css/Printly_admin.css') }}"
+/>
+
+<!-- Socket-Verwaltung (nur auf Socket-Seite) -->
+<link
+  rel="stylesheet"
+  href="{{ url_for('Printly.static', filename='_base/css/Printly_admin_socket.css') }}"
+/>
+
+<!-- Style-Verwaltung (nur auf Style-Seite) -->
+<link
+  rel="stylesheet"
+  href="{{ url_for('Printly.static', filename='_base/css/Printly_admin_style.css') }}"
+/>
+
+<!-- Task-Verwaltung -->
+<link
+  rel="stylesheet"
+  href="{{ url_for('Printly.static', filename='_base/css/Printly_admin_task.css') }}"
+/>
+
+<!-- Log-Viewer (nur auf Log-Seite) -->
+<link
+  rel="stylesheet"
+  href="{{ url_for('Printly.static', filename='_base/css/Printly_admin_logview.css') }}"
+/>
+{% endif %}
+
+<!-- ========================================
+     CUSTOM STYLES (optional - Overrides)
+     ======================================== -->
+
+{% if config.TEMPLATE_APP_CUSTOM_CSS %}
+
+<!-- Custom Base Overrides -->
+<link
+  rel="stylesheet"
+  href="{{ url_for('Printly.static', filename='_custom/css/Printly.css') }}"
+/>
+
+<!-- Custom Sidebar Overrides -->
+<link
+  rel="stylesheet"
+  href="{{ url_for('Printly.static', filename='_custom/css/Printly_VerticalSidbar.css') }}"
+/>
+
+<!-- Custom Admin Overrides (nur im Admin) -->
+{% if 'app_settings' in request.path %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('Printly.static', filename='_custom/css/Printly_admin.css') }}"
+/>
+
+<!-- Custom Socket Overrides -->
+{% if 'sockets' in request.path %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('Printly.static', filename='_custom/css/Printly_admin_sockets.css') }}"
+/>
+{% endif %}
+
+<!-- Custom Log Overrides -->
+{% if 'logs' in request.path %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('Printly.static', filename='_custom/css/Printly_admin_logview.css') }}"
+/>
+{% endif %} {% endif %} {% endif %}
+
+<!-- Integriere custom css Files HTML-->
+{% include "_custom/layout/Printly_integrate_css.html" %}
+
+<!-- Dynamische Sidebar-Farben aus app_config -->
+{% if app_config is defined %}
+<style>
+  :root {
+    /* Haupt-Sidebar */
+    --color-sidbar-background:       {{ app_config.sidebar_bg }};
+    --color-sidbar-background-hover: {{ app_config.sidebar_hover_bg }};
+    --color-active-background:       {{ app_config.sidebar_active_bg }};
+    --color-text-light:              {{ app_config.sidebar_text_active }};
+    --color-text-dark:               {{ app_config.sidebar_text_hover }};
+    --color-text-inactive:           {{ app_config.sidebar_text_inactive }};
+    /* Admin-Sidebar */
+    --color-sidbar-admin-background: {{ app_config.sidebar_admin_bg }};
+    --color-admin-text:              {{ app_config.sidebar_admin_text }};
+    --color-admin-hover-bg:          {{ app_config.sidebar_admin_hover_bg }};
+    --color-admin-hover-text:        {{ app_config.sidebar_admin_hover_text }};
+    --color-admin-active-bg:         {{ app_config.sidebar_admin_active_bg }};
+    --color-admin-active-text:       {{ app_config.sidebar_admin_active_text }};
+  }
+</style>
+{% endif %}

@@ -1,0 +1,7 @@
+{% extends "_base/layouts/web_app_layouts/Printly_web_app_base.html"
+%} {% block main_content %} {% if content == 'app_settings' %} {% include
+'_base/admin/Printly_app_settings.html' %} {% else %} {% set page =
+pages | selectattr('id', 'equalto', content) | first %} {% if page %} {% include
+page.template %} {% else %} {% include
+'_custom/content/Printly_dashboard.html' %} {% endif %} {% endif %} {%
+endblock %}

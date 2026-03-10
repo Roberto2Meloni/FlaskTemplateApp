@@ -1,0 +1,191 @@
+<div class="log-viewer-container">
+  <!-- Header mit Statistiken -->
+  <div class="log-header">
+    <h2><i class="bi bi-file-text-fill"></i> App Logs</h2>
+
+    <div class="log-stats">
+      <div class="stat-item">
+        <i class="bi bi-hdd-fill"></i>
+        <span class="stat-label">Dateigröße:</span>
+        <span class="stat-value"
+          >{{ log_stats.total_size_mb|default('0', true) }} MB</span
+        >
+      </div>
+      <div class="stat-item">
+        <i class="bi bi-list-ol"></i>
+        <span class="stat-label">Gefilterte Logs:</span>
+        <span class="stat-value"
+          >{{ app_logs.filtered_lines|default('0', true) }}</span
+        >
+      </div>
+      <div class="stat-item">
+        <i class="bi bi-clock-fill"></i>
+        <span class="stat-label">Letzte Änderung:</span>
+        <span class="stat-value"
+          >{{ log_stats.last_modified|default('Unbekannt', true) }}</span
+        >
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Controls -->
+  <div class="log-controls">
+    <div class="filter-row">
+      <!-- Log-Level Filter -->
+      <div class="filter-group">
+        <label for="level-filter"> <i class="bi bi-funnel"></i> Level: </label>
+        <select id="level-filter" class="form-control">
+          <option value="">Alle Levels</option>
+          <option value="CRITICAL">CRITICAL</option>
+          <option value="ERROR">ERROR</option>
+          <option value="WARNING">WARNING</option>
+          <option value="INFO">INFO</option>
+          <option value="DEBUG">DEBUG</option>
+        </select>
+      </div>
+
+      <!-- Limit Filter -->
+      <div class="filter-group">
+        <label for="limit-filter">
+          <i class="bi bi-card-list"></i> Anzahl:
+        </label>
+        <select id="limit-filter" class="form-control">
+          <option value="100">100 Zeilen</option>
+          <option value="500" selected>500 Zeilen</option>
+          <option value="1000">1000 Zeilen</option>
+          <option value="2000">2000 Zeilen</option>
+        </select>
+      </div>
+
+      <!-- Suche -->
+      <div class="filter-group filter-search">
+        <label for="search-filter"> <i class="bi bi-search"></i> Suche: </label>
+        <input
+          type="text"
+          id="search-filter"
+          class="form-control"
+          placeholder="Nach Text suchen..."
+          oninput="LogViewer.applyFilters()"
+        />
+      </div>
+
+      <!-- Buttons -->
+      <div class="filter-actions">
+        <button class="btn btn-primary" onclick="LogViewer.refreshLogs()">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+        <button class="btn btn-secondary" onclick="resetFilters()">
+          <i class="bi bi-arrow-clockwise"></i> Zurücksetzen
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick Filters -->
+    <div class="quick-filters">
+      <span class="quick-filter-label">Schnellfilter:</span>
+      <button class="btn-quick-filter" onclick="quickFilter('ERROR')">
+        <i class="bi bi-exclamation-triangle-fill"></i> Nur Errors
+      </button>
+      <button class="btn-quick-filter" onclick="quickFilter('WARNING')">
+        <i class="bi bi-exclamation-circle-fill"></i> Nur Warnings
+      </button>
+      <button class="btn-quick-filter" onclick="quickFilter('INFO')">
+        <i class="bi bi-info-circle-fill"></i> Nur Info
+      </button>
+      <button class="btn-quick-filter">
+        <i class="bi bi-info-circle-fill"></i> Log Level: {{
+        app_config.logger_level }}
+      </button>
+      <button
+        class="btn-quick-filter"
+        id="auto-refresh-btn"
+        onclick="LogViewer.toggleAutoRefresh()"
+      >
+        <i class="bi bi-play-circle"></i> Auto Refresh:
+        <span>Aus</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Log Display -->
+  <div class="log-display">
+    {% if app_logs and app_logs.logs %}
+
+    <!-- Warning wenn mehr Logs verfügbar -->
+    {% if app_logs.has_more %}
+    <div class="log-warning">
+      <i class="bi bi-info-circle-fill"></i>
+      Es werden {{ app_logs.filtered_lines }} gefilterte Logs angezeigt. Erhöhe
+      das Limit für mehr Ergebnisse.
+    </div>
+    {% endif %}
+
+    <div class="log-table-container">
+      <table class="log-table">
+        <thead>
+          <tr>
+            <th class="col-timestamp">Zeitstempel</th>
+            <th class="col-level">Level</th>
+            <th class="col-logger">Logger</th>
+            <th class="col-message">Nachricht</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in app_logs.logs %}
+          <tr
+            class="log-row log-level-{{ log.level|lower|default('unknown') }}"
+          >
+            <td class="log-timestamp">{{ log.timestamp|default('N/A') }}</td>
+            <td class="log-level">
+              <span
+                class="level-badge level-{{ log.level|lower|default('unknown') }}"
+              >
+                {% if log.level in ['ERROR', 'CRITICAL'] %}
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                {% elif log.level == 'WARNING' %}
+                <i class="bi bi-exclamation-circle-fill"></i>
+                {% elif log.level == 'INFO' %}
+                <i class="bi bi-info-circle-fill"></i>
+                {% elif log.level == 'DEBUG' %}
+                <i class="bi bi-bug-fill"></i>
+                {% else %}
+                <i class="bi bi-question-circle-fill"></i>
+                {% endif %} {{ log.level|default('UNKNOWN') }}
+              </span>
+            </td>
+            <td class="log-logger">{{ log.logger|default('N/A') }}</td>
+            <td
+              class="log-message"
+              onclick="copyLogMessage(this)"
+              style="cursor: pointer"
+              title="Klicken zum Kopieren"
+            >
+              {{ log.message|default('Keine Nachricht') }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% else %}
+
+    <div class="no-logs-message">
+      <i class="bi bi-inbox"></i>
+      <p>Keine Logs gefunden</p>
+      <small
+        >Mit den aktuellen Filtereinstellungen wurden keine Logs
+        gefunden.</small
+      >
+    </div>
+
+    {% endif %}
+  </div>
+
+  <!-- Toast Notification -->
+  <div
+    id="log-toast-notification"
+    class="toast-notification"
+    style="display: none"
+  ></div>
+</div>

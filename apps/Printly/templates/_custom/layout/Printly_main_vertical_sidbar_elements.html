@@ -1,0 +1,56 @@
+<!-- Diese Datei wird in die _base/layouts/web_app_layouts/Printly_sidebar_vertical.html eingebunden -->
+<ul>
+  <div class="upper_items">
+    {% for page in pages %} {% if page.show_in_sidebar %}
+    <li class="list {% if page.placeholder %}disabled{% endif %}">
+      <a
+        href="{{ url_for('Printly.' + page.id) }}"
+        class="nav-link {% if page.placeholder %}disabled{% endif %}"
+        data-page="{{ page.id }}"
+        {%
+        if
+        page.placeholder
+        %}style="opacity: 0.4; cursor: not-allowed; pointer-events: none;"
+        title="Noch nicht verfügbar"
+        {%
+        endif
+        %}
+      >
+        <span class="icon">
+          <i class="sidebar-icon bi {{ page.icon }}"></i>
+        </span>
+        <div class="list_element">
+          {{ page.label }} {% if page.placeholder %}<small>(bald)</small>{%
+          endif %}
+        </div>
+      </a>
+    </li>
+    {% endif %} {% endfor %}
+  </div>
+
+  <div class="lower_items">
+    <li class="list">
+      <a href="{{ url_for('myapp.home') }}">
+        <span class="icon">
+          <i class="sidebar-icon bi bi-grid-3x3-gap-fill"></i>
+        </span>
+        <div class="list_element">Zurück zu Apps</div>
+      </a>
+    </li>
+
+    {% if current_user|has_admin_rights %}
+    <li class="list">
+      <a
+        href="{{ url_for('Printly.app_settings') }}"
+        class="nav-link"
+        data-page="app_settings"
+      >
+        <span class="icon">
+          <i class="sidebar-icon bi bi-gear-fill"></i>
+        </span>
+        <div class="list_element">Admin</div>
+      </a>
+    </li>
+    {% endif %}
+  </div>
+</ul>

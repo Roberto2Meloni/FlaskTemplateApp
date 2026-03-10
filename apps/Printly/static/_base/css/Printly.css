@@ -1,0 +1,70 @@
+:root {}
+
+*, body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    /* Box-Sizing auf die gesamte Seite anwenden */
+}
+
+.main-content {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+}
+
+/* Navigation (Sidebar) */
+.navigation {
+    flex-shrink: 0;
+    /* Verhindert Schrumpfen bei kleinem Viewport */
+}
+
+/* Content Area */
+.app-content {
+    flex: 1;
+    /* Nimmt restlichen verfügbaren Platz */
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: 100vh;
+    overflow-y: auto;
+    background: #ffffff;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 768px) {
+    .main-content {
+        flex-direction: column;
+    }
+
+    .app-content {
+        min-height: calc(100vh - 60px);
+        /* Platz für Navigation */
+        padding: 15px;
+    }
+}
+
+/* ========================================
+   UTILITIES (optional)
+   ======================================== */
+
+/* Verstecke Scrollbar aber behalte Funktionalität */
+.app-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.app-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.app-content::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.app-content::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}

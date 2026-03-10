@@ -1,0 +1,2 @@
+- Sidbar eingeklap behalten wenn wechsel zu Admin
+- Responsive?

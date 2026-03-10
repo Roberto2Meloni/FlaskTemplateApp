@@ -1,0 +1,40 @@
+{
+  "app_display_name": "Printly",
+  "app_version": "0.0.0",
+  "admin_app_version": "0.0.2",
+  "app_author": "Karatekit_123",
+  "app_description": "Flask Application based on Template",
+  "blueprint": {
+    "url_prefix": "/Printly",
+    "static_url_path": "/Printly_static",
+    "template_folder": "templates",
+    "static_folder": "static"
+  },
+  "logger": {
+    "name": "APP-Printly",
+    "level": "DEBUG"
+  },
+  "tasks_intervall": {
+    "app_keep_alive_log": 200,
+    "app_custom_keep_alive_log": 10
+  },
+  "features": {
+    "socketio_enabled": true,
+    "scheduler_enabled": true,
+    "admin_panel_enabled": true
+  },
+  "styling": {
+    "sidebar_bg": "#1e1e1e",
+    "sidebar_text_inactive": "#ffffff",
+    "sidebar_hover_bg": "#ffffff",
+    "sidebar_text_hover": "#333333",
+    "sidebar_active_bg": "#3498db",
+    "sidebar_text_active": "#ffffff",
+    "sidebar_admin_bg": "#fcfcfc",
+    "sidebar_admin_text": "#333333",
+    "sidebar_admin_hover_bg": "#f0f0f0",
+    "sidebar_admin_hover_text": "#111111",
+    "sidebar_admin_active_bg": "#3498db",
+    "sidebar_admin_active_text": "#ffffff"
+  }
+}
