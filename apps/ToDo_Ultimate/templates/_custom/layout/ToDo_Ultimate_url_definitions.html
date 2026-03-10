@@ -8,4 +8,9 @@
     {{ page.id }}: "{{ url_for('ToDo_Ultimate.' + page.id) }}",
     {% endfor %}
   };
+
+  // ========================================
+  // API ToDoes
+  // ========================================
+  const URL_API_ADD_TODO = "{{ url_for('ToDo_Ultimate.api_add_todo') }}";
 </script>

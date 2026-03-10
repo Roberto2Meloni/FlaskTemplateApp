@@ -1,0 +1,417 @@
+<div class="style-config-container">
+  <div class="config-header">
+    <h4><i class="bi bi-brush"></i> App Styling</h4>
+    <p class="config-subtitle">
+      Passe die Farben der Sidebar an — Änderungen werden live in der Vorschau
+      angezeigt
+    </p>
+  </div>
+
+  <div class="style-config-body">
+    <!-- ── Live-Vorschau ── -->
+    <div class="style-preview-panel">
+      <p class="preview-label"><i class="bi bi-eye"></i> Vorschau</p>
+
+      <!-- Haupt-Sidebar Vorschau -->
+      <div class="preview-sidebar" id="previewSidebar">
+        <div class="preview-header">
+          <div class="preview-hamburger"><i class="bi bi-list"></i></div>
+          <div class="preview-title">App Name</div>
+        </div>
+        <ul class="preview-nav">
+          <li class="preview-item" id="prev-active">
+            <i class="bi bi-house-door-fill"></i>
+            <span>Dashboard</span>
+          </li>
+          <li class="preview-item" id="prev-inactive">
+            <i class="bi bi-cash-coin"></i>
+            <span>Seite 01</span>
+          </li>
+          <li class="preview-item" id="prev-hover">
+            <i class="bi bi-controller"></i>
+            <span>Hover</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Admin-Sidebar Vorschau -->
+      <div class="preview-admin-sidebar" id="previewAdminSidebar">
+        <div class="preview-header" id="prev-admin-header">
+          <div class="preview-title">Admin</div>
+        </div>
+        <ul class="preview-nav">
+          <li class="preview-item" id="prev-admin-active">
+            <i class="bi bi-sliders"></i>
+            <span>Konfiguration</span>
+          </li>
+          <li class="preview-item" id="prev-admin-inactive">
+            <i class="bi bi-brush"></i>
+            <span>Styling</span>
+          </li>
+          <li class="preview-item" id="prev-admin-hover">
+            <i class="bi bi-plug-fill"></i>
+            <span>Hover</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ── Farb-Felder ── -->
+    <form id="styleForm" onsubmit="return false;">
+      <!-- Haupt-Sidebar -->
+      <div class="config-section">
+        <h5 class="section-title">
+          <i class="bi bi-layout-sidebar"></i> Haupt-Sidebar
+        </h5>
+        <div class="color-grid">
+          <div class="color-item">
+            <label class="config-label"
+              >Hintergrund
+              <span class="config-type-badge">sidebar_bg</span></label
+            >
+            <div class="color-input-row">
+              <input
+                type="color"
+                class="color-swatch"
+                id="sidebar_bg"
+                name="sidebar_bg"
+                value="{{ app_config.sidebar_bg }}"
+              />
+              <input
+                type="text"
+                class="color-hex"
+                id="sidebar_bg_hex"
+                value="{{ app_config.sidebar_bg }}"
+                maxlength="7"
+                placeholder="#1e1e1e"
+              />
+            </div>
+            <small class="config-hint">Hintergrundfarbe der Sidebar</small>
+          </div>
+
+          <div class="color-item">
+            <label class="config-label"
+              >Text (inaktiv)
+              <span class="config-type-badge"
+                >sidebar_text_inactive</span
+              ></label
+            >
+            <div class="color-input-row">
+              <input
+                type="color"
+                class="color-swatch"
+                id="sidebar_text_inactive"
+                name="sidebar_text_inactive"
+                value="{{ app_config.sidebar_text_inactive }}"
+              />
+              <input
+                type="text"
+                class="color-hex"
+                id="sidebar_text_inactive_hex"
+                value="{{ app_config.sidebar_text_inactive }}"
+                maxlength="7"
+                placeholder="#ffffff"
+              />
+            </div>
+            <small class="config-hint">Textfarbe für inaktive Einträge</small>
+          </div>
+
+          <div class="color-item">
+            <label class="config-label"
+              >Hover Hintergrund
+              <span class="config-type-badge">sidebar_hover_bg</span></label
+            >
+            <div class="color-input-row">
+              <input
+                type="color"
+                class="color-swatch"
+                id="sidebar_hover_bg"
+                name="sidebar_hover_bg"
+                value="{{ app_config.sidebar_hover_bg }}"
+              />
+              <input
+                type="text"
+                class="color-hex"
+                id="sidebar_hover_bg_hex"
+                value="{{ app_config.sidebar_hover_bg }}"
+                maxlength="7"
+                placeholder="#ffffff"
+              />
+            </div>
+            <small class="config-hint">Hintergrundfarbe beim Hover</small>
+          </div>
+
+          <div class="color-item">
+            <label class="config-label"
+              >Hover Text
+              <span class="config-type-badge">sidebar_text_hover</span></label
+            >
+            <div class="color-input-row">
+              <input
+                type="color"
+                class="color-swatch"
+                id="sidebar_text_hover"
+                name="sidebar_text_hover"
+                value="{{ app_config.sidebar_text_hover }}"
+              />
+              <input
+                type="text"
+                class="color-hex"
+                id="sidebar_text_hover_hex"
+                value="{{ app_config.sidebar_text_hover }}"
+                maxlength="7"
+                placeholder="#333333"
+              />
+            </div>
+            <small class="config-hint">Textfarbe beim Hover</small>
+          </div>
+
+          <div class="color-item">
+            <label class="config-label"
+              >Aktiv Hintergrund
+              <span class="config-type-badge">sidebar_active_bg</span></label
+            >
+            <div class="color-input-row">
+              <input
+                type="color"
+                class="color-swatch"
+                id="sidebar_active_bg"
+                name="sidebar_active_bg"
+                value="{{ app_config.sidebar_active_bg }}"
+              />
+              <input
+                type="text"
+                class="color-hex"
+                id="sidebar_active_bg_hex"
+                value="{{ app_config.sidebar_active_bg }}"
+                maxlength="7"
+                placeholder="#3498db"
+              />
+            </div>
+            <small class="config-hint"
+              >Hintergrundfarbe des aktiven Eintrags</small
+            >
+          </div>
+
+          <div class="color-item">
+            <label class="config-label"
+              >Aktiv Text
+              <span class="config-type-badge">sidebar_text_active</span></label
+            >
+            <div class="color-input-row">
+              <input
+                type="color"
+                class="color-swatch"
+                id="sidebar_text_active"
+                name="sidebar_text_active"
+                value="{{ app_config.sidebar_text_active }}"
+              />
+              <input
+                type="text"
+                class="color-hex"
+                id="sidebar_text_active_hex"
+                value="{{ app_config.sidebar_text_active }}"
+                maxlength="7"
+                placeholder="#ffffff"
+              />
+            </div>
+            <small class="config-hint">Textfarbe des aktiven Eintrags</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin-Sidebar -->
+      <div class="config-section">
+        <h5 class="section-title">
+          <i class="bi bi-layout-sidebar-reverse"></i> Admin-Sidebar
+        </h5>
+        <div class="color-grid">
+          <div class="color-item">
+            <label class="config-label"
+              >Hintergrund
+              <span class="config-type-badge">sidebar_admin_bg</span></label
+            >
+            <div class="color-input-row">
+              <input
+                type="color"
+                class="color-swatch"
+                id="sidebar_admin_bg"
+                name="sidebar_admin_bg"
+                value="{{ app_config.sidebar_admin_bg }}"
+              />
+              <input
+                type="text"
+                class="color-hex"
+                id="sidebar_admin_bg_hex"
+                value="{{ app_config.sidebar_admin_bg }}"
+                maxlength="7"
+                placeholder="#fcfcfc"
+              />
+            </div>
+            <small class="config-hint"
+              >Hintergrundfarbe der Admin-Sidebar</small
+            >
+          </div>
+
+          <div class="color-item">
+            <label class="config-label"
+              >Text (inaktiv)
+              <span class="config-type-badge">sidebar_admin_text</span></label
+            >
+            <div class="color-input-row">
+              <input
+                type="color"
+                class="color-swatch"
+                id="sidebar_admin_text"
+                name="sidebar_admin_text"
+                value="{{ app_config.sidebar_admin_text }}"
+              />
+              <input
+                type="text"
+                class="color-hex"
+                id="sidebar_admin_text_hex"
+                value="{{ app_config.sidebar_admin_text }}"
+                maxlength="7"
+                placeholder="#333333"
+              />
+            </div>
+            <small class="config-hint">Textfarbe für inaktive Einträge</small>
+          </div>
+
+          <div class="color-item">
+            <label class="config-label"
+              >Hover Hintergrund
+              <span class="config-type-badge"
+                >sidebar_admin_hover_bg</span
+              ></label
+            >
+            <div class="color-input-row">
+              <input
+                type="color"
+                class="color-swatch"
+                id="sidebar_admin_hover_bg"
+                name="sidebar_admin_hover_bg"
+                value="{{ app_config.sidebar_admin_hover_bg }}"
+              />
+              <input
+                type="text"
+                class="color-hex"
+                id="sidebar_admin_hover_bg_hex"
+                value="{{ app_config.sidebar_admin_hover_bg }}"
+                maxlength="7"
+                placeholder="#eeeeee"
+              />
+            </div>
+            <small class="config-hint">Hintergrundfarbe beim Hover</small>
+          </div>
+
+          <div class="color-item">
+            <label class="config-label"
+              >Hover Text
+              <span class="config-type-badge"
+                >sidebar_admin_hover_text</span
+              ></label
+            >
+            <div class="color-input-row">
+              <input
+                type="color"
+                class="color-swatch"
+                id="sidebar_admin_hover_text"
+                name="sidebar_admin_hover_text"
+                value="{{ app_config.sidebar_admin_hover_text }}"
+              />
+              <input
+                type="text"
+                class="color-hex"
+                id="sidebar_admin_hover_text_hex"
+                value="{{ app_config.sidebar_admin_hover_text }}"
+                maxlength="7"
+                placeholder="#111111"
+              />
+            </div>
+            <small class="config-hint">Textfarbe beim Hover</small>
+          </div>
+
+          <div class="color-item">
+            <label class="config-label"
+              >Aktiv Hintergrund
+              <span class="config-type-badge"
+                >sidebar_admin_active_bg</span
+              ></label
+            >
+            <div class="color-input-row">
+              <input
+                type="color"
+                class="color-swatch"
+                id="sidebar_admin_active_bg"
+                name="sidebar_admin_active_bg"
+                value="{{ app_config.sidebar_admin_active_bg }}"
+              />
+              <input
+                type="text"
+                class="color-hex"
+                id="sidebar_admin_active_bg_hex"
+                value="{{ app_config.sidebar_admin_active_bg }}"
+                maxlength="7"
+                placeholder="#3498db"
+              />
+            </div>
+            <small class="config-hint"
+              >Hintergrundfarbe des aktiven Eintrags</small
+            >
+          </div>
+
+          <div class="color-item">
+            <label class="config-label"
+              >Aktiv Text
+              <span class="config-type-badge"
+                >sidebar_admin_active_text</span
+              ></label
+            >
+            <div class="color-input-row">
+              <input
+                type="color"
+                class="color-swatch"
+                id="sidebar_admin_active_text"
+                name="sidebar_admin_active_text"
+                value="{{ app_config.sidebar_admin_active_text }}"
+              />
+              <input
+                type="text"
+                class="color-hex"
+                id="sidebar_admin_active_text_hex"
+                value="{{ app_config.sidebar_admin_active_text }}"
+                maxlength="7"
+                placeholder="#ffffff"
+              />
+            </div>
+            <small class="config-hint">Textfarbe des aktiven Eintrags</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Aktionen -->
+      <div class="config-actions">
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          onclick="resetToDefaults()"
+        >
+          <i class="bi bi-slash-circle"></i> Auf Standard zurücksetzen
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="resetStyle()">
+          <i class="bi bi-arrow-counterclockwise"></i> Zurücksetzen
+        </button>
+        <button type="button" class="btn btn-primary" onclick="saveStyle()">
+          <i class="bi bi-save"></i> Speichern
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div
+    id="styleStatusMessage"
+    class="status-message"
+    style="display: none"
+  ></div>
+</div>

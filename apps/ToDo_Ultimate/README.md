@@ -8,9 +8,9 @@ Author: Karatekti_123
 
 Created: 22.02.2026
 
-Last Update: 22.02.2026
+Last Update: 10.03.2026
 
-Last Version: 0.0.2
+Last Version: 0.0.3
 
 System Requirements: 1.4.2
 

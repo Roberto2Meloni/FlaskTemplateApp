@@ -47,6 +47,12 @@
   href="{{ url_for('Template_app_v002.static', filename='_base/css/Template_app_v002_admin_socket.css') }}"
 />
 
+<!-- Style-Verwaltung (nur auf Style-Seite) -->
+<link
+  rel="stylesheet"
+  href="{{ url_for('Template_app_v002.static', filename='_base/css/Template_app_v002_admin_style.css') }}"
+/>
+
 <!-- Task-Verwaltung -->
 <link
   rel="stylesheet"
@@ -103,3 +109,25 @@
 
 <!-- Integriere custom css Files HTML-->
 {% include "_custom/layout/Template_app_v002_integrate_css.html" %}
+
+<!-- Dynamische Sidebar-Farben aus app_config -->
+{% if app_config is defined %}
+<style>
+  :root {
+    /* Haupt-Sidebar */
+    --color-sidbar-background:       {{ app_config.sidebar_bg }};
+    --color-sidbar-background-hover: {{ app_config.sidebar_hover_bg }};
+    --color-active-background:       {{ app_config.sidebar_active_bg }};
+    --color-text-light:              {{ app_config.sidebar_text_active }};
+    --color-text-dark:               {{ app_config.sidebar_text_hover }};
+    --color-text-inactive:           {{ app_config.sidebar_text_inactive }};
+    /* Admin-Sidebar */
+    --color-sidbar-admin-background: {{ app_config.sidebar_admin_bg }};
+    --color-admin-text:              {{ app_config.sidebar_admin_text }};
+    --color-admin-hover-bg:          {{ app_config.sidebar_admin_hover_bg }};
+    --color-admin-hover-text:        {{ app_config.sidebar_admin_hover_text }};
+    --color-admin-active-bg:         {{ app_config.sidebar_admin_active_bg }};
+    --color-admin-active-text:       {{ app_config.sidebar_admin_active_text }};
+  }
+</style>
+{% endif %}

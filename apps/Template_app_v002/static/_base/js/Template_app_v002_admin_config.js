@@ -150,38 +150,6 @@ async function saveConfig() {
   }
 }
 
-/**
- * Zeigt eine Toast-Benachrichtigung
- */
-function showToast(message, type = "info") {
-  const toast = document.getElementById("toast-notification");
-
-  if (!toast) {
-    console.warn("Toast-Element nicht gefunden");
-    alert(message);
-    return;
-  }
-
-  const icons = {
-    success:
-      '<i class="bi bi-check-circle-fill" style="color: #28a745; font-size: 20px;"></i>',
-    error:
-      '<i class="bi bi-x-circle-fill" style="color: #dc3545; font-size: 20px;"></i>',
-    info: '<i class="bi bi-info-circle-fill" style="color: #3498db; font-size: 20px;"></i>',
-  };
-
-  toast.innerHTML = `
-    ${icons[type]}
-    <span>${message}</span>
-  `;
-
-  toast.className = `toast-notification ${type} show`;
-
-  setTimeout(() => {
-    toast.classList.remove("show");
-  }, 3000);
-}
-
 // ========================================
 // CONFIG FUNCTIONS
 // ========================================

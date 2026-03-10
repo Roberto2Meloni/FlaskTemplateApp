@@ -345,7 +345,9 @@ def main() -> None:
     print("=" * 60)
     print("🔄  Flask App Update Script")
     print(f"    Template:      {TEMPLATE_NAME}")
-    print(f"    admin_version: {base_version}  (aus _BASE_VERSION)")
+    print(
+        f"    admin_version: {base_version}  (aus _BASE_VERSION), um dies zu ändern, editiere _base/config/app_config.py, json ist irrelevant"
+    )
     print(f"    app_version:   +0.0.1 pro App  (individuell)")
     print(f"    Filter:        Template_Base: {REQUIRED_BASE}")
     print(f"\n    Aktualisierte Bereiche:")

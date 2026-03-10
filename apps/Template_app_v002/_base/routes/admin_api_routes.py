@@ -506,4 +506,46 @@ def api_get_log_stats():
         return jsonify({"success": False, "message": str(e)}), 500
 
 
+@blueprint.route("/admin/api_style_save", methods=["POST"])
+@admin_required
+def api_style_save():
+    """Speichert den 'styling' Block in app_config.json"""
+
+    data = request.get_json()
+    if not data or "styling" not in data:
+        return (
+            jsonify({"success": False, "error": "Keine Styling-Daten empfangen"}),
+            400,
+        )
+
+    ALLOWED_KEYS = {
+        "sidebar_bg",
+        "sidebar_text_inactive",
+        "sidebar_hover_bg",
+        "sidebar_text_hover",
+        "sidebar_active_bg",
+        "sidebar_text_active",
+        "sidebar_admin_bg",
+        "sidebar_admin_text",
+    }
+
+    incoming = data["styling"]
+    filtered = {k: v for k, v in incoming.items() if k in ALLOWED_KEYS}
+
+    if not filtered:
+        return jsonify({"success": False, "error": "Keine gültigen Felder"}), 400
+
+    try:
+        # Aktuellen styling-Block laden und mergen
+        current_styling = app_config.config.get("styling", {})
+        current_styling.update(filtered)
+        # Über set() speichern — handled deep merge + _save_config()
+        app_config.set("styling", current_styling)
+        app_logger.info(f"Styling gespeichert: {list(filtered.keys())}")
+        return jsonify({"success": True, "message": "Farben gespeichert"})
+    except Exception as e:
+        app_logger.error(f"Fehler beim Speichern des Stylings: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 app_logger.info(f"✅ Admin API Routes für {app_config.app_name} geladen")

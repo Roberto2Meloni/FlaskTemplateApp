@@ -24,7 +24,7 @@ class AppConfig:
     # BASE VERSION — hardcoded, wird nie vom JSON überschrieben
     # Update-Script setzt diese Version wenn es _base Dateien aktualisiert
     # ========================================
-    _BASE_VERSION = "0.0.1"
+    _BASE_VERSION = "0.0.2"
 
     # ========================================
     # READONLY FIELDS
@@ -62,6 +62,22 @@ class AppConfig:
                 "socketio_enabled": True,
                 "scheduler_enabled": True,
                 "admin_panel_enabled": True,
+            },
+            "styling": {
+                # Haupt-Sidebar
+                "sidebar_bg": "#1e1e1e",
+                "sidebar_text_inactive": "#ffffff",
+                "sidebar_hover_bg": "#ffffff",
+                "sidebar_text_hover": "#333333",
+                "sidebar_active_bg": "#3498db",
+                "sidebar_text_active": "#ffffff",
+                # Admin-Sidebar
+                "sidebar_admin_bg": "#fcfcfc",
+                "sidebar_admin_text": "#333333",
+                "sidebar_admin_hover_bg": "#f0f0f0",
+                "sidebar_admin_hover_text": "#111111",
+                "sidebar_admin_active_bg": "#3498db",
+                "sidebar_admin_active_text": "#ffffff",
             },
         }
 
@@ -256,6 +272,64 @@ class AppConfig:
     @property
     def tasks_intervals(self) -> Dict[str, int]:
         return self.config.get("tasks_intervall", {})
+
+    # ── Styling ──────────────────────────────────────────────
+
+    @property
+    def styling(self) -> dict:
+        return self.config.get("styling", {})
+
+    # Haupt-Sidebar
+    @property
+    def sidebar_bg(self) -> str:
+        return self.config.get("styling", {}).get("sidebar_bg", "#1e1e1e")
+
+    @property
+    def sidebar_text_inactive(self) -> str:
+        return self.config.get("styling", {}).get("sidebar_text_inactive", "#ffffff")
+
+    @property
+    def sidebar_hover_bg(self) -> str:
+        return self.config.get("styling", {}).get("sidebar_hover_bg", "#ffffff")
+
+    @property
+    def sidebar_text_hover(self) -> str:
+        return self.config.get("styling", {}).get("sidebar_text_hover", "#333333")
+
+    @property
+    def sidebar_active_bg(self) -> str:
+        return self.config.get("styling", {}).get("sidebar_active_bg", "#3498db")
+
+    @property
+    def sidebar_text_active(self) -> str:
+        return self.config.get("styling", {}).get("sidebar_text_active", "#ffffff")
+
+    # Admin-Sidebar
+    @property
+    def sidebar_admin_bg(self) -> str:
+        return self.config.get("styling", {}).get("sidebar_admin_bg", "#fcfcfc")
+
+    @property
+    def sidebar_admin_text(self) -> str:
+        return self.config.get("styling", {}).get("sidebar_admin_text", "#333333")
+
+    @property
+    def sidebar_admin_hover_bg(self) -> str:
+        return self.config.get("styling", {}).get("sidebar_admin_hover_bg", "#f0f0f0")
+
+    @property
+    def sidebar_admin_hover_text(self) -> str:
+        return self.config.get("styling", {}).get("sidebar_admin_hover_text", "#111111")
+
+    @property
+    def sidebar_admin_active_bg(self) -> str:
+        return self.config.get("styling", {}).get("sidebar_admin_active_bg", "#3498db")
+
+    @property
+    def sidebar_admin_active_text(self) -> str:
+        return self.config.get("styling", {}).get(
+            "sidebar_admin_active_text", "#ffffff"
+        )
 
     # ========================================
     # PUBLIC API

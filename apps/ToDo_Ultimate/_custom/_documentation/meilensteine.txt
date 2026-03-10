@@ -2,4 +2,3 @@
 - To Do anzeigen
 - To Do bearbeiten
 - To Do archivieren
-- Löschen Testseinen

@@ -101,6 +101,34 @@ def app_settings_config():
     )
 
 
+@blueprint.route("/app_settings/style", methods=["GET"])
+@admin_required
+def app_settings_style():
+    """App-Darstellung bearbeiten"""
+
+    app_config_dict = app_config.config  # Nutze direkt .config statt .to_dict()
+
+    if is_ajax_request():
+        return render_template(
+            "_base/admin/Template_app_v002_admin_style.html",
+            user=current_user,
+            config=app_config,
+            app_config_dict=app_config_dict,
+            app_config=app_config,
+        )
+
+    return render_template(
+        "Template_app_v002.html",
+        user=current_user,
+        config=app_config,
+        content="app_settings",
+        settings="style",
+        app_config_dict=app_config_dict,
+        app_config=app_config,
+        pages=PAGES,
+    )
+
+
 @blueprint.route("/app_settings/sockets", methods=["GET"])
 @admin_required
 def app_settings_sockets():

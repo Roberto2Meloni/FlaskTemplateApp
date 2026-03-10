@@ -6,4 +6,12 @@ from app.decorators import admin_required, enabled_required
 from ... import blueprint, app_logger, app_config
 
 app_logger.info(f"Starte CUSTOM API Routes für {app_config.app_name}")
+
+
+@blueprint.route("/api/add_todo", methods=["POST"])
+@enabled_required
+def api_add_todo():
+    pass
+
+
 app_logger.info(f"Ende CUSTOM API Routes für {app_config.app_name}")

@@ -3,14 +3,22 @@
  * Haupt- und Admin-Navigation
  */
 
-/* CSS Variables (Sidebar-spezifisch) */
+/* CSS Variables — Fallback falls app_config nicht verfügbar */
 :root {
+    /* Haupt-Sidebar */
     --color-sidbar-background: #1e1e1e;
     --color-sidbar-background-hover: #ffffff;
-    --color-sidbar-admin-background: #fcfcfc;
     --color-active-background: #3498db;
     --color-text-light: #ffffff;
     --color-text-dark: #333333;
+    --color-text-inactive: #ffffff;
+    /* Admin-Sidebar */
+    --color-sidbar-admin-background: #fcfcfc;
+    --color-admin-text: #333333;
+    --color-admin-hover-bg: rgba(0, 0, 0, 0.05);
+    --color-admin-hover-text: #111111;
+    --color-admin-active-bg: #3498db;
+    --color-admin-active-text: #ffffff;
 }
 
 /* ========================================
@@ -42,7 +50,7 @@
 .hamburger-menu {
     background: none;
     border: none;
-    color: var(--color-text-light);
+    color: var(--color-text-inactive);
     font-size: 20px;
     cursor: pointer;
     margin-right: 15px;
@@ -52,7 +60,7 @@
 }
 
 .sidebar_title {
-    color: var(--color-text-light);
+    color: var(--color-text-inactive);
     margin: 0;
     font-weight: bold;
     white-space: nowrap;
@@ -87,7 +95,7 @@ ul {
     align-items: center;
     padding: 15px;
     text-decoration: none;
-    color: var(--color-text-light);
+    color: var(--color-text-inactive);
     transition: background-color 0.2s ease, color 0.2s ease;
     white-space: nowrap;
 }
@@ -163,34 +171,35 @@ ul {
 }
 
 .navigation-admin .hamburger-menu {
-    color: var(--color-text-dark);
+    color: var(--color-admin-text);
 }
 
 .navigation-admin .sidebar_title {
-    color: var(--color-text-dark);
+    color: var(--color-admin-text);
 }
 
 .navigation-admin .list a {
-    color: var(--color-text-dark);
+    color: var(--color-admin-text);
 }
 
 .navigation-admin .list a:hover {
-    background: rgba(0, 0, 0, 0.05);
+    background: var(--color-admin-hover-bg);
+    color: var(--color-admin-hover-text);
 }
 
 .navigation-admin .list.active a {
-    background: var(--color-active-background);
-    color: var(--color-text-light);
+    background: var(--color-admin-active-bg);
+    color: var(--color-admin-active-text);
 }
 
 .navigation-admin .list.active a:hover {
-    background: var(--color-active-background);
-    color: var(--color-text-light);
+    background: var(--color-admin-active-bg);
+    color: var(--color-admin-active-text);
 }
 
 .navigation-admin.collapsed .list:hover::after {
     background: var(--color-sidbar-admin-background);
-    color: var(--color-text-dark);
+    color: var(--color-admin-text);
     border: 1px solid #ddd;
 }
 
