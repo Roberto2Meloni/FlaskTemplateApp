@@ -1,2 +1,15 @@
-- Sidbar eingeklap behalten wenn wechsel zu Admin
-- Responsive?
+Ok - Seiten
+- Offerte   x
+- Drucker   x
+- Filamente x
+- Strom Tarife X
+- Arbeitszeiten x
+- Overhead [Mite, Internet, Betreibskosten?] x
+- Rabatte und Aufschlag
+
+- Drucker hinzufügen
+--> Rückgabe vorhandene Drucker
+--> Drucker hinzufügen
+--> Drucker bearbeiten
+--> Drucker Friedhof --> Drucker werden wenn in Offerte verwendet nicht gelöscht
+

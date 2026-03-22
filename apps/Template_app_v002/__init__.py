@@ -42,7 +42,7 @@ __all__ = ["blueprint", "app_logger", "app_config", "APP_NAME", "APP_ROOT", "ini
 def _register_routes():
     """Importiere Routes (intern, nach Blueprint-Erstellung)"""
     from ._base.routes import api_routes, admin_routes, admin_api_routes
-    from ._custom.routes import routes, admin_routes
+    from ._custom.routes import api_routes, routes, admin_routes
 
     app_logger.info("Routes registriert")
 
@@ -97,7 +97,13 @@ def _register_extensions():
             app_logger.warning(f"Scheduler Module nicht gefunden: {e}")
 
 
+def _register_models():
+    """Importiere optionale Models"""
+    from . import models
+
+
 # Registriere alles beim Import
+_register_models
 _register_routes()
 _register_extensions()
 

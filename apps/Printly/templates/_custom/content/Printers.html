@@ -1,0 +1,201 @@
+<div class="printers-page">
+  <!-- Header -->
+  <div class="printers-header">
+    <div class="printers-header__left">
+      <span class="printers-header__label">GERÄTEPARK</span>
+      <h1 class="printers-header__title">3D Drucker</h1>
+    </div>
+    <button
+      class="btn-add-printer"
+      id="btnAddPrinter"
+      onclick="PrinterModal.openAdd()"
+    >
+      <span class="btn-add-printer__icon">+</span>
+      <span>Neuer Drucker</span>
+    </button>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="printers-stats">
+    <div class="stat-pill">
+      <span class="stat-pill__value" id="statTotal">{{ printers|length }}</span>
+      <span class="stat-pill__label">Drucker total</span>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-pill__value" id="statBrands">–</span>
+      <span class="stat-pill__label">Marken</span>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-pill__value" id="statAvgCost">–</span>
+      <span class="stat-pill__label">Ø CHF/h</span>
+    </div>
+  </div>
+
+  <!-- Printer Grid -->
+  <div class="printers-grid" id="printersGrid">
+    {% for printer in printers %}
+    <div class="printer-card" data-id="{{ printer.id }}">
+      <div class="printer-card__brand-bar">
+        <span class="printer-card__brand">{{ printer.brand }}</span>
+        <span class="printer-card__cost"
+          >{{ printer.machine_cost_per_hour }} CHF/h</span
+        >
+      </div>
+      <div class="printer-card__body">
+        <h3 class="printer-card__name">{{ printer.name }}</h3>
+        <div class="printer-card__metrics">
+          {% if printer.energy_consumption %}
+          <div class="metric">
+            <span class="metric__label">Verbrauch</span>
+            <span class="metric__value"
+              >{{ printer.energy_consumption }} W</span
+            >
+          </div>
+          {% endif %}
+          <div class="metric">
+            <span class="metric__label">Tageskosten</span>
+            <span class="metric__value"
+              >{{ "%.2f"|format(printer.daily_machine_cost) }} CHF</span
+            >
+          </div>
+          <div class="metric">
+            <span class="metric__label">Erfasst am</span>
+            <span class="metric__value"
+              >{{ printer.created_at.strftime('%d.%m.%Y') }}</span
+            >
+          </div>
+        </div>
+        {% if printer.notes %}
+        <p class="printer-card__notes">{{ printer.notes }}</p>
+        {% endif %}
+      </div>
+      <div class="printer-card__footer">
+        <span class="printer-card__creator">{{ printer.created_by }}</span>
+        <button
+          class="btn-edit"
+          data-id="{{ printer.id }}"
+          data-name="{{ printer.name }}"
+          data-brand="{{ printer.brand }}"
+          data-cost="{{ printer.machine_cost_per_hour }}"
+          data-energy="{{ printer.energy_consumption or '' }}"
+          data-notes="{{ printer.notes or '' }}"
+          onclick="PrinterModal.openEdit(this.dataset)"
+        >
+          Bearbeiten
+        </button>
+      </div>
+    </div>
+    {% else %}
+    <div class="printers-empty">
+      <div class="printers-empty__icon">🖨️</div>
+      <p class="printers-empty__text">Noch keine Drucker erfasst.</p>
+      <button class="btn-add-printer" id="btnAddPrinterEmpty">
+        <span class="btn-add-printer__icon">+</span>
+        <span>Ersten Drucker hinzufügen</span>
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Modal – standardmässig versteckt via display:none -->
+<div
+  class="modal-overlay"
+  id="printerModal"
+  style="display: none"
+  onclick="PrinterModal.overlayClick(event)"
+>
+  <div class="modal">
+    <div class="modal__header">
+      <h2 class="modal__title" id="modalTitle">Neuer Drucker</h2>
+      <button class="modal__close" onclick="PrinterModal.close()">✕</button>
+    </div>
+    <form
+      class="modal__form"
+      id="printerForm"
+      onsubmit="PrinterModal.submit(event)"
+    >
+      <input type="hidden" id="formPrinterId" value="" />
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="formName">Name *</label>
+          <input
+            class="form-input"
+            type="text"
+            id="formName"
+            placeholder="z.B. Prusa MK4"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="formBrand">Marke *</label>
+          <select class="form-input form-select" id="formBrand" required>
+            <option value="">Marke wählen...</option>
+            <option>Prusa</option>
+            <option>Creality</option>
+            <option>Bambu Lab</option>
+            <option>Ultimaker</option>
+            <option>Formlabs</option>
+            <option>Artillery</option>
+            <option>Anycubic</option>
+            <option>Elegoo</option>
+            <option>QIDI</option>
+            <option>Voron</option>
+            <option>Andere</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="formCost"
+            >Maschinenkosten (CHF/h) *</label
+          >
+          <input
+            class="form-input"
+            type="number"
+            id="formCost"
+            step="0.01"
+            min="0"
+            placeholder="0.00"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="formEnergy"
+            >Energieverbrauch (Watt)</label
+          >
+          <input
+            class="form-input"
+            type="number"
+            id="formEnergy"
+            min="0"
+            placeholder="optional"
+          />
+        </div>
+      </div>
+
+      <div class="form-group form-group--full">
+        <label class="form-label" for="formNotes">Notizen</label>
+        <textarea
+          class="form-input form-textarea"
+          id="formNotes"
+          placeholder="Optionale Bemerkungen..."
+        ></textarea>
+      </div>
+
+      <div class="modal__actions">
+        <button
+          type="button"
+          class="btn-cancel"
+          id="modalCancel"
+          onclick="PrinterModal.close()"
+        >
+          Abbrechen
+        </button>
+        <button type="submit" class="btn-save">Speichern</button>
+      </div>
+    </form>
+  </div>
+</div>

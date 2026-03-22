@@ -24,10 +24,10 @@
     "admin_panel_enabled": true
   },
   "styling": {
-    "sidebar_bg": "#1e1e1e",
-    "sidebar_text_inactive": "#ffffff",
-    "sidebar_hover_bg": "#ffffff",
-    "sidebar_text_hover": "#333333",
+    "sidebar_bg": "#323232",
+    "sidebar_text_inactive": "#f46201",
+    "sidebar_hover_bg": "#f46201",
+    "sidebar_text_hover": "#fbebf2",
     "sidebar_active_bg": "#3498db",
     "sidebar_text_active": "#ffffff",
     "sidebar_admin_bg": "#fcfcfc",

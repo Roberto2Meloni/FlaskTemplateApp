@@ -4,13 +4,10 @@
 -->
 
 <!-- URL Definitions -->
-{% include
-"_base/layouts/web_app_layouts/Printly_url_definitions.html" %}
+{% include "_base/layouts/web_app_layouts/Printly_url_definitions.html" %}
 
 <!-- Custom URL Definitions (optional) -->
-{% if config.TEMPLATE_APP_CUSTOM_JS %} {% include
-"_custom/layouts/Printly_url_definitions.html" ignore missing %} {%
-endif %}
+{% include "_custom/layout/Printly_url_definitions.html" %}
 
 <!-- ========================================
      LIBRARIES

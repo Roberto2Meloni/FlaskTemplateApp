@@ -1,0 +1,491 @@
+/* ============================================================
+   Printers.css
+   Baut auf den globalen CSS-Variablen auf:
+     --color-sidbar-background       (#323232)
+     --color-text-inactive           (#f46201) ← Orange-Akzent
+     --color-sidbar-background-hover (#f46201)
+     --color-active-background       (#3498db) ← Blau
+     --color-text-light              (#ffffff)
+     --color-text-dark               (#fbebf2)
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;700&display=swap');
+
+/* Lokale Ergänzungs-Variablen (keine Überschreibung) */
+.printers-page {
+    --p-bg: #f5f5f5;
+    --p-surface: #ffffff;
+    --p-border: #e4e4e4;
+    --p-text: #1a1a1a;
+    --p-text-muted: #777777;
+    --p-radius: 6px;
+    --p-radius-lg: 12px;
+    --p-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
+    --p-shadow-lg: 0 6px 28px rgba(0, 0, 0, 0.13);
+    --p-mono: 'IBM Plex Mono', monospace;
+    --p-sans: 'DM Sans', sans-serif;
+    --p-transition: 0.2s ease;
+}
+
+/* ============================================================
+   PAGE LAYOUT
+   ============================================================ */
+
+.printers-page {
+    font-family: var(--p-sans);
+    color: var(--p-text);
+    background: var(--p-bg);
+    min-height: 100%;
+    padding: 32px 40px;
+    box-sizing: border-box;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+
+.printers-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.printers-header__label {
+    font-family: var(--p-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    /* Orange aus globaler Variable */
+    color: var(--color-text-inactive);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.printers-header__title {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0;
+    line-height: 1;
+    color: var(--p-text);
+}
+
+/* ============================================================
+   ADD BUTTON  – Orange Akzent
+   ============================================================ */
+
+.btn-add-printer {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--color-sidbar-background-hover);
+    /* #f46201 */
+    color: var(--color-text-light);
+    /* #ffffff */
+    border: none;
+    border-radius: var(--p-radius);
+    padding: 10px 20px;
+    font-family: var(--p-sans);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: filter var(--p-transition), transform var(--p-transition);
+}
+
+.btn-add-printer:hover {
+    filter: brightness(0.9);
+    transform: translateY(-1px);
+}
+
+.btn-add-printer__icon {
+    font-size: 20px;
+    font-weight: 300;
+    line-height: 1;
+}
+
+/* ============================================================
+   STATS BAR
+   ============================================================ */
+
+.printers-stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+}
+
+.stat-pill {
+    background: var(--p-surface);
+    border: 1px solid var(--p-border);
+    border-radius: 999px;
+    padding: 7px 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.stat-pill__value {
+    font-family: var(--p-mono);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-active-background);
+    /* #3498db */
+}
+
+.stat-pill__label {
+    font-size: 12px;
+    color: var(--p-text-muted);
+}
+
+/* ============================================================
+   PRINTER GRID
+   ============================================================ */
+
+.printers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 18px;
+}
+
+/* ============================================================
+   PRINTER CARD
+   ============================================================ */
+
+.printer-card {
+    background: var(--p-surface);
+    border: 1px solid var(--p-border);
+    border-radius: var(--p-radius-lg);
+    overflow: hidden;
+    box-shadow: var(--p-shadow);
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow var(--p-transition), transform var(--p-transition);
+    animation: cardIn 0.25s ease both;
+}
+
+.printer-card:hover {
+    box-shadow: var(--p-shadow-lg);
+    transform: translateY(-2px);
+}
+
+@keyframes cardIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Brand Bar – dunkler Hintergrund wie Sidebar */
+.printer-card__brand-bar {
+    background: var(--color-sidbar-background);
+    /* #323232 */
+    color: var(--color-text-light);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+}
+
+.printer-card__brand {
+    font-family: var(--p-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-text-inactive);
+    /* #f46201 – Orange */
+}
+
+.printer-card__cost {
+    font-family: var(--p-mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-light);
+}
+
+/* Card Body */
+.printer-card__body {
+    padding: 18px 18px 12px;
+    flex: 1;
+}
+
+.printer-card__name {
+    font-size: 17px;
+    font-weight: 700;
+    margin: 0 0 14px;
+    color: var(--p-text);
+}
+
+/* Metrics */
+.printer-card__metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.metric {
+    background: var(--p-bg);
+    border: 1px solid var(--p-border);
+    border-radius: var(--p-radius);
+    padding: 5px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.metric__label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--p-text-muted);
+}
+
+.metric__value {
+    font-family: var(--p-mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--p-text);
+}
+
+.printer-card__notes {
+    font-size: 12px;
+    color: var(--p-text-muted);
+    margin: 0;
+    line-height: 1.5;
+    border-left: 2px solid var(--color-text-inactive);
+    padding-left: 10px;
+}
+
+/* Card Footer */
+.printer-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 18px;
+    border-top: 1px solid var(--p-border);
+}
+
+.printer-card__creator {
+    font-size: 11px;
+    color: var(--p-text-muted);
+    font-family: var(--p-mono);
+}
+
+.btn-edit {
+    background: transparent;
+    border: 1px solid var(--color-active-background);
+    /* #3498db */
+    color: var(--color-active-background);
+    border-radius: var(--p-radius);
+    padding: 5px 14px;
+    font-family: var(--p-sans);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background var(--p-transition), color var(--p-transition);
+}
+
+.btn-edit:hover {
+    background: var(--color-active-background);
+    color: var(--color-text-light);
+}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+
+.printers-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 64px 24px;
+    color: var(--p-text-muted);
+}
+
+.printers-empty__icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.4;
+}
+
+.printers-empty__text {
+    font-size: 15px;
+    margin-bottom: 24px;
+}
+
+/* ============================================================
+   MODAL OVERLAY
+   ============================================================ */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.modal {
+    background: var(--p-surface);
+    border-radius: var(--p-radius-lg);
+    width: 100%;
+    max-width: 560px;
+    box-shadow: var(--p-shadow-lg);
+    overflow: hidden;
+}
+
+/* Modal Header – Sidebar-Farbe */
+.modal__header {
+    background: var(--color-sidbar-background);
+    /* #323232 */
+    color: var(--color-text-light);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+}
+
+.modal__title {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--color-text-light);
+}
+
+.modal__close {
+    background: transparent;
+    border: none;
+    color: var(--color-text-inactive);
+    /* #f46201 */
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background var(--p-transition);
+    line-height: 1;
+}
+
+.modal__close:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================================
+   FORM
+   ============================================================ */
+
+.modal__form {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group--full {
+    grid-column: 1 / -1;
+}
+
+.form-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--p-text-muted);
+}
+
+.form-input {
+    border: 1px solid var(--p-border);
+    border-radius: var(--p-radius);
+    padding: 9px 12px;
+    font-family: var(--p-sans);
+    font-size: 14px;
+    color: var(--p-text);
+    background: var(--p-bg);
+    outline: none;
+    transition: border-color var(--p-transition), box-shadow var(--p-transition);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.form-input:focus {
+    border-color: var(--color-active-background);
+    /* #3498db */
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+    background: var(--p-surface);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.form-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%23777' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+}
+
+/* Modal Actions */
+.modal__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--p-border);
+}
+
+.btn-cancel {
+    background: transparent;
+    border: 1px solid var(--p-border);
+    color: var(--p-text-muted);
+    border-radius: var(--p-radius);
+    padding: 9px 20px;
+    font-family: var(--p-sans);
+    font-size: 14px;
+    cursor: pointer;
+    transition: background var(--p-transition);
+}
+
+.btn-cancel:hover {
+    background: var(--p-bg);
+}
+
+.btn-save {
+    background: var(--color-active-background);
+    /* #3498db */
+    color: var(--color-text-light);
+    border: none;
+    border-radius: var(--p-radius);
+    padding: 9px 24px;
+    font-family: var(--p-sans);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: filter var(--p-transition);
+}
+
+.btn-save:hover {
+    filter: brightness(0.9);
+}
