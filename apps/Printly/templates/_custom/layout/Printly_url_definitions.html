@@ -5,6 +5,7 @@
     app_settings: "{{ url_for('Printly.app_settings') }}",
     api_printers: "{{ url_for('Printly.api_create_printer') }}",
     api_printer_update: "{{ url_for('Printly.api_update_printer', printer_id=0) }}",
+    api_printer_archive: "{{ url_for('Printly.api_archive_printer', printer_id=0) }}",
 
     {% for page in pages %}
     {{ page.id }}: "{{ url_for('Printly.' + page.id) }}",

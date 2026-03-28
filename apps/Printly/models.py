@@ -32,6 +32,9 @@ class PrintlyPrinter(db.Model):
         db.String(64), nullable=False
     )  # Speichert current_user.username
 
+    # Friedhof Atribute
+    is_archived = db.Column(db.Boolean, default=False, nullable=False)
+
     def __repr__(self):
         return f"<PrintlyPrinter {self.name} ({self.brand})>"
 

@@ -23,8 +23,17 @@ def load_quote_calculator_context():
 
 
 def load_printers_context():
-    all_printers = PrintlyPrinter.query.order_by(PrintlyPrinter.name).all()
-    return {"all_printers": all_printers}
+    active = (
+        PrintlyPrinter.query.filter_by(is_archived=False)
+        .order_by(PrintlyPrinter.name)
+        .all()
+    )
+    graveyard = (
+        PrintlyPrinter.query.filter_by(is_archived=True)
+        .order_by(PrintlyPrinter.name)
+        .all()
+    )
+    return {"all_printers": active, "graveyard_printers": graveyard}
 
 
 def load_filaments_context():

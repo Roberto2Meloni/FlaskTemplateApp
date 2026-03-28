@@ -1,14 +1,112 @@
 /**
  * Printers.js – Printly Drucker-Verwaltung
- * Globales PrinterModal Objekt – wird direkt via onclick im HTML aufgerufen
  */
 
-// ============================================================
-// STATS
-// ============================================================
+const PrinterModal = {
+  openAdd() {
+    $("#printerModalLabel").text("Neuer Drucker");
+    $("#printerForm")[0].reset();
+    $("#formPrinterId").val("");
+    $("#printerModal").modal("show");
+  },
 
+  openEdit(dataset) {
+    $("#printerModalLabel").text("Drucker bearbeiten");
+    $("#printerForm")[0].reset();
+    $("#formPrinterId").val(dataset.id || "");
+    $("#formName").val(dataset.name || "");
+    $("#formCost").val(dataset.cost || "");
+    $("#formEnergy").val(dataset.energy || "");
+    $("#formNotes").val(dataset.notes || "");
+
+    const brand = dataset.brand || "";
+    $("#formBrand option").each(function () {
+      $(this).prop(
+        "selected",
+        $(this).val() === brand || $(this).text() === brand,
+      );
+    });
+
+    $("#printerModal").modal("show");
+  },
+
+  archive(printerId, printerName) {
+    const url = APP_URLS.api_printer_archive.replace("/0", `/${printerId}`);
+
+    fetch(url, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success) {
+          const action = data.is_archived ? "begraben ⚰️" : "wiederbelebt 💚";
+          console.log(`[Printers] '${printerName}' wurde ${action}`);
+          window.location.reload();
+        } else {
+          alert("Fehler: " + (data.error || "Unbekannter Fehler"));
+        }
+      })
+      .catch((err) => {
+        console.error("[PrinterModal] Fehler:", err);
+        alert("Verbindungsfehler – bitte nochmals versuchen.");
+      });
+  },
+
+  submit(event) {
+    event.preventDefault();
+    const id = $("#formPrinterId").val();
+    const isEdit = !!id;
+
+    const payload = {
+      name: $("#formName").val(),
+      brand: $("#formBrand").val(),
+      machine_cost_per_hour: parseFloat($("#formCost").val()),
+      energy_consumption: $("#formEnergy").val()
+        ? parseInt($("#formEnergy").val())
+        : null,
+      notes: $("#formNotes").val() || null,
+    };
+
+    const url = isEdit
+      ? APP_URLS.api_printer_update.replace("/0", `/${id}`)
+      : APP_URLS.api_printers;
+    const method = isEdit ? "PUT" : "POST";
+
+    fetch(url, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      body: JSON.stringify(payload),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success) {
+          $("#printerModal").modal("hide");
+          window.location.reload();
+        } else {
+          alert("Fehler: " + (data.error || "Unbekannter Fehler"));
+        }
+      })
+      .catch((err) => {
+        console.error("[PrinterModal] Fehler:", err);
+        alert("Verbindungsfehler – bitte nochmals versuchen.");
+      });
+  },
+};
+
+// ============================================================
+// STATS (nur aktive Drucker)
+// ============================================================
 function updatePrinterStats() {
-  const cards = document.querySelectorAll(".printer-card");
+  const cards = document.querySelectorAll(
+    ".printers-grid:not(.printers-grid--graveyard) .printer-card",
+  );
   const total = cards.length;
 
   const elTotal = document.getElementById("statTotal");
@@ -23,7 +121,6 @@ function updatePrinterStats() {
     return;
   }
 
-  // Einzigartige Marken
   const brands = new Set();
   cards.forEach((card) => {
     const brand = card
@@ -33,7 +130,6 @@ function updatePrinterStats() {
   });
   if (elBrands) elBrands.textContent = brands.size;
 
-  // Ø CHF/h
   let totalCost = 0;
   let count = 0;
   cards.forEach((card) => {
@@ -48,131 +144,6 @@ function updatePrinterStats() {
   }
 }
 
-// ============================================================
-// PRINTER MODAL – globales Objekt
-// ============================================================
-
-const PrinterModal = {
-  // ----------------------------------------------------------
-  // ÖFFNEN: Neuer Drucker
-  // ----------------------------------------------------------
-  openAdd() {
-    document.getElementById("modalTitle").textContent = "Neuer Drucker";
-    document.getElementById("formPrinterId").value = "";
-    document.getElementById("printerForm").reset();
-    document.getElementById("printerModal").style.display = "flex";
-    document.getElementById("formName").focus();
-  },
-
-  // ----------------------------------------------------------
-  // ÖFFNEN: Drucker bearbeiten
-  // dataset kommt direkt von this.dataset des Buttons
-  // ----------------------------------------------------------
-  openEdit(dataset) {
-    document.getElementById("modalTitle").textContent = "Drucker bearbeiten";
-    document.getElementById("printerForm").reset();
-    document.getElementById("formPrinterId").value = dataset.id || "";
-    document.getElementById("formName").value = dataset.name || "";
-    document.getElementById("formCost").value = dataset.cost || "";
-    document.getElementById("formEnergy").value = dataset.energy || "";
-    document.getElementById("formNotes").value = dataset.notes || "";
-
-    // Marke im Select setzen
-    const select = document.getElementById("formBrand");
-    Array.from(select.options).forEach((opt) => {
-      opt.selected =
-        opt.value === dataset.brand || opt.textContent === dataset.brand;
-    });
-
-    document.getElementById("printerModal").style.display = "flex";
-    document.getElementById("formName").focus();
-  },
-
-  // ----------------------------------------------------------
-  // SCHLIESSEN
-  // ----------------------------------------------------------
-  close() {
-    document.getElementById("printerModal").style.display = "none";
-    document.getElementById("printerForm").reset();
-  },
-
-  // ----------------------------------------------------------
-  // OVERLAY KLICK – nur schliessen wenn Klick auf Overlay selbst
-  // ----------------------------------------------------------
-  overlayClick(event) {
-    if (event.target === event.currentTarget) {
-      PrinterModal.close();
-    }
-  },
-
-  // ----------------------------------------------------------
-  // SUBMIT – API Call
-  // Wird via onsubmit="PrinterModal.submit(event)" im <form> aufgerufen
-  // ----------------------------------------------------------
-  submit(event) {
-    event.preventDefault();
-
-    const id = document.getElementById("formPrinterId").value;
-    const isEdit = !!id;
-
-    const payload = {
-      name: document.getElementById("formName").value,
-      brand: document.getElementById("formBrand").value,
-      machine_cost_per_hour: parseFloat(
-        document.getElementById("formCost").value,
-      ),
-      energy_consumption: document.getElementById("formEnergy").value
-        ? parseInt(document.getElementById("formEnergy").value)
-        : null,
-      notes: document.getElementById("formNotes").value || null,
-    };
-
-    const url = isEdit
-      ? `${APP_URLS.api_printer_update}${id}`
-      : APP_URLS.api_printers;
-    const method = isEdit ? "PUT" : "POST";
-
-    console.log(`[PrinterModal] ${method} ${url}`, payload);
-
-    fetch(url, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-        "X-Requested-With": "XMLHttpRequest",
-      },
-      body: JSON.stringify(payload),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.success) {
-          PrinterModal.close();
-          window.location.reload();
-        } else {
-          alert("Fehler: " + (data.error || "Unbekannter Fehler"));
-        }
-      })
-      .catch((err) => {
-        console.error("[PrinterModal] API Fehler:", err);
-        alert("Verbindungsfehler – bitte nochmals versuchen.");
-      });
-  },
-};
-
-// ============================================================
-// ESC – einziger globaler Event Listener (kein onclick-Equivalent)
-// ============================================================
-document.addEventListener("keydown", function (e) {
-  if (e.key === "Escape") {
-    const modal = document.getElementById("printerModal");
-    if (modal && modal.classList.contains("is-open")) {
-      PrinterModal.close();
-    }
-  }
-});
-
-// ============================================================
-// INIT
-// ============================================================
 document.addEventListener("DOMContentLoaded", updatePrinterStats);
 
 console.log("Printers.js geladen");

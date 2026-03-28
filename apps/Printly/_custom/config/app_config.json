@@ -28,7 +28,7 @@
     "sidebar_text_inactive": "#f46201",
     "sidebar_hover_bg": "#f46201",
     "sidebar_text_hover": "#fbebf2",
-    "sidebar_active_bg": "#3498db",
+    "sidebar_active_bg": "#f46201",
     "sidebar_text_active": "#ffffff",
     "sidebar_admin_bg": "#fcfcfc",
     "sidebar_admin_text": "#333333",

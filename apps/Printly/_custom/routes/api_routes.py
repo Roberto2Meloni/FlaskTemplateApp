@@ -59,4 +59,13 @@ def api_update_printer(printer_id):
     return jsonify({"success": True, "printer": printer.to_dict()})
 
 
+@blueprint.route("/api/printers/<int:printer_id>/archive", methods=["PUT"])
+@enabled_required
+def api_archive_printer(printer_id):
+    printer = PrintlyPrinter.query.get_or_404(printer_id)
+    printer.is_archived = not printer.is_archived  # Toggle
+    db.session.commit()
+    return jsonify({"success": True, "is_archived": printer.is_archived})
+
+
 app_logger.info(f"Ende CUSTOM API Routes für {app_config.app_name}")

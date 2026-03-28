@@ -5,11 +5,7 @@
       <span class="printers-header__label">GERÄTEPARK</span>
       <h1 class="printers-header__title">3D Drucker</h1>
     </div>
-    <button
-      class="btn-add-printer"
-      id="btnAddPrinter"
-      onclick="PrinterModal.openAdd()"
-    >
+    <button class="btn-add-printer" onclick="PrinterModal.openAdd()">
       <span class="btn-add-printer__icon">+</span>
       <span>Neuer Drucker</span>
     </button>
@@ -18,7 +14,9 @@
   <!-- Stats Bar -->
   <div class="printers-stats">
     <div class="stat-pill">
-      <span class="stat-pill__value" id="statTotal">{{ printers|length }}</span>
+      <span class="stat-pill__value" id="statTotal"
+        >{{ all_printers|length }}</span
+      >
       <span class="stat-pill__label">Drucker total</span>
     </div>
     <div class="stat-pill">
@@ -29,11 +27,20 @@
       <span class="stat-pill__value" id="statAvgCost">–</span>
       <span class="stat-pill__label">Ø CHF/h</span>
     </div>
+    {% if graveyard_printers %}
+    <div class="stat-pill stat-pill--graveyard">
+      <span class="stat-pill__value">{{ graveyard_printers|length }}</span>
+      <span class="stat-pill__label">🪦 Friedhof</span>
+    </div>
+    {% endif %}
   </div>
 
-  <!-- Printer Grid -->
+  <!-- ==============================
+       AKTIVE DRUCKER
+       ============================== -->
+  <div class="printers-section-label">Aktive Drucker</div>
   <div class="printers-grid" id="printersGrid">
-    {% for printer in printers %}
+    {% for printer in all_printers %}
     <div class="printer-card" data-id="{{ printer.id }}">
       <div class="printer-card__brand-bar">
         <span class="printer-card__brand">{{ printer.brand }}</span>
@@ -71,131 +78,200 @@
       </div>
       <div class="printer-card__footer">
         <span class="printer-card__creator">{{ printer.created_by }}</span>
-        <button
-          class="btn-edit"
-          data-id="{{ printer.id }}"
-          data-name="{{ printer.name }}"
-          data-brand="{{ printer.brand }}"
-          data-cost="{{ printer.machine_cost_per_hour }}"
-          data-energy="{{ printer.energy_consumption or '' }}"
-          data-notes="{{ printer.notes or '' }}"
-          onclick="PrinterModal.openEdit(this.dataset)"
-        >
-          Bearbeiten
-        </button>
+        <div class="printer-card__actions">
+          <button
+            class="btn-edit"
+            data-id="{{ printer.id }}"
+            data-name="{{ printer.name }}"
+            data-brand="{{ printer.brand }}"
+            data-cost="{{ printer.machine_cost_per_hour }}"
+            data-energy="{{ printer.energy_consumption or '' }}"
+            data-notes="{{ printer.notes or '' }}"
+            onclick="PrinterModal.openEdit(this.dataset)"
+          >
+            Bearbeiten
+          </button>
+          <button
+            class="btn-bury"
+            onclick="PrinterModal.archive({{ printer.id }}, '{{ printer.name }}')"
+            title="Drucker in Friedhof begraben"
+          >
+            🪦 Begraben
+          </button>
+        </div>
       </div>
     </div>
     {% else %}
     <div class="printers-empty">
       <div class="printers-empty__icon">🖨️</div>
       <p class="printers-empty__text">Noch keine Drucker erfasst.</p>
-      <button class="btn-add-printer" id="btnAddPrinterEmpty">
+      <button class="btn-add-printer" onclick="PrinterModal.openAdd()">
         <span class="btn-add-printer__icon">+</span>
         <span>Ersten Drucker hinzufügen</span>
       </button>
     </div>
     {% endfor %}
   </div>
+
+  <!-- ==============================
+       FRIEDHOF
+       ============================== -->
+  {% if graveyard_printers %}
+  <div class="graveyard-section">
+    <div class="graveyard-section__header">
+      <span class="graveyard-section__icon">🪦</span>
+      <h2 class="graveyard-section__title">Friedhof</h2>
+      <span class="graveyard-section__count"
+        >{{ graveyard_printers|length }} Drucker begraben</span
+      >
+    </div>
+    <div class="printers-grid printers-grid--graveyard">
+      {% for printer in graveyard_printers %}
+      <div
+        class="printer-card printer-card--graveyard"
+        data-id="{{ printer.id }}"
+      >
+        <div class="printer-card__brand-bar">
+          <span class="printer-card__brand">{{ printer.brand }}</span>
+          <span class="printer-card__cost"
+            >{{ printer.machine_cost_per_hour }} CHF/h</span
+          >
+        </div>
+        <div class="printer-card__body">
+          <h3 class="printer-card__name">{{ printer.name }}</h3>
+          <div class="printer-card__metrics">
+            <div class="metric">
+              <span class="metric__label">Begraben am</span>
+              <span class="metric__value"
+                >{{ printer.updated_at.strftime('%d.%m.%Y') }}</span
+              >
+            </div>
+          </div>
+          {% if printer.notes %}
+          <p class="printer-card__notes">{{ printer.notes }}</p>
+          {% endif %}
+        </div>
+        <div class="printer-card__footer">
+          <span class="printer-card__creator">{{ printer.created_by }}</span>
+          <button
+            class="btn-revive"
+            onclick="PrinterModal.archive({{ printer.id }}, '{{ printer.name }}')"
+            title="Drucker wiederbeleben"
+          >
+            Wiederbeleben
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
 </div>
 
-<!-- Modal – standardmässig versteckt via display:none -->
+<!-- Bootstrap Modal -->
 <div
-  class="modal-overlay"
+  class="modal fade"
   id="printerModal"
-  style="display: none"
-  onclick="PrinterModal.overlayClick(event)"
+  tabindex="-1"
+  role="dialog"
+  aria-hidden="true"
 >
-  <div class="modal">
-    <div class="modal__header">
-      <h2 class="modal__title" id="modalTitle">Neuer Drucker</h2>
-      <button class="modal__close" onclick="PrinterModal.close()">✕</button>
-    </div>
-    <form
-      class="modal__form"
-      id="printerForm"
-      onsubmit="PrinterModal.submit(event)"
-    >
-      <input type="hidden" id="formPrinterId" value="" />
-
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="formName">Name *</label>
-          <input
-            class="form-input"
-            type="text"
-            id="formName"
-            placeholder="z.B. Prusa MK4"
-            required
-          />
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="formBrand">Marke *</label>
-          <select class="form-input form-select" id="formBrand" required>
-            <option value="">Marke wählen...</option>
-            <option>Prusa</option>
-            <option>Creality</option>
-            <option>Bambu Lab</option>
-            <option>Ultimaker</option>
-            <option>Formlabs</option>
-            <option>Artillery</option>
-            <option>Anycubic</option>
-            <option>Elegoo</option>
-            <option>QIDI</option>
-            <option>Voron</option>
-            <option>Andere</option>
-          </select>
-        </div>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content printer-modal-content">
+      <div class="modal-header printer-modal-header">
+        <h5 class="modal-title printer-modal-title" id="printerModalLabel">
+          Neuer Drucker
+        </h5>
+        <button
+          type="button"
+          class="close printer-modal-close"
+          onclick="$('#printerModal').modal('hide')"
+        >
+          <span aria-hidden="true">✕</span>
+        </button>
       </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="formCost"
-            >Maschinenkosten (CHF/h) *</label
-          >
-          <input
-            class="form-input"
-            type="number"
-            id="formCost"
-            step="0.01"
-            min="0"
-            placeholder="0.00"
-            required
-          />
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="formEnergy"
-            >Energieverbrauch (Watt)</label
-          >
-          <input
-            class="form-input"
-            type="number"
-            id="formEnergy"
-            min="0"
-            placeholder="optional"
-          />
-        </div>
+      <div class="modal-body">
+        <form id="printerForm" onsubmit="PrinterModal.submit(event)">
+          <input type="hidden" id="formPrinterId" value="" />
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="formName">Name *</label>
+              <input
+                class="form-input"
+                type="text"
+                id="formName"
+                placeholder="z.B. Prusa MK4"
+                required
+              />
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="formBrand">Marke *</label>
+              <select class="form-input form-select" id="formBrand" required>
+                <option value="">Marke wählen...</option>
+                <option>Prusa</option>
+                <option>Creality</option>
+                <option>Bambu Lab</option>
+                <option>Ultimaker</option>
+                <option>Formlabs</option>
+                <option>Artillery</option>
+                <option>Anycubic</option>
+                <option>Elegoo</option>
+                <option>QIDI</option>
+                <option>Voron</option>
+                <option>Andere</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="formCost"
+                >Maschinenkosten (CHF/h) *</label
+              >
+              <input
+                class="form-input"
+                type="number"
+                id="formCost"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                required
+              />
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="formEnergy"
+                >Energieverbrauch (Watt)</label
+              >
+              <input
+                class="form-input"
+                type="number"
+                id="formEnergy"
+                min="0"
+                placeholder="optional"
+              />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="formNotes">Notizen</label>
+            <textarea
+              class="form-input form-textarea"
+              id="formNotes"
+              placeholder="Optionale Bemerkungen..."
+            ></textarea>
+          </div>
+        </form>
       </div>
-
-      <div class="form-group form-group--full">
-        <label class="form-label" for="formNotes">Notizen</label>
-        <textarea
-          class="form-input form-textarea"
-          id="formNotes"
-          placeholder="Optionale Bemerkungen..."
-        ></textarea>
-      </div>
-
-      <div class="modal__actions">
+      <div class="modal-footer printer-modal-footer">
         <button
           type="button"
           class="btn-cancel"
-          id="modalCancel"
-          onclick="PrinterModal.close()"
+          onclick="$('#printerModal').modal('hide')"
         >
           Abbrechen
         </button>
-        <button type="submit" class="btn-save">Speichern</button>
+        <button type="submit" form="printerForm" class="btn-save">
+          Speichern
+        </button>
       </div>
-    </form>
+    </div>
   </div>
 </div>

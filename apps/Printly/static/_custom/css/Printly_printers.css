@@ -1,18 +1,10 @@
 /* ============================================================
-   Printers.css
-   Baut auf den globalen CSS-Variablen auf:
-     --color-sidbar-background       (#323232)
-     --color-text-inactive           (#f46201) ← Orange-Akzent
-     --color-sidbar-background-hover (#f46201)
-     --color-active-background       (#3498db) ← Blau
-     --color-text-light              (#ffffff)
-     --color-text-dark               (#fbebf2)
+   Printers.css – baut auf Bootstrap + globalen CSS-Variablen auf
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;700&display=swap');
 
-/* Lokale Ergänzungs-Variablen (keine Überschreibung) */
-.printers-page {
+:root {
     --p-bg: #f5f5f5;
     --p-surface: #ffffff;
     --p-border: #e4e4e4;
@@ -30,7 +22,6 @@
 /* ============================================================
    PAGE LAYOUT
    ============================================================ */
-
 .printers-page {
     font-family: var(--p-sans);
     color: var(--p-text);
@@ -43,7 +34,6 @@
 /* ============================================================
    HEADER
    ============================================================ */
-
 .printers-header {
     display: flex;
     align-items: flex-end;
@@ -56,7 +46,6 @@
     font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.18em;
-    /* Orange aus globaler Variable */
     color: var(--color-text-inactive);
     display: block;
     margin-bottom: 4px;
@@ -72,17 +61,14 @@
 }
 
 /* ============================================================
-   ADD BUTTON  – Orange Akzent
+   ADD BUTTON
    ============================================================ */
-
 .btn-add-printer {
     display: inline-flex;
     align-items: center;
     gap: 8px;
     background: var(--color-sidbar-background-hover);
-    /* #f46201 */
     color: var(--color-text-light);
-    /* #ffffff */
     border: none;
     border-radius: var(--p-radius);
     padding: 10px 20px;
@@ -107,7 +93,6 @@
 /* ============================================================
    STATS BAR
    ============================================================ */
-
 .printers-stats {
     display: flex;
     gap: 12px;
@@ -130,7 +115,6 @@
     font-size: 14px;
     font-weight: 600;
     color: var(--color-active-background);
-    /* #3498db */
 }
 
 .stat-pill__label {
@@ -141,7 +125,6 @@
 /* ============================================================
    PRINTER GRID
    ============================================================ */
-
 .printers-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
@@ -151,7 +134,6 @@
 /* ============================================================
    PRINTER CARD
    ============================================================ */
-
 .printer-card {
     background: var(--p-surface);
     border: 1px solid var(--p-border);
@@ -181,10 +163,8 @@
     }
 }
 
-/* Brand Bar – dunkler Hintergrund wie Sidebar */
 .printer-card__brand-bar {
     background: var(--color-sidbar-background);
-    /* #323232 */
     color: var(--color-text-light);
     display: flex;
     align-items: center;
@@ -199,7 +179,6 @@
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--color-text-inactive);
-    /* #f46201 – Orange */
 }
 
 .printer-card__cost {
@@ -209,7 +188,6 @@
     color: var(--color-text-light);
 }
 
-/* Card Body */
 .printer-card__body {
     padding: 18px 18px 12px;
     flex: 1;
@@ -222,7 +200,6 @@
     color: var(--p-text);
 }
 
-/* Metrics */
 .printer-card__metrics {
     display: flex;
     flex-wrap: wrap;
@@ -264,7 +241,6 @@
     padding-left: 10px;
 }
 
-/* Card Footer */
 .printer-card__footer {
     display: flex;
     align-items: center;
@@ -282,7 +258,6 @@
 .btn-edit {
     background: transparent;
     border: 1px solid var(--color-active-background);
-    /* #3498db */
     color: var(--color-active-background);
     border-radius: var(--p-radius);
     padding: 5px 14px;
@@ -301,7 +276,6 @@
 /* ============================================================
    EMPTY STATE
    ============================================================ */
-
 .printers-empty {
     grid-column: 1 / -1;
     text-align: center;
@@ -321,96 +295,47 @@
 }
 
 /* ============================================================
-   MODAL OVERLAY
+   BOOTSTRAP MODAL – Design-Overrides
    ============================================================ */
-
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.45);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-}
-
-.modal {
-    background: var(--p-surface);
+.printer-modal-content {
     border-radius: var(--p-radius-lg);
-    width: 100%;
-    max-width: 560px;
-    box-shadow: var(--p-shadow-lg);
     overflow: hidden;
+    border: none;
+    box-shadow: var(--p-shadow-lg);
 }
 
-/* Modal Header – Sidebar-Farbe */
-.modal__header {
+.printer-modal-header {
     background: var(--color-sidbar-background);
-    /* #323232 */
-    color: var(--color-text-light);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    border-bottom: none;
     padding: 16px 24px;
 }
 
-.modal__title {
+.printer-modal-title {
+    font-family: var(--p-sans);
     font-size: 16px;
     font-weight: 600;
-    margin: 0;
     color: var(--color-text-light);
 }
 
-.modal__close {
-    background: transparent;
-    border: none;
-    color: var(--color-text-inactive);
-    /* #f46201 */
+.printer-modal-close {
+    color: var(--color-text-inactive) !important;
+    opacity: 1 !important;
     font-size: 16px;
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 4px;
-    transition: background var(--p-transition);
-    line-height: 1;
 }
 
-.modal__close:hover {
-    background: rgba(255, 255, 255, 0.1);
+.printer-modal-footer {
+    border-top: 1px solid var(--p-border);
+    padding: 12px 24px;
 }
 
-/* ============================================================
-   FORM
-   ============================================================ */
-
-.modal__form {
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.form-group--full {
-    grid-column: 1 / -1;
-}
-
+/* Form Styles */
 .form-label {
     font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--p-text-muted);
+    margin-bottom: 6px;
 }
 
 .form-input {
@@ -429,7 +354,6 @@
 
 .form-input:focus {
     border-color: var(--color-active-background);
-    /* #3498db */
     box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
     background: var(--p-surface);
 }
@@ -445,15 +369,6 @@
     background-repeat: no-repeat;
     background-position: right 10px center;
     padding-right: 30px;
-}
-
-/* Modal Actions */
-.modal__actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    padding-top: 8px;
-    border-top: 1px solid var(--p-border);
 }
 
 .btn-cancel {
@@ -474,7 +389,6 @@
 
 .btn-save {
     background: var(--color-active-background);
-    /* #3498db */
     color: var(--color-text-light);
     border: none;
     border-radius: var(--p-radius);
@@ -488,4 +402,103 @@
 
 .btn-save:hover {
     filter: brightness(0.9);
+}
+
+/* ============================================================
+   FRIEDHOF
+   ============================================================ */
+
+.printers-section-label {
+    font-family: var(--p-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--p-text-muted);
+    margin-bottom: 14px;
+}
+
+.printer-card__actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-bury {
+    background: transparent;
+    border: 1px solid #999;
+    color: #999;
+    border-radius: var(--p-radius);
+    padding: 5px 10px;
+    font-family: var(--p-sans);
+    font-size: 11px;
+    cursor: pointer;
+    transition: background var(--p-transition), color var(--p-transition);
+}
+
+.btn-bury:hover {
+    background: #555;
+    color: #fff;
+    border-color: #555;
+}
+
+.graveyard-section {
+    margin-top: 48px;
+}
+
+.graveyard-section__header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px dashed var(--p-border);
+}
+
+.graveyard-section__icon {
+    font-size: 24px;
+}
+
+.graveyard-section__title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--p-text-muted);
+    margin: 0;
+}
+
+.graveyard-section__count {
+    font-family: var(--p-mono);
+    font-size: 11px;
+    color: var(--p-text-muted);
+}
+
+.printer-card--graveyard {
+    opacity: 0.55;
+    filter: grayscale(0.6);
+    transition: opacity var(--p-transition), filter var(--p-transition);
+}
+
+.printer-card--graveyard:hover {
+    opacity: 0.85;
+    filter: grayscale(0.2);
+}
+
+.btn-revive {
+    background: transparent;
+    border: 1px solid #4caf50;
+    color: #4caf50;
+    border-radius: var(--p-radius);
+    padding: 5px 10px;
+    font-family: var(--p-sans);
+    font-size: 11px;
+    cursor: pointer;
+    transition: background var(--p-transition), color var(--p-transition);
+}
+
+.btn-revive:hover {
+    background: #4caf50;
+    color: #fff;
+}
+
+.stat-pill--graveyard .stat-pill__value {
+    color: var(--p-text-muted);
 }
