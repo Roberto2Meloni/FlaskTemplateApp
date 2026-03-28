@@ -495,3 +495,12 @@
     color: #6A1B9A;
     margin-bottom: 16px;
 }
+
+/* ============================================================
+   CONTACT EDIT BUTTON – Icon Fix
+   ============================================================ */
+.btn-contact-edit i,
+.btn-contact-delete i {
+    font-size: 12px;
+    pointer-events: none;
+}

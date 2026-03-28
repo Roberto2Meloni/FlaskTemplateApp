@@ -672,8 +672,11 @@ class PrintlyCompany(db.Model):
     country = db.Column(db.String(50), nullable=False, default="CH")
 
     # Standard Rabatt
+    # Falls der Rabat gelöscht wird, dann wird die Verknüpfung gelscht
     discount_profile_id = db.Column(
-        db.Integer, db.ForeignKey("printly_discount_profiles.id"), nullable=True
+        db.Integer,
+        db.ForeignKey("printly_discount_profiles.id", ondelete="SET NULL"),
+        nullable=True,
     )
     discount_profile = db.relationship("PrintlyDiscountProfile", backref="companies")
 
@@ -778,8 +781,11 @@ class PrintlyCustomer(db.Model):
     country = db.Column(db.String(50), nullable=False, default="CH")
 
     # Rabatt (überschreibt Firmenrabatt falls gesetzt)
+    # Falls der Rabat gelöscht wird, dann wird die Verknüpfung gelscht
     discount_profile_id = db.Column(
-        db.Integer, db.ForeignKey("printly_discount_profiles.id"), nullable=True
+        db.Integer,
+        db.ForeignKey("printly_discount_profiles.id", ondelete="SET NULL"),
+        nullable=True,
     )
     discount_profile = db.relationship("PrintlyDiscountProfile", backref="customers")
 

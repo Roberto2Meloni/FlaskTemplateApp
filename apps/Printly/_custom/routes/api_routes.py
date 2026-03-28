@@ -571,11 +571,32 @@ def api_toggle_discount_profile(profile_id):
 @enabled_required
 def api_delete_discount_profile(profile_id):
     profile = PrintlyDiscountProfile.query.get_or_404(profile_id)
+
+    linked_companies = PrintlyCompany.query.filter_by(
+        discount_profile_id=profile_id
+    ).all()
+    linked_customers = PrintlyCustomer.query.filter_by(
+        discount_profile_id=profile_id
+    ).all()
+
+    if linked_companies or linked_customers:
+        details = []
+        for c in linked_companies:
+            details.append(f"🏢 {c.company_name} ({c.company_number})")
+        for c in linked_customers:
+            details.append(f"👤 {c.full_name} ({c.customer_number})")
+
+        return (
+            jsonify(
+                {"success": False, "error": "Rabatt noch verknüpft", "linked": details}
+            ),
+            409,
+        )
+
     name = profile.name
     db.session.delete(profile)
     db.session.commit()
-
-    app_logger.info(f"DiscountProfile '{name}' gelöscht von {current_user.username}")
+    app_logger.info(f"DiscountProfile '{name}' gelöscht")
     return jsonify({"success": True})
 
 

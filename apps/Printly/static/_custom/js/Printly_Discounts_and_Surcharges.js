@@ -58,11 +58,18 @@ const DiscountModal = {
     })
       .then((r) => r.json())
       .then((data) => {
-        if (data.success) window.location.reload();
-        else alert("Fehler: " + (data.error || "Unbekannter Fehler"));
+        if (data.success) {
+          window.location.reload();
+        } else if (data.linked) {
+          const list = data.linked.join("\n");
+          alert(
+            `Rabatt kann nicht gelöscht werden.\n\nNoch verknüpft mit:\n${list}\n\nBitte zuerst die Verknüpfungen entfernen.`,
+          );
+        } else {
+          alert("Fehler: " + (data.error || "Unbekannter Fehler"));
+        }
       });
   },
-
   submit(event) {
     event.preventDefault();
     const id = $("#formDiscountId").val();
