@@ -3,7 +3,7 @@ Zentrale Seitenkonfiguration für Printly
 Neue Seite hinzufügen = nur hier eintragen!
 """
 
-from ..models import PrintlyPrinter
+from ..models import PrintlyPrinter, PrintlyFilament
 
 # ============================================================
 # CONTEXT LOADER FUNKTIONEN
@@ -37,7 +37,20 @@ def load_printers_context():
 
 
 def load_filaments_context():
-    return {}
+    active = (
+        PrintlyFilament.query.filter_by(is_archived=False)
+        .order_by(PrintlyFilament.manufacturer, PrintlyFilament.name)
+        .all()
+    )
+    graveyard = (
+        PrintlyFilament.query.filter_by(is_archived=True)
+        .order_by(PrintlyFilament.name)
+        .all()
+    )
+    return {
+        "all_filaments": active,
+        "graveyard_filaments": graveyard,
+    }
 
 
 def load_electricity_costs_context():

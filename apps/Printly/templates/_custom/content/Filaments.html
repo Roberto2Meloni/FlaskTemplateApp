@@ -1,1 +1,353 @@
-<h4>Filamente</h4>
+<div class="filaments-page">
+  <!-- Header -->
+  <div class="filaments-header">
+    <div class="filaments-header__left">
+      <span class="filaments-header__label">MATERIAL</span>
+      <h1 class="filaments-header__title">Filamente</h1>
+    </div>
+    <button class="btn-add-filament" onclick="FilamentModal.openAdd()">
+      <span class="btn-add-filament__icon">+</span>
+      <span>Neues Filament</span>
+    </button>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="filaments-stats">
+    <div class="stat-pill">
+      <span class="stat-pill__value" id="statTotal"
+        >{{ all_filaments|length }}</span
+      >
+      <span class="stat-pill__label">Filamente total</span>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-pill__value" id="statManufacturers">–</span>
+      <span class="stat-pill__label">Hersteller</span>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-pill__value" id="statAvgPrice">–</span>
+      <span class="stat-pill__label">Ø CHF/kg</span>
+    </div>
+    {% if graveyard_filaments %}
+    <div class="stat-pill stat-pill--graveyard">
+      <span class="stat-pill__value">{{ graveyard_filaments|length }}</span>
+      <span class="stat-pill__label">🪦 Friedhof</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Aktive Filamente -->
+  <div class="filaments-section-label">Aktive Filamente</div>
+  <div class="filaments-grid" id="filamentsGrid">
+    {% for filament in all_filaments %}
+    <div class="filament-card" data-id="{{ filament.id }}">
+      <div class="filament-card__type-bar">
+        <span
+          class="filament-type-badge filament-type-badge--{{ filament.filament_type|lower }}"
+        >
+          {{ filament.filament_type }}
+        </span>
+        <span class="filament-card__diameter"
+          >⌀ {{ filament.diameter }} mm</span
+        >
+      </div>
+
+      <div class="filament-card__body">
+        <div class="filament-card__manufacturer">
+          {{ filament.manufacturer }}
+        </div>
+        <h3 class="filament-card__name">{{ filament.name }}</h3>
+        {% if filament.color %}
+        <div class="filament-card__color">
+          <span class="filament-card__color-label">Farbe:</span>
+          <span class="filament-card__color-value">{{ filament.color }}</span>
+        </div>
+        {% endif %}
+        <div class="filament-card__metrics">
+          <div class="metric">
+            <span class="metric__label">Gewicht</span>
+            <span class="metric__value">{{ filament.weight }} g</span>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Preis</span>
+            <span class="metric__value"
+              >{{ "%.2f"|format(filament.price) }} CHF</span
+            >
+          </div>
+          <div class="metric">
+            <span class="metric__label">CHF/kg</span>
+            <span class="metric__value"
+              >{{ "%.2f"|format(filament.price_per_kg) }}</span
+            >
+          </div>
+          <div class="metric">
+            <span class="metric__label">CHF/g</span>
+            <span class="metric__value"
+              >{{ "%.4f"|format(filament.price_per_gram) }}</span
+            >
+          </div>
+        </div>
+        {% if filament.notes %}
+        <p class="filament-card__notes">{{ filament.notes }}</p>
+        {% endif %}
+      </div>
+
+      <div class="filament-card__footer">
+        <span class="filament-card__creator">{{ filament.created_by }}</span>
+        <div class="filament-card__actions">
+          <button
+            class="btn-edit"
+            data-id="{{ filament.id }}"
+            data-type="{{ filament.filament_type }}"
+            data-name="{{ filament.name }}"
+            data-color="{{ filament.color or '' }}"
+            data-manufacturer="{{ filament.manufacturer }}"
+            data-diameter="{{ filament.diameter }}"
+            data-weight="{{ filament.weight }}"
+            data-price="{{ filament.price }}"
+            data-notes="{{ filament.notes or '' }}"
+            onclick="FilamentModal.openEdit(this.dataset)"
+          >
+            Bearbeiten
+          </button>
+          <button
+            class="btn-bury"
+            onclick="FilamentModal.archive({{ filament.id }}, '{{ filament.name }}')"
+          >
+            🪦 Begraben
+          </button>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="filaments-empty">
+      <div class="filaments-empty__icon">🧵</div>
+      <p class="filaments-empty__text">Noch keine Filamente erfasst.</p>
+      <button class="btn-add-filament" onclick="FilamentModal.openAdd()">
+        <span class="btn-add-filament__icon">+</span>
+        <span>Erstes Filament hinzufügen</span>
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Friedhof -->
+  {% if graveyard_filaments %}
+  <div class="graveyard-section">
+    <div class="graveyard-section__header">
+      <span class="graveyard-section__icon">🪦</span>
+      <h2 class="graveyard-section__title">Friedhof</h2>
+      <span class="graveyard-section__count"
+        >{{ graveyard_filaments|length }} Filamente begraben</span
+      >
+    </div>
+    <div class="filaments-grid filaments-grid--graveyard">
+      {% for filament in graveyard_filaments %}
+      <div
+        class="filament-card filament-card--graveyard"
+        data-id="{{ filament.id }}"
+      >
+        <div class="filament-card__type-bar">
+          <span
+            class="filament-type-badge filament-type-badge--{{ filament.filament_type|lower }}"
+          >
+            {{ filament.filament_type }}
+          </span>
+          <span class="filament-card__diameter"
+            >⌀ {{ filament.diameter }} mm</span
+          >
+        </div>
+        <div class="filament-card__body">
+          <div class="filament-card__manufacturer">
+            {{ filament.manufacturer }}
+          </div>
+          <h3 class="filament-card__name">{{ filament.name }}</h3>
+          <div class="filament-card__metrics">
+            <div class="metric">
+              <span class="metric__label">Begraben am</span>
+              <span class="metric__value"
+                >{{ filament.updated_at.strftime('%d.%m.%Y') }}</span
+              >
+            </div>
+          </div>
+        </div>
+        <div class="filament-card__footer">
+          <span class="filament-card__creator">{{ filament.created_by }}</span>
+          <button
+            class="btn-revive"
+            onclick="FilamentModal.archive({{ filament.id }}, '{{ filament.name }}')"
+          >
+            💚 Wiederbeleben
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Bootstrap Modal -->
+<div
+  class="modal fade"
+  id="filamentModal"
+  tabindex="-1"
+  role="dialog"
+  aria-hidden="true"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content printer-modal-content">
+      <div class="modal-header printer-modal-header">
+        <h5 class="modal-title printer-modal-title" id="filamentModalLabel">
+          Neues Filament
+        </h5>
+        <button
+          type="button"
+          class="close printer-modal-close"
+          onclick="$('#filamentModal').modal('hide')"
+        >
+          <span aria-hidden="true">✕</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form id="filamentForm" onsubmit="FilamentModal.submit(event)">
+          <input type="hidden" id="formFilamentId" value="" />
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="formType">Typ *</label>
+              <select class="form-input form-select" id="formType" required>
+                <option value="">Typ wählen...</option>
+                <option>PLA</option>
+                <option>PETG</option>
+                <option>TPU</option>
+                <option>ABS</option>
+                <option>ASA</option>
+                <option>WOOD</option>
+                <option>CARBON</option>
+                <option>NYLON</option>
+                <option>Andere</option>
+              </select>
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="formManufacturer"
+                >Hersteller *</label
+              >
+              <select
+                class="form-input form-select"
+                id="formManufacturer"
+                required
+              >
+                <option value="">Hersteller wählen...</option>
+                <option>Filamentum</option>
+                <option>Prusa</option>
+                <option>Bambu Lab</option>
+                <option>Polymaker</option>
+                <option>eSUN</option>
+                <option>Prusament</option>
+                <option>Andere</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="formFilamentName">Name *</label>
+            <input
+              class="form-input"
+              type="text"
+              id="formFilamentName"
+              placeholder="z.B. PLA Volcanic Black"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <div class="form-check-row">
+              <input
+                type="checkbox"
+                id="formColorFromName"
+                class="form-check-input"
+              />
+              <label class="form-check-label" for="formColorFromName">
+                Farbe aus Name übernehmen
+              </label>
+            </div>
+            <input
+              class="form-input"
+              type="text"
+              id="formColor"
+              placeholder="z.B. Volcanic Black (optional)"
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-4">
+              <label class="form-label" for="formDiameter">Durchmesser *</label>
+              <select class="form-input form-select" id="formDiameter" required>
+                <option value="1.75">1.75 mm</option>
+                <option value="2.85">2.85 mm</option>
+              </select>
+            </div>
+            <div class="form-group col-4">
+              <label class="form-label" for="formWeight">Gewicht (g) *</label>
+              <input
+                class="form-input"
+                type="number"
+                id="formWeight"
+                min="1"
+                placeholder="z.B. 1000"
+                required
+              />
+            </div>
+            <div class="form-group col-4">
+              <label class="form-label" for="formPrice">Preis (CHF) *</label>
+              <input
+                class="form-input"
+                type="number"
+                id="formPrice"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- Preis-Preview -->
+          <div class="price-preview" id="pricePreview" style="display: none">
+            <span class="price-preview__item">
+              <span class="price-preview__label">CHF/kg</span>
+              <span class="price-preview__value" id="previewPerKg">–</span>
+            </span>
+            <span class="price-preview__item">
+              <span class="price-preview__label">CHF/g</span>
+              <span class="price-preview__value" id="previewPerGram">–</span>
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="formFilamentNotes">Notizen</label>
+            <textarea
+              class="form-input form-textarea"
+              id="formFilamentNotes"
+              placeholder="Optionale Bemerkungen..."
+            ></textarea>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer printer-modal-footer">
+        <button
+          type="button"
+          class="btn-cancel"
+          onclick="$('#filamentModal').modal('hide')"
+        >
+          Abbrechen
+        </button>
+        <button type="submit" form="filamentForm" class="btn-save">
+          Speichern
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,370 @@
+/* ============================================================
+   Filaments.css – Printly Filament-Verwaltung
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;700&display=swap');
+
+/* ============================================================
+   PAGE LAYOUT
+   ============================================================ */
+.filaments-page {
+    font-family: var(--p-sans);
+    color: var(--p-text);
+    background: var(--p-bg);
+    min-height: 100%;
+    padding: 32px 40px;
+    box-sizing: border-box;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.filaments-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.filaments-header__label {
+    font-family: var(--p-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    color: var(--color-text-inactive);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.filaments-header__title {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0;
+    line-height: 1;
+    color: var(--p-text);
+}
+
+.btn-add-filament {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--color-sidbar-background-hover);
+    color: var(--color-text-light);
+    border: none;
+    border-radius: var(--p-radius);
+    padding: 10px 20px;
+    font-family: var(--p-sans);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: filter var(--p-transition), transform var(--p-transition);
+}
+
+.btn-add-filament:hover {
+    filter: brightness(0.9);
+    transform: translateY(-1px);
+}
+
+.btn-add-filament__icon {
+    font-size: 20px;
+    font-weight: 300;
+    line-height: 1;
+}
+
+/* ============================================================
+   STATS BAR  (gleiche Klassen wie Printers)
+   ============================================================ */
+.filaments-stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+}
+
+/* ============================================================
+   SECTION LABEL
+   ============================================================ */
+.filaments-section-label {
+    font-family: var(--p-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--p-text-muted);
+    margin-bottom: 14px;
+}
+
+/* ============================================================
+   FILAMENT GRID
+   ============================================================ */
+.filaments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 18px;
+}
+
+/* ============================================================
+   FILAMENT CARD
+   ============================================================ */
+.filament-card {
+    background: var(--p-surface);
+    border: 1px solid var(--p-border);
+    border-radius: var(--p-radius-lg);
+    overflow: hidden;
+    box-shadow: var(--p-shadow);
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow var(--p-transition), transform var(--p-transition);
+    animation: cardIn 0.25s ease both;
+}
+
+.filament-card:hover {
+    box-shadow: var(--p-shadow-lg);
+    transform: translateY(-2px);
+}
+
+@keyframes cardIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Type Bar */
+.filament-card__type-bar {
+    background: var(--color-sidbar-background);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+}
+
+.filament-card__diameter {
+    font-family: var(--p-mono);
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Type Badges */
+.filament-type-badge {
+    font-family: var(--p-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.filament-type-badge--pla {
+    background: #2ecc71;
+    color: #fff;
+}
+
+.filament-type-badge--petg {
+    background: #3498db;
+    color: #fff;
+}
+
+.filament-type-badge--tpu {
+    background: #9b59b6;
+    color: #fff;
+}
+
+.filament-type-badge--abs {
+    background: #e74c3c;
+    color: #fff;
+}
+
+.filament-type-badge--asa {
+    background: #e67e22;
+    color: #fff;
+}
+
+.filament-type-badge--wood {
+    background: #795548;
+    color: #fff;
+}
+
+.filament-type-badge--carbon {
+    background: #212121;
+    color: #fff;
+}
+
+.filament-type-badge--nylon {
+    background: #00bcd4;
+    color: #fff;
+}
+
+.filament-type-badge--andere {
+    background: #777;
+    color: #fff;
+}
+
+/* Card Body */
+.filament-card__body {
+    padding: 16px 18px 12px;
+    flex: 1;
+}
+
+.filament-card__manufacturer {
+    font-family: var(--p-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-text-inactive);
+    margin-bottom: 4px;
+}
+
+.filament-card__name {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 10px;
+    color: var(--p-text);
+}
+
+.filament-card__color {
+    font-size: 12px;
+    color: var(--p-text-muted);
+    margin-bottom: 12px;
+}
+
+.filament-card__color-label {
+    font-weight: 600;
+    margin-right: 4px;
+}
+
+.filament-card__metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.filament-card__notes {
+    font-size: 12px;
+    color: var(--p-text-muted);
+    margin: 0;
+    line-height: 1.5;
+    border-left: 2px solid var(--color-text-inactive);
+    padding-left: 10px;
+}
+
+/* Card Footer */
+.filament-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 18px;
+    border-top: 1px solid var(--p-border);
+}
+
+.filament-card__creator {
+    font-size: 11px;
+    color: var(--p-text-muted);
+    font-family: var(--p-mono);
+}
+
+.filament-card__actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.filaments-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 64px 24px;
+    color: var(--p-text-muted);
+}
+
+.filaments-empty__icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.4;
+}
+
+.filaments-empty__text {
+    font-size: 15px;
+    margin-bottom: 24px;
+}
+
+/* ============================================================
+   FRIEDHOF
+   ============================================================ */
+.filament-card--graveyard {
+    opacity: 0.55;
+    filter: grayscale(0.6);
+    transition: opacity var(--p-transition), filter var(--p-transition);
+}
+
+.filament-card--graveyard:hover {
+    opacity: 0.85;
+    filter: grayscale(0.2);
+}
+
+/* ============================================================
+   PREIS PREVIEW IM MODAL
+   ============================================================ */
+.price-preview {
+    background: var(--p-bg);
+    border: 1px solid var(--p-border);
+    border-radius: var(--p-radius);
+    padding: 10px 16px;
+    display: flex;
+    gap: 24px;
+    margin-bottom: 4px;
+}
+
+.price-preview__item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.price-preview__label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--p-text-muted);
+}
+
+.price-preview__value {
+    font-family: var(--p-mono);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-active-background);
+}
+
+/* ============================================================
+   FARBE AUS NAME HAKEN
+   ============================================================ */
+.form-check-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.form-check-input {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--color-active-background);
+}
+
+.form-check-label {
+    font-size: 12px;
+    color: var(--p-text-muted);
+    cursor: pointer;
+}

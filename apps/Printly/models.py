@@ -95,29 +95,120 @@ class PrintlyPrinter(db.Model):
             "Andere",
         ]
 
-    # Methoden aus PrintHub
-    # @classmethod
-    # def get_by_user(cls, username):
-    #     """Holt alle Drucker eines bestimmten Benutzers"""
-    #     return (
-    #         cls.query.filter_by(created_by=username)
-    #         .order_by(cls.created_at.desc())
-    #         .all()
-    #     )
 
-    # @classmethod
-    # def search(cls, username, search_term=None):
-    #     """Sucht Drucker mit optionalen Filtern"""
-    #     query = cls.query.filter_by(created_by=username)
+class PrintlyFilament(db.Model):
+    __tablename__ = "printly_filaments"
 
-    #     if search_term:
-    #         search = f"%{search_term}%"
-    #         query = query.filter(
-    #             db.or_(
-    #                 cls.name.ilike(search),
-    #                 cls.brand.ilike(search),
-    #                 cls.notes.ilike(search),
-    #             )
-    #         )
+    id = db.Column(db.Integer, primary_key=True)
+    filament_type = db.Column(
+        db.String(20), nullable=False, index=True
+    )  # PLA, PETG, TPU, etc.
+    name = db.Column(db.String(100), nullable=False)  # z.B. "PLA Volcanic Black"
+    color = db.Column(
+        db.String(50), nullable=True
+    )  # optional, via GUI aus Name extrahiert
+    manufacturer = db.Column(db.String(50), nullable=False)  # Filamentum, Prusa, etc.
+    diameter = db.Column(
+        db.Numeric(3, 2), nullable=False, default=1.75
+    )  # 1.75 oder 2.85 mm
+    weight = db.Column(
+        db.Integer, nullable=False
+    )  # Gewicht in Gramm (750, 1000, 2300...)
+    price = db.Column(db.Numeric(8, 2), nullable=False)  # Preis in CHF
+    notes = db.Column(db.Text, nullable=True)  # Optionale Notizen
+    is_archived = db.Column(db.Boolean, default=False, nullable=False)  # Friedhof
 
-    #     return query.order_by(cls.created_at.desc()).all()
+    # Zeitstempel
+    created_at = db.Column(db.DateTime, default=get_current_time, nullable=False)
+    updated_at = db.Column(
+        db.DateTime, default=get_current_time, onupdate=get_current_time, nullable=False
+    )
+
+    # Benutzer
+    created_by = db.Column(db.String(64), nullable=False)
+
+    def __repr__(self):
+        return (
+            f"<PrintlyFilament {self.name} ({self.filament_type}, {self.diameter}mm)>"
+        )
+
+    # ----------------------------------------------------------
+    # PROPERTIES
+    # ----------------------------------------------------------
+
+    @property
+    def price_per_gram(self):
+        """Preis pro Gramm – für Offertenkalkulation"""
+        if self.weight > 0:
+            return round(float(self.price) / self.weight, 4)
+        return 0.0
+
+    @property
+    def price_per_kg(self):
+        """Preis pro Kilogramm"""
+        if self.weight > 0:
+            return round(float(self.price) / self.weight * 1000, 2)
+        return 0.0
+
+    @property
+    def type_badge_class(self):
+        """CSS-Klasse für Typ-Badge"""
+        type_classes = {
+            "PLA": "badge-pla",
+            "PETG": "badge-petg",
+            "TPU": "badge-tpu",
+            "ABS": "badge-abs",
+            "ASA": "badge-asa",
+            "WOOD": "badge-wood",
+            "CARBON": "badge-carbon",
+            "NYLON": "badge-nylon",
+        }
+        return type_classes.get(self.filament_type, "badge-secondary")
+
+    # ----------------------------------------------------------
+    # SERIALISIERUNG
+    # ----------------------------------------------------------
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "filament_type": self.filament_type,
+            "name": self.name,
+            "color": self.color,
+            "manufacturer": self.manufacturer,
+            "diameter": float(self.diameter),
+            "weight": self.weight,
+            "price": float(self.price),
+            "price_per_gram": self.price_per_gram,
+            "price_per_kg": self.price_per_kg,
+            "notes": self.notes,
+            "is_archived": self.is_archived,
+            "type_badge_class": self.type_badge_class,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "created_by": self.created_by,
+        }
+
+    # ----------------------------------------------------------
+    # STATISCHE HILFSMETHODEN
+    # ----------------------------------------------------------
+
+    @staticmethod
+    def get_filament_types():
+        return ["PLA", "PETG", "TPU", "ABS", "ASA", "WOOD", "CARBON", "NYLON", "Andere"]
+
+    @staticmethod
+    def get_manufacturers():
+        return [
+            "Filamentum",
+            "Prusa",
+            "Bambu Lab",
+            "Polymaker",
+            "eSUN",
+            "Prusament",
+            "Andere",
+        ]
+
+    @staticmethod
+    def get_diameters():
+        return [1.75, 2.85]
