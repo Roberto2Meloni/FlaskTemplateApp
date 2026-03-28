@@ -1,1 +1,266 @@
-<h4>Arbeitszeiten</h4>
+<div class="workhours-page">
+  <!-- Header -->
+  <div class="workhours-header">
+    <div class="workhours-header__left">
+      <span class="workhours-header__label">PERSONALKOSTEN</span>
+      <h1 class="workhours-header__title">Arbeitszeiten</h1>
+    </div>
+    <button class="btn-add-workhours" onclick="WorkHoursModal.openAdd()">
+      <span class="btn-add-workhours__icon">+</span>
+      <span>Neuer Stundensatz</span>
+    </button>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="workhours-stats">
+    <div class="stat-pill">
+      <span class="stat-pill__value" id="statTotal"
+        >{{ all_work_hours|length }}</span
+      >
+      <span class="stat-pill__label">Stundensätze</span>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-pill__value" id="statAvgRate">–</span>
+      <span class="stat-pill__label">Ø CHF/h</span>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-pill__value" id="statMaxRate">–</span>
+      <span class="stat-pill__label">Max CHF/h</span>
+    </div>
+    {% if graveyard_work_hours %}
+    <div class="stat-pill stat-pill--graveyard">
+      <span class="stat-pill__value">{{ graveyard_work_hours|length }}</span>
+      <span class="stat-pill__label">🪦 Friedhof</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Aktive Stundensätze -->
+  <div class="workhours-section-label">Aktive Stundensätze</div>
+  <div class="workhours-grid" id="workHoursGrid">
+    {% for rate in all_work_hours %}
+    <div class="workhours-card" data-id="{{ rate.id }}">
+      <div class="workhours-card__header-bar">
+        <span class="workhours-card__rate"
+          >{{ "%.2f"|format(rate.cost_per_hour) }} CHF/h</span
+        >
+      </div>
+
+      <div class="workhours-card__body">
+        <h3 class="workhours-card__name">{{ rate.name }}</h3>
+        <div class="workhours-card__metrics">
+          <div class="metric">
+            <span class="metric__label">Tag (8h)</span>
+            <span class="metric__value"
+              >{{ "%.2f"|format(rate.daily_cost) }} CHF</span
+            >
+          </div>
+          <div class="metric">
+            <span class="metric__label">Monat (160h)</span>
+            <span class="metric__value"
+              >{{ "%.2f"|format(rate.monthly_cost) }} CHF</span
+            >
+          </div>
+          <div class="metric">
+            <span class="metric__label">Erfasst am</span>
+            <span class="metric__value"
+              >{{ rate.created_at.strftime('%d.%m.%Y') }}</span
+            >
+          </div>
+        </div>
+        {% if rate.notes %}
+        <p class="workhours-card__notes">{{ rate.notes }}</p>
+        {% endif %}
+      </div>
+
+      <div class="workhours-card__footer">
+        <span class="workhours-card__creator">{{ rate.created_by }}</span>
+        <div class="workhours-card__actions">
+          <button
+            class="btn-edit"
+            data-id="{{ rate.id }}"
+            data-name="{{ rate.name }}"
+            data-cost="{{ rate.cost_per_hour }}"
+            data-notes="{{ rate.notes or '' }}"
+            onclick="WorkHoursModal.openEdit(this.dataset)"
+          >
+            Bearbeiten
+          </button>
+          <button
+            class="btn-bury"
+            onclick="WorkHoursModal.archive({{ rate.id }}, '{{ rate.name }}')"
+          >
+            🪦 Begraben
+          </button>
+          <button
+            class="btn-delete"
+            onclick="WorkHoursModal.delete({{ rate.id }}, '{{ rate.name }}')"
+          >
+            🗑 Löschen
+          </button>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="workhours-empty">
+      <div class="workhours-empty__icon">⏱️</div>
+      <p class="workhours-empty__text">Noch keine Stundensätze erfasst.</p>
+      <button class="btn-add-workhours" onclick="WorkHoursModal.openAdd()">
+        <span class="btn-add-workhours__icon">+</span>
+        <span>Ersten Stundensatz hinzufügen</span>
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Friedhof -->
+  {% if graveyard_work_hours %}
+  <div class="graveyard-section">
+    <div class="graveyard-section__header">
+      <span class="graveyard-section__icon">🪦</span>
+      <h2 class="graveyard-section__title">Friedhof</h2>
+      <span class="graveyard-section__count"
+        >{{ graveyard_work_hours|length }} Stundensätze begraben</span
+      >
+    </div>
+    <div class="workhours-grid workhours-grid--graveyard">
+      {% for rate in graveyard_work_hours %}
+      <div
+        class="workhours-card workhours-card--graveyard"
+        data-id="{{ rate.id }}"
+      >
+        <div class="workhours-card__header-bar">
+          <span class="workhours-card__rate"
+            >{{ "%.2f"|format(rate.cost_per_hour) }} CHF/h</span
+          >
+        </div>
+        <div class="workhours-card__body">
+          <h3 class="workhours-card__name">{{ rate.name }}</h3>
+          <div class="workhours-card__metrics">
+            <div class="metric">
+              <span class="metric__label">Begraben am</span>
+              <span class="metric__value"
+                >{{ rate.updated_at.strftime('%d.%m.%Y') }}</span
+              >
+            </div>
+          </div>
+        </div>
+        <div class="workhours-card__footer">
+          <span class="workhours-card__creator">{{ rate.created_by }}</span>
+          <div class="workhours-card__actions">
+            <button
+              class="btn-revive"
+              onclick="WorkHoursModal.archive({{ rate.id }}, '{{ rate.name }}')"
+            >
+              💚 Wiederbeleben
+            </button>
+            <button
+              class="btn-delete"
+              onclick="WorkHoursModal.delete({{ rate.id }}, '{{ rate.name }}')"
+            >
+              🗑 Löschen
+            </button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Bootstrap Modal -->
+<div
+  class="modal fade"
+  id="workHoursModal"
+  tabindex="-1"
+  role="dialog"
+  aria-hidden="true"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content printer-modal-content">
+      <div class="modal-header printer-modal-header">
+        <h5 class="modal-title printer-modal-title" id="workHoursModalLabel">
+          Neuer Stundensatz
+        </h5>
+        <button
+          type="button"
+          class="close printer-modal-close"
+          onclick="$('#workHoursModal').modal('hide')"
+        >
+          <span aria-hidden="true">✕</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form id="workHoursForm" onsubmit="WorkHoursModal.submit(event)">
+          <input type="hidden" id="formWorkHoursId" value="" />
+
+          <div class="form-group">
+            <label class="form-label" for="formWorkHoursName">Name *</label>
+            <input
+              class="form-input"
+              type="text"
+              id="formWorkHoursName"
+              placeholder="z.B. Normaler Stundensatz"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="formCostPerHour"
+              >Stundensatz (CHF/h) *</label
+            >
+            <input
+              class="form-input"
+              type="number"
+              id="formCostPerHour"
+              step="0.01"
+              min="0"
+              placeholder="0.00"
+              required
+            />
+          </div>
+
+          <!-- Kosten Preview -->
+          <div
+            class="workhours-preview"
+            id="workHoursPreview"
+            style="display: none"
+          >
+            <span class="price-preview__item">
+              <span class="price-preview__label">Tag (8h)</span>
+              <span class="price-preview__value" id="previewDaily">–</span>
+            </span>
+            <span class="price-preview__item">
+              <span class="price-preview__label">Monat (160h)</span>
+              <span class="price-preview__value" id="previewMonthly">–</span>
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="formWorkHoursNotes">Notizen</label>
+            <textarea
+              class="form-input form-textarea"
+              id="formWorkHoursNotes"
+              placeholder="Optionale Bemerkungen..."
+            ></textarea>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer printer-modal-footer">
+        <button
+          type="button"
+          class="btn-cancel"
+          onclick="$('#workHoursModal').modal('hide')"
+        >
+          Abbrechen
+        </button>
+        <button type="submit" form="workHoursForm" class="btn-save">
+          Speichern
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -3,7 +3,15 @@ from flask_login import current_user
 from app.decorators import enabled_required
 from ... import blueprint, app_logger, app_config
 from datetime import date
-from ...models import PrintlyPrinter, PrintlyFilament, PrintlyElectricityCost
+from ...models import (
+    PrintlyPrinter,
+    PrintlyFilament,
+    PrintlyElectricityCost,
+    PrintlyWorkHours,
+    PrintlyOverheadProfile,
+    printly_printer_overhead,
+    PrintlyDiscountProfile,
+)
 from app import db
 
 app_logger.info(f"Starte CUSTOM API Routes für {app_config.app_name}")
@@ -254,6 +262,316 @@ def api_delete_energy_cost(cost_id):
     db.session.delete(cost)
     db.session.commit()
     app_logger.info(f"ElectricityCost '{name}' gelöscht von {current_user.username}")
+    return jsonify({"success": True})
+
+
+@blueprint.route("/api/work_hours", methods=["POST"])
+@enabled_required
+def api_create_work_hours():
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Keine Daten"}), 400
+
+    if not data.get("name") or not data.get("cost_per_hour"):
+        return jsonify({"error": "Name und Stundensatz sind Pflichtfelder"}), 422
+
+    new_rate = PrintlyWorkHours(
+        name=data["name"],
+        cost_per_hour=float(data["cost_per_hour"]),
+        notes=data.get("notes") or None,
+        created_by=current_user.username,
+    )
+    db.session.add(new_rate)
+    db.session.commit()
+
+    app_logger.info(f"WorkHours '{new_rate.name}' erstellt von {current_user.username}")
+    return jsonify({"success": True, "work_hours": new_rate.to_dict()}), 201
+
+
+@blueprint.route("/api/work_hours/<int:rate_id>", methods=["PUT"])
+@enabled_required
+def api_update_work_hours(rate_id):
+    rate = PrintlyWorkHours.query.get_or_404(rate_id)
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Keine Daten"}), 400
+
+    rate.name = data.get("name", rate.name)
+    rate.cost_per_hour = float(data.get("cost_per_hour", rate.cost_per_hour))
+    rate.notes = data.get("notes") or None
+    db.session.commit()
+
+    app_logger.info(f"WorkHours '{rate.name}' bearbeitet von {current_user.username}")
+    return jsonify({"success": True, "work_hours": rate.to_dict()})
+
+
+@blueprint.route("/api/work_hours/<int:rate_id>/archive", methods=["PUT"])
+@enabled_required
+def api_archive_work_hours(rate_id):
+    rate = PrintlyWorkHours.query.get_or_404(rate_id)
+    rate.is_archived = not rate.is_archived
+    db.session.commit()
+
+    action = "begraben 🪦" if rate.is_archived else "wiederbelebt 💚"
+    app_logger.info(f"WorkHours '{rate.name}' wurde {action}")
+    return jsonify({"success": True, "is_archived": rate.is_archived})
+
+
+@blueprint.route("/api/work_hours/<int:rate_id>", methods=["DELETE"])
+@enabled_required
+def api_delete_work_hours(rate_id):
+    rate = PrintlyWorkHours.query.get_or_404(rate_id)
+    name = rate.name
+    db.session.delete(rate)
+    db.session.commit()
+
+    app_logger.info(f"WorkHours '{name}' gelöscht von {current_user.username}")
+    return jsonify({"success": True})
+
+
+# ----------------------------------------------------------
+# ERSTELLEN - Overhead Profile
+# ----------------------------------------------------------
+@blueprint.route("/api/overhead_profiles", methods=["POST"])
+@enabled_required
+def api_create_overhead_profile():
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Keine Daten"}), 400
+
+    if not data.get("name"):
+        return jsonify({"error": "Name ist Pflichtfeld"}), 422
+
+    profile = PrintlyOverheadProfile(
+        name=data["name"],
+        location=data.get("location") or None,
+        rent_monthly=float(data.get("rent_monthly") or 0),
+        electricity_monthly=float(data.get("electricity_monthly") or 0),
+        insurance=float(data.get("insurance") or 0),
+        internet=float(data.get("internet") or 0),
+        software_cost=float(data.get("software_cost") or 0),
+        software_billing=data.get("software_billing", "monthly"),
+        other_costs=float(data.get("other_costs") or 0),
+        planned_hours_monthly=int(data.get("planned_hours_monthly") or 100),
+        is_active=data.get("is_active", True),
+        notes=data.get("notes") or None,
+        created_by=current_user.username,
+    )
+    db.session.add(profile)
+    db.session.commit()
+
+    app_logger.info(
+        f"OverheadProfile '{profile.name}' erstellt von {current_user.username}"
+    )
+    return jsonify({"success": True, "profile": profile.to_dict()}), 201
+
+
+# ----------------------------------------------------------
+# BEARBEITEN
+# ----------------------------------------------------------
+@blueprint.route("/api/overhead_profiles/<int:profile_id>", methods=["PUT"])
+@enabled_required
+def api_update_overhead_profile(profile_id):
+    profile = PrintlyOverheadProfile.query.get_or_404(profile_id)
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Keine Daten"}), 400
+
+    profile.name = data.get("name", profile.name)
+    profile.location = data.get("location") or profile.location
+    profile.rent_monthly = float(data.get("rent_monthly") or 0)
+    profile.electricity_monthly = float(data.get("electricity_monthly") or 0)
+    profile.insurance = float(data.get("insurance") or 0)
+    profile.internet = float(data.get("internet") or 0)
+    profile.software_cost = float(data.get("software_cost") or 0)
+    profile.software_billing = data.get("software_billing", profile.software_billing)
+    profile.other_costs = float(data.get("other_costs") or 0)
+    profile.planned_hours_monthly = int(
+        data.get("planned_hours_monthly") or profile.planned_hours_monthly
+    )
+    profile.is_active = data.get("is_active", profile.is_active)
+    profile.notes = data.get("notes") or None
+    db.session.commit()
+
+    app_logger.info(
+        f"OverheadProfile '{profile.name}' bearbeitet von {current_user.username}"
+    )
+    return jsonify({"success": True, "profile": profile.to_dict()})
+
+
+# ----------------------------------------------------------
+# TOGGLE AKTIV/INAKTIV
+# ----------------------------------------------------------
+@blueprint.route("/api/overhead_profiles/<int:profile_id>/toggle", methods=["PUT"])
+@enabled_required
+def api_toggle_overhead_profile(profile_id):
+    profile = PrintlyOverheadProfile.query.get_or_404(profile_id)
+    profile.is_active = not profile.is_active
+    db.session.commit()
+
+    status = "aktiviert" if profile.is_active else "deaktiviert"
+    app_logger.info(f"OverheadProfile '{profile.name}' wurde {status}")
+    return jsonify({"success": True, "is_active": profile.is_active})
+
+
+# ----------------------------------------------------------
+# LÖSCHEN
+# ----------------------------------------------------------
+@blueprint.route("/api/overhead_profiles/<int:profile_id>", methods=["DELETE"])
+@enabled_required
+def api_delete_overhead_profile(profile_id):
+    profile = PrintlyOverheadProfile.query.get_or_404(profile_id)
+    name = profile.name
+    db.session.delete(profile)
+    db.session.commit()
+
+    app_logger.info(f"OverheadProfile '{name}' gelöscht von {current_user.username}")
+    return jsonify({"success": True})
+
+
+# ----------------------------------------------------------
+# VERKNÜPFUNG: Drucker ↔ Overhead (Schritt 2)
+# ----------------------------------------------------------
+@blueprint.route(
+    "/api/overhead_profiles/<int:profile_id>/link_printer", methods=["POST"]
+)
+@enabled_required
+def api_link_printer_to_overhead(profile_id):
+    profile = PrintlyOverheadProfile.query.get_or_404(profile_id)
+    data = request.get_json()
+    printer_id = data.get("printer_id")
+    is_default = data.get("is_default", False)
+
+    printer = PrintlyPrinter.query.get_or_404(printer_id)
+
+    # Prüfen ob Verknüpfung bereits existiert
+    existing = db.session.execute(
+        db.select(printly_printer_overhead).where(
+            printly_printer_overhead.c.printer_id == printer_id,
+            printly_printer_overhead.c.overhead_id == profile_id,
+        )
+    ).fetchone()
+
+    if existing:
+        return jsonify({"error": "Verknüpfung existiert bereits"}), 409
+
+    # Falls is_default → alle anderen auf False setzen
+    if is_default:
+        db.session.execute(
+            printly_printer_overhead.update()
+            .where(printly_printer_overhead.c.printer_id == printer_id)
+            .values(is_default=False)
+        )
+
+    db.session.execute(
+        printly_printer_overhead.insert().values(
+            printer_id=printer_id,
+            overhead_id=profile_id,
+            is_default=is_default,
+        )
+    )
+    db.session.commit()
+
+    app_logger.info(f"Drucker '{printer.name}' mit Overhead '{profile.name}' verknüpft")
+    return jsonify({"success": True})
+
+
+@blueprint.route(
+    "/api/overhead_profiles/<int:profile_id>/unlink_printer", methods=["DELETE"]
+)
+@enabled_required
+def api_unlink_printer_from_overhead(profile_id):
+    data = request.get_json()
+    printer_id = data.get("printer_id")
+
+    db.session.execute(
+        printly_printer_overhead.delete().where(
+            printly_printer_overhead.c.printer_id == printer_id,
+            printly_printer_overhead.c.overhead_id == profile_id,
+        )
+    )
+    db.session.commit()
+
+    app_logger.info(
+        f"Verknüpfung Drucker {printer_id} ↔ Overhead {profile_id} entfernt"
+    )
+    return jsonify({"success": True})
+
+
+# ----------------------------------------------------------
+# ERSTELLEN - Discount Profile
+# ----------------------------------------------------------
+
+
+@blueprint.route("/api/discount_profiles", methods=["POST"])
+@enabled_required
+def api_create_discount_profile():
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Keine Daten"}), 400
+
+    if not data.get("name") or data.get("percentage") is None:
+        return jsonify({"error": "Name und Prozentsatz sind Pflichtfelder"}), 422
+
+    profile = PrintlyDiscountProfile(
+        name=data["name"],
+        discount_type=data.get("discount_type", "discount"),
+        percentage=float(data["percentage"]),
+        notes=data.get("notes") or None,
+        is_active=data.get("is_active", True),
+        created_by=current_user.username,
+    )
+    db.session.add(profile)
+    db.session.commit()
+
+    app_logger.info(
+        f"DiscountProfile '{profile.name}' erstellt von {current_user.username}"
+    )
+    return jsonify({"success": True, "profile": profile.to_dict()}), 201
+
+
+@blueprint.route("/api/discount_profiles/<int:profile_id>", methods=["PUT"])
+@enabled_required
+def api_update_discount_profile(profile_id):
+    profile = PrintlyDiscountProfile.query.get_or_404(profile_id)
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Keine Daten"}), 400
+
+    profile.name = data.get("name", profile.name)
+    profile.discount_type = data.get("discount_type", profile.discount_type)
+    profile.percentage = float(data.get("percentage", profile.percentage))
+    profile.notes = data.get("notes") or None
+    profile.is_active = data.get("is_active", profile.is_active)
+    db.session.commit()
+
+    app_logger.info(
+        f"DiscountProfile '{profile.name}' bearbeitet von {current_user.username}"
+    )
+    return jsonify({"success": True, "profile": profile.to_dict()})
+
+
+@blueprint.route("/api/discount_profiles/<int:profile_id>/toggle", methods=["PUT"])
+@enabled_required
+def api_toggle_discount_profile(profile_id):
+    profile = PrintlyDiscountProfile.query.get_or_404(profile_id)
+    profile.is_active = not profile.is_active
+    db.session.commit()
+
+    status = "aktiviert" if profile.is_active else "deaktiviert"
+    app_logger.info(f"DiscountProfile '{profile.name}' wurde {status}")
+    return jsonify({"success": True, "is_active": profile.is_active})
+
+
+@blueprint.route("/api/discount_profiles/<int:profile_id>", methods=["DELETE"])
+@enabled_required
+def api_delete_discount_profile(profile_id):
+    profile = PrintlyDiscountProfile.query.get_or_404(profile_id)
+    name = profile.name
+    db.session.delete(profile)
+    db.session.commit()
+
+    app_logger.info(f"DiscountProfile '{name}' gelöscht von {current_user.username}")
     return jsonify({"success": True})
 
 

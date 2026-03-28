@@ -1,15 +1,7 @@
 Ok - Seiten
 - Offerte   x
-- Drucker   x
-- Filamente x
-- Strom Tarife X
-- Arbeitszeiten x
-- Overhead [Mite, Internet, Betreibskosten?] x
 - Rabatte und Aufschlag
+- Import / Export
 
-- Drucker hinzufügen
---> Rückgabe vorhandene Drucker
---> Drucker hinzufügen
---> Drucker bearbeiten
---> Drucker Friedhof --> Drucker werden wenn in Offerte verwendet nicht gelöscht
-
+Befehle
+robocopy "C:\Users\roberto\Documents\DEV\Eigene Projekte\FlaskTemplate\app\imported_apps\develop_release\Printly" "C:\Users\roberto\Documents\DEV\Eigene Projekte\FlaskTemplateApps\FlaskTemplateApp\apps\Printly" /E /PURGE

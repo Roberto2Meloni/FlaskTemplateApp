@@ -1,1 +1,517 @@
-<h4>Overhead Profiles</h4>
+<div class="overhead-page">
+  <!-- Header -->
+  <div class="overhead-header">
+    <div class="overhead-header__left">
+      <span class="overhead-header__label">FIXKOSTEN</span>
+      <h1 class="overhead-header__title">Overhead Profile</h1>
+    </div>
+    <button class="btn-add-overhead" onclick="OverheadModal.openAdd()">
+      <span class="btn-add-overhead__icon">+</span>
+      <span>Neues Profil</span>
+    </button>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="overhead-stats">
+    <div class="stat-pill">
+      <span class="stat-pill__value">{{ active_profiles|length }}</span>
+      <span class="stat-pill__label">Aktive Profile</span>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-pill__value" id="statAvgOverhead">–</span>
+      <span class="stat-pill__label">Ø CHF/h Overhead</span>
+    </div>
+    {% if inactive_profiles %}
+    <div class="stat-pill stat-pill--graveyard">
+      <span class="stat-pill__value">{{ inactive_profiles|length }}</span>
+      <span class="stat-pill__label">⏸ Inaktiv</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Aktive Profile -->
+  <div class="overhead-section-label">Aktive Profile</div>
+  <div class="overhead-grid" id="overheadGrid">
+    {% for profile in active_profiles %}
+    <div class="overhead-card overhead-card--active" data-id="{{ profile.id }}">
+      <div class="overhead-card__header-bar">
+        <span class="overhead-card__name">{{ profile.name }}</span>
+        <span class="overhead-card__per-hour"
+          >{{ "%.4f"|format(profile.overhead_per_hour) }} CHF/h</span
+        >
+      </div>
+
+      <div class="overhead-card__body">
+        {% if profile.location %}
+        <div class="overhead-card__location">📍 {{ profile.location }}</div>
+        {% endif %}
+
+        <!-- Kostenaufstellung -->
+        <div class="overhead-costs">
+          {% if profile.rent_monthly > 0 %}
+          <div class="overhead-cost-row">
+            <span class="overhead-cost-row__label">Miete</span>
+            <span class="overhead-cost-row__value"
+              >{{ "%.2f"|format(profile.rent_monthly) }} CHF/Mt.</span
+            >
+          </div>
+          {% endif %} {% if profile.electricity_monthly > 0 %}
+          <div class="overhead-cost-row">
+            <span class="overhead-cost-row__label">Strom</span>
+            <span class="overhead-cost-row__value"
+              >{{ "%.2f"|format(profile.electricity_monthly) }} CHF/Mt.</span
+            >
+          </div>
+          {% endif %} {% if profile.insurance > 0 %}
+          <div class="overhead-cost-row">
+            <span class="overhead-cost-row__label">Versicherung</span>
+            <span class="overhead-cost-row__value"
+              >{{ "%.2f"|format(profile.insurance) }} CHF/Mt.</span
+            >
+          </div>
+          {% endif %} {% if profile.internet > 0 %}
+          <div class="overhead-cost-row">
+            <span class="overhead-cost-row__label">Internet</span>
+            <span class="overhead-cost-row__value"
+              >{{ "%.2f"|format(profile.internet) }} CHF/Mt.</span
+            >
+          </div>
+          {% endif %} {% if profile.software_cost > 0 %}
+          <div class="overhead-cost-row">
+            <span class="overhead-cost-row__label">
+              Software
+              <span class="overhead-cost-row__sub">
+                ({{ "Jährlich" if profile.software_billing == "yearly" else
+                "Monatlich" }})
+              </span>
+            </span>
+            <span class="overhead-cost-row__value"
+              >{{ "%.2f"|format(profile.software_cost_monthly) }} CHF/Mt.</span
+            >
+          </div>
+          {% endif %} {% if profile.other_costs > 0 %}
+          <div class="overhead-cost-row">
+            <span class="overhead-cost-row__label">Weitere Kosten</span>
+            <span class="overhead-cost-row__value"
+              >{{ "%.2f"|format(profile.other_costs) }} CHF/Mt.</span
+            >
+          </div>
+          {% endif %}
+
+          <div class="overhead-cost-row overhead-cost-row--total">
+            <span class="overhead-cost-row__label">Total/Monat</span>
+            <span class="overhead-cost-row__value"
+              >{{ "%.2f"|format(profile.total_monthly_costs) }} CHF</span
+            >
+          </div>
+          <div class="overhead-cost-row">
+            <span class="overhead-cost-row__label">Geplante Stunden/Mt.</span>
+            <span class="overhead-cost-row__value"
+              >{{ profile.planned_hours_monthly }} h</span
+            >
+          </div>
+        </div>
+
+        {% if profile.notes %}
+        <p class="overhead-card__notes">{{ profile.notes }}</p>
+        {% endif %}
+
+        <!-- Verknüpfte Drucker -->
+        <div class="overhead-card__printers">
+          <div class="overhead-card__printers-label">Verknüpfte Drucker</div>
+          {% set linked = profile.linked_printers %} {% if linked %}
+          <div class="overhead-printer-tags">
+            {% for item in linked %}
+            <span
+              class="overhead-printer-tag {% if item.is_default %}overhead-printer-tag--default{% endif %}"
+            >
+              {{ item.printer.name }} {% if item.is_default %}<span
+                class="overhead-printer-tag__default"
+                >★ Standard</span
+              >{% endif %}
+              <button
+                class="overhead-printer-tag__remove"
+                onclick="OverheadModal.unlinkPrinter({{ profile.id }}, {{ item.printer.id }}, '{{ item.printer.name }}')"
+                title="Verknüpfung entfernen"
+              >
+                ✕
+              </button>
+            </span>
+            {% endfor %}
+          </div>
+          {% else %}
+          <span class="overhead-no-printers">Keine Drucker verknüpft</span>
+          {% endif %}
+
+          <!-- Drucker verknüpfen -->
+          <div class="overhead-link-form">
+            <select
+              class="form-input form-select overhead-printer-select"
+              id="printerSelect_{{ profile.id }}"
+            >
+              <option value="">Drucker wählen...</option>
+              {% for printer in all_printers %}
+              <option value="{{ printer.id }}">
+                {{ printer.name }} ({{ printer.brand }})
+              </option>
+              {% endfor %}
+            </select>
+            <label class="overhead-default-label">
+              <input
+                type="checkbox"
+                id="isDefault_{{ profile.id }}"
+                class="form-check-input"
+              />
+              Standard
+            </label>
+            <button
+              class="btn-link-printer"
+              onclick="OverheadModal.linkPrinter({{ profile.id }})"
+            >
+              + Verknüpfen
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overhead-card__footer">
+        <span class="overhead-card__creator">{{ profile.created_by }}</span>
+        <div class="overhead-card__actions">
+          <button
+            class="btn-edit"
+            data-id="{{ profile.id }}"
+            data-name="{{ profile.name }}"
+            data-location="{{ profile.location or '' }}"
+            data-rent="{{ profile.rent_monthly }}"
+            data-electricity="{{ profile.electricity_monthly }}"
+            data-insurance="{{ profile.insurance }}"
+            data-internet="{{ profile.internet }}"
+            data-software-cost="{{ profile.software_cost }}"
+            data-software-billing="{{ profile.software_billing }}"
+            data-other-costs="{{ profile.other_costs }}"
+            data-planned-hours="{{ profile.planned_hours_monthly }}"
+            data-is-active="{{ profile.is_active|lower }}"
+            data-notes="{{ profile.notes or '' }}"
+            onclick="OverheadModal.openEdit(this.dataset)"
+          >
+            Bearbeiten
+          </button>
+          <button
+            class="btn-toggle btn-toggle--active"
+            onclick="OverheadModal.toggle({{ profile.id }}, '{{ profile.name }}')"
+          >
+            ⏸ Deaktivieren
+          </button>
+          <button
+            class="btn-delete"
+            onclick="OverheadModal.delete({{ profile.id }}, '{{ profile.name }}')"
+          >
+            🗑 Löschen
+          </button>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="overhead-empty">
+      <div class="overhead-empty__icon">🏭</div>
+      <p class="overhead-empty__text">Noch keine Overhead-Profile erfasst.</p>
+      <button class="btn-add-overhead" onclick="OverheadModal.openAdd()">
+        <span class="btn-add-overhead__icon">+</span>
+        <span>Erstes Profil hinzufügen</span>
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Inaktive Profile -->
+  {% if inactive_profiles %}
+  <div class="overhead-section-label" style="margin-top: 48px">
+    ⏸ Inaktive Profile
+  </div>
+  <div class="overhead-grid overhead-grid--inactive">
+    {% for profile in inactive_profiles %}
+    <div
+      class="overhead-card overhead-card--inactive"
+      data-id="{{ profile.id }}"
+    >
+      <div class="overhead-card__header-bar">
+        <span class="overhead-card__name">{{ profile.name }}</span>
+        <span class="overhead-card__per-hour"
+          >{{ "%.4f"|format(profile.overhead_per_hour) }} CHF/h</span
+        >
+      </div>
+      <div class="overhead-card__body">
+        {% if profile.location %}
+        <div class="overhead-card__location">📍 {{ profile.location }}</div>
+        {% endif %}
+        <div class="overhead-cost-row overhead-cost-row--total">
+          <span class="overhead-cost-row__label">Total/Monat</span>
+          <span class="overhead-cost-row__value"
+            >{{ "%.2f"|format(profile.total_monthly_costs) }} CHF</span
+          >
+        </div>
+      </div>
+      <div class="overhead-card__footer">
+        <span class="overhead-card__creator">{{ profile.created_by }}</span>
+        <div class="overhead-card__actions">
+          <button
+            class="btn-toggle"
+            onclick="OverheadModal.toggle({{ profile.id }}, '{{ profile.name }}')"
+          >
+            ▶ Aktivieren
+          </button>
+          <button
+            class="btn-delete"
+            onclick="OverheadModal.delete({{ profile.id }}, '{{ profile.name }}')"
+          >
+            🗑 Löschen
+          </button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Bootstrap Modal -->
+<div
+  class="modal fade"
+  id="overheadModal"
+  tabindex="-1"
+  role="dialog"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content printer-modal-content">
+      <div class="modal-header printer-modal-header">
+        <h5 class="modal-title printer-modal-title" id="overheadModalLabel">
+          Neues Profil
+        </h5>
+        <button
+          type="button"
+          class="close printer-modal-close"
+          onclick="$('#overheadModal').modal('hide')"
+        >
+          <span aria-hidden="true">✕</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form id="overheadForm" onsubmit="OverheadModal.submit(event)">
+          <input type="hidden" id="formOverheadId" value="" />
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="formOverheadName">Name *</label>
+              <input
+                class="form-input"
+                type="text"
+                id="formOverheadName"
+                placeholder="z.B. Zuhause"
+                required
+              />
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="formLocation">Standort</label>
+              <input
+                class="form-input"
+                type="text"
+                id="formLocation"
+                placeholder="z.B. Heimatelier, Keller"
+              />
+            </div>
+          </div>
+
+          <div class="overhead-form-section">Fixkosten / Monat</div>
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="formRent">Miete (CHF)</label>
+              <input
+                class="form-input overhead-calc-input"
+                type="number"
+                id="formRent"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value="0"
+              />
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="formElectricity"
+                >Strom (CHF)</label
+              >
+              <input
+                class="form-input overhead-calc-input"
+                type="number"
+                id="formElectricity"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value="0"
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="formInsurance"
+                >Versicherung (CHF)</label
+              >
+              <input
+                class="form-input overhead-calc-input"
+                type="number"
+                id="formInsurance"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value="0"
+              />
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="formInternet"
+                >Internet (CHF)</label
+              >
+              <input
+                class="form-input overhead-calc-input"
+                type="number"
+                id="formInternet"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value="0"
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-4">
+              <label class="form-label" for="formSoftwareCost"
+                >Software (CHF)</label
+              >
+              <input
+                class="form-input overhead-calc-input"
+                type="number"
+                id="formSoftwareCost"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value="0"
+              />
+            </div>
+            <div class="form-group col-4">
+              <label class="form-label" for="formSoftwareBilling"
+                >Abrechnung</label
+              >
+              <select
+                class="form-input form-select overhead-calc-input"
+                id="formSoftwareBilling"
+              >
+                <option value="monthly">Monatlich</option>
+                <option value="yearly">Jährlich</option>
+              </select>
+            </div>
+            <div class="form-group col-4">
+              <label class="form-label" for="formOtherCosts"
+                >Weitere Kosten (CHF)</label
+              >
+              <input
+                class="form-input overhead-calc-input"
+                type="number"
+                id="formOtherCosts"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value="0"
+              />
+            </div>
+          </div>
+
+          <div class="overhead-form-section">Produktionsplanung</div>
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="formPlannedHours"
+                >Geplante Stunden/Monat *</label
+              >
+              <input
+                class="form-input overhead-calc-input"
+                type="number"
+                id="formPlannedHours"
+                min="1"
+                placeholder="100"
+                value="100"
+                required
+              />
+            </div>
+            <div class="form-group col-6">
+              <!-- Live Preview -->
+              <label class="form-label">Overhead/Stunde</label>
+              <div
+                class="overhead-per-hour-preview"
+                id="overheadPerHourPreview"
+              >
+                –
+              </div>
+            </div>
+          </div>
+
+          <!-- Total Preview -->
+          <div
+            class="overhead-total-preview"
+            id="overheadTotalPreview"
+            style="display: none"
+          >
+            <div class="overhead-total-preview__row">
+              <span>Total Fixkosten/Monat</span>
+              <span id="previewTotal">–</span>
+            </div>
+            <div
+              class="overhead-total-preview__row overhead-total-preview__row--highlight"
+            >
+              <span>Overhead/Stunde</span>
+              <span id="previewPerHour">–</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="form-check-row">
+              <input
+                type="checkbox"
+                id="formOverheadIsActive"
+                class="form-check-input"
+                checked
+              />
+              <label class="form-check-label" for="formOverheadIsActive"
+                >Profil aktiv</label
+              >
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="formOverheadNotes">Notizen</label>
+            <textarea
+              class="form-input form-textarea"
+              id="formOverheadNotes"
+              placeholder="Optionale Bemerkungen..."
+            ></textarea>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer printer-modal-footer">
+        <button
+          type="button"
+          class="btn-cancel"
+          onclick="$('#overheadModal').modal('hide')"
+        >
+          Abbrechen
+        </button>
+        <button type="submit" form="overheadForm" class="btn-save">
+          Speichern
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,293 @@
+/* ============================================================
+   Discounts.css – Printly Rabatte & Aufschläge
+   ============================================================ */
+
+.discounts-page {
+    font-family: var(--p-sans);
+    color: var(--p-text);
+    background: var(--p-bg);
+    min-height: 100%;
+    padding: 32px 40px;
+    box-sizing: border-box;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.discounts-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.discounts-header__label {
+    font-family: var(--p-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    color: var(--color-text-inactive);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.discounts-header__title {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0;
+    line-height: 1;
+    color: var(--p-text);
+}
+
+.btn-add-discount {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--color-sidbar-background-hover);
+    color: var(--color-text-light);
+    border: none;
+    border-radius: var(--p-radius);
+    padding: 10px 20px;
+    font-family: var(--p-sans);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: filter var(--p-transition), transform var(--p-transition);
+}
+
+.btn-add-discount:hover {
+    filter: brightness(0.9);
+    transform: translateY(-1px);
+}
+
+.btn-add-discount__icon {
+    font-size: 20px;
+    font-weight: 300;
+    line-height: 1;
+}
+
+/* ============================================================
+   STATS
+   ============================================================ */
+.discounts-stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+}
+
+/* ============================================================
+   SECTION LABEL
+   ============================================================ */
+.discounts-section-label {
+    font-family: var(--p-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--p-text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.discounts-section-label--discount {
+    color: #2E7D32;
+}
+
+.discounts-section-label--surcharge {
+    color: #B71C1C;
+}
+
+.discounts-section-label__icon {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+/* ============================================================
+   GRID
+   ============================================================ */
+.discounts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+.discounts-grid--inactive {
+    opacity: 0.6;
+}
+
+/* ============================================================
+   CARD
+   ============================================================ */
+.discount-card {
+    background: var(--p-surface);
+    border: 1px solid var(--p-border);
+    border-radius: var(--p-radius-lg);
+    overflow: hidden;
+    box-shadow: var(--p-shadow);
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow var(--p-transition), transform var(--p-transition);
+    animation: cardIn 0.25s ease both;
+}
+
+.discount-card:hover {
+    box-shadow: var(--p-shadow-lg);
+    transform: translateY(-2px);
+}
+
+/* Header Bar */
+.discount-card__header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+}
+
+.discount-card__header-bar--discount {
+    background: #2E7D32;
+}
+
+.discount-card__header-bar--surcharge {
+    background: #B71C1C;
+}
+
+.discount-card__percentage {
+    font-family: var(--p-mono);
+    font-size: 22px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.discount-card__type {
+    font-family: var(--p-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+}
+
+/* Body */
+.discount-card__body {
+    padding: 14px 18px 10px;
+    flex: 1;
+}
+
+.discount-card__name {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0 0 10px;
+    color: var(--p-text);
+}
+
+.discount-card__factor {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--p-bg);
+    border: 1px solid var(--p-border);
+    border-radius: var(--p-radius);
+    padding: 6px 10px;
+    margin-bottom: 8px;
+}
+
+.discount-card__factor-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--p-text-muted);
+}
+
+.discount-card__factor-value {
+    font-family: var(--p-mono);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--p-text);
+}
+
+.discount-card__notes {
+    font-size: 12px;
+    color: var(--p-text-muted);
+    margin: 0;
+    line-height: 1.5;
+    border-left: 2px solid var(--p-border);
+    padding-left: 10px;
+}
+
+/* Footer */
+.discount-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 18px;
+    border-top: 1px solid var(--p-border);
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.discount-card__creator {
+    font-size: 11px;
+    color: var(--p-text-muted);
+    font-family: var(--p-mono);
+}
+
+.discount-card__actions {
+    display: flex;
+    gap: 6px;
+}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.discounts-empty {
+    text-align: center;
+    padding: 64px 24px;
+    color: var(--p-text-muted);
+}
+
+.discounts-empty__icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.4;
+}
+
+.discounts-empty__text {
+    font-size: 15px;
+    margin-bottom: 24px;
+}
+
+/* ============================================================
+   MODAL PREVIEW
+   ============================================================ */
+.discount-preview {
+    background: var(--p-bg);
+    border: 1px solid var(--p-border);
+    border-radius: var(--p-radius);
+    padding: 12px 16px;
+    margin-bottom: 12px;
+}
+
+.discount-preview__row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    font-family: var(--p-mono);
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.discount-preview__result {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.discount-preview__factor {
+    font-size: 11px;
+    color: var(--p-text-muted);
+}

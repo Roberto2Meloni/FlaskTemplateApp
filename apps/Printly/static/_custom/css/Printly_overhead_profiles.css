@@ -1,0 +1,424 @@
+/* ============================================================
+   Overhead Profiles CSS – Printly
+   ============================================================ */
+
+.overhead-page {
+    font-family: var(--p-sans);
+    color: var(--p-text);
+    background: var(--p-bg);
+    min-height: 100%;
+    padding: 32px 40px;
+    box-sizing: border-box;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.overhead-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.overhead-header__label {
+    font-family: var(--p-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    color: var(--color-text-inactive);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.overhead-header__title {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0;
+    line-height: 1;
+    color: var(--p-text);
+}
+
+.btn-add-overhead {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--color-sidbar-background-hover);
+    color: var(--color-text-light);
+    border: none;
+    border-radius: var(--p-radius);
+    padding: 10px 20px;
+    font-family: var(--p-sans);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: filter var(--p-transition), transform var(--p-transition);
+}
+
+.btn-add-overhead:hover {
+    filter: brightness(0.9);
+    transform: translateY(-1px);
+}
+
+.btn-add-overhead__icon {
+    font-size: 20px;
+    font-weight: 300;
+    line-height: 1;
+}
+
+/* ============================================================
+   STATS
+   ============================================================ */
+.overhead-stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+}
+
+/* ============================================================
+   SECTION LABEL
+   ============================================================ */
+.overhead-section-label {
+    font-family: var(--p-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--p-text-muted);
+    margin-bottom: 14px;
+}
+
+/* ============================================================
+   GRID
+   ============================================================ */
+.overhead-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 20px;
+}
+
+.overhead-grid--inactive {
+    opacity: 0.65;
+}
+
+/* ============================================================
+   CARD
+   ============================================================ */
+.overhead-card {
+    background: var(--p-surface);
+    border: 1px solid var(--p-border);
+    border-radius: var(--p-radius-lg);
+    overflow: hidden;
+    box-shadow: var(--p-shadow);
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow var(--p-transition), transform var(--p-transition);
+    animation: cardIn 0.25s ease both;
+}
+
+.overhead-card:hover {
+    box-shadow: var(--p-shadow-lg);
+    transform: translateY(-2px);
+}
+
+.overhead-card__header-bar {
+    background: var(--color-sidbar-background);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+}
+
+.overhead-card__name {
+    font-family: var(--p-sans);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-light);
+}
+
+.overhead-card__per-hour {
+    font-family: var(--p-mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-inactive);
+}
+
+.overhead-card__body {
+    padding: 16px 18px 12px;
+    flex: 1;
+}
+
+.overhead-card__location {
+    font-size: 12px;
+    color: var(--p-text-muted);
+    margin-bottom: 12px;
+}
+
+/* ============================================================
+   KOSTENAUFSTELLUNG
+   ============================================================ */
+.overhead-costs {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.overhead-cost-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--p-border);
+}
+
+.overhead-cost-row__label {
+    color: var(--p-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.overhead-cost-row__sub {
+    font-size: 10px;
+    color: var(--p-text-muted);
+    opacity: 0.7;
+}
+
+.overhead-cost-row__value {
+    font-family: var(--p-mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--p-text);
+}
+
+.overhead-cost-row--total {
+    border-top: 2px solid var(--p-border);
+    border-bottom: none;
+    padding-top: 8px;
+    margin-top: 4px;
+}
+
+.overhead-cost-row--total .overhead-cost-row__label {
+    font-weight: 700;
+    color: var(--p-text);
+}
+
+.overhead-cost-row--total .overhead-cost-row__value {
+    color: var(--color-text-inactive);
+    font-size: 14px;
+}
+
+/* ============================================================
+   VERKNÜPFTE DRUCKER
+   ============================================================ */
+.overhead-card__printers {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--p-border);
+}
+
+.overhead-card__printers-label {
+    font-family: var(--p-mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--p-text-muted);
+    margin-bottom: 8px;
+}
+
+.overhead-printer-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.overhead-printer-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--p-bg);
+    border: 1px solid var(--p-border);
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: 11px;
+    color: var(--p-text);
+}
+
+.overhead-printer-tag--default {
+    background: rgba(244, 98, 1, 0.1);
+    border-color: var(--color-text-inactive);
+}
+
+.overhead-printer-tag__default {
+    font-size: 10px;
+    color: var(--color-text-inactive);
+    font-weight: 600;
+}
+
+.overhead-printer-tag__remove {
+    background: none;
+    border: none;
+    color: var(--p-text-muted);
+    cursor: pointer;
+    padding: 0;
+    font-size: 11px;
+    line-height: 1;
+    transition: color var(--p-transition);
+}
+
+.overhead-printer-tag__remove:hover {
+    color: #e74c3c;
+}
+
+.overhead-no-printers {
+    font-size: 11px;
+    color: var(--p-text-muted);
+    font-style: italic;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.overhead-link-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.overhead-printer-select {
+    flex: 1;
+    min-width: 140px;
+    font-size: 12px;
+    padding: 6px 10px;
+}
+
+.overhead-default-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--p-text-muted);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.btn-link-printer {
+    background: transparent;
+    border: 1px solid var(--color-active-background);
+    color: var(--color-active-background);
+    border-radius: var(--p-radius);
+    padding: 5px 10px;
+    font-size: 11px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background var(--p-transition), color var(--p-transition);
+}
+
+.btn-link-printer:hover {
+    background: var(--color-active-background);
+    color: #fff;
+}
+
+/* ============================================================
+   CARD FOOTER
+   ============================================================ */
+.overhead-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 18px;
+    border-top: 1px solid var(--p-border);
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.overhead-card__creator {
+    font-size: 11px;
+    color: var(--p-text-muted);
+    font-family: var(--p-mono);
+}
+
+.overhead-card__actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.overhead-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 64px 24px;
+    color: var(--p-text-muted);
+}
+
+.overhead-empty__icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.4;
+}
+
+.overhead-empty__text {
+    font-size: 15px;
+    margin-bottom: 24px;
+}
+
+/* ============================================================
+   MODAL – FORM SECTIONS + PREVIEW
+   ============================================================ */
+.overhead-form-section {
+    font-family: var(--p-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--p-text-muted);
+    border-bottom: 1px solid var(--p-border);
+    padding-bottom: 6px;
+    margin: 16px 0 12px;
+}
+
+.overhead-per-hour-preview {
+    font-family: var(--p-mono);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-text-inactive);
+    padding-top: 8px;
+}
+
+.overhead-total-preview {
+    background: var(--p-bg);
+    border: 1px solid var(--p-border);
+    border-radius: var(--p-radius);
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.overhead-total-preview__row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--p-text-muted);
+}
+
+.overhead-total-preview__row--highlight {
+    font-weight: 700;
+    font-family: var(--p-mono);
+    color: var(--color-text-inactive);
+    font-size: 15px;
+    border-top: 1px solid var(--p-border);
+    padding-top: 6px;
+    margin-top: 2px;
+}

@@ -502,3 +502,30 @@
 .stat-pill--graveyard .stat-pill__value {
     color: var(--p-text-muted);
 }
+
+/* ============================================================
+   OVERHEAD VERKNÜPFUNG AUF DRUCKER-KARTE
+   ============================================================ */
+
+.printer-card__overhead {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--p-border);
+}
+
+.printer-card__overhead-label {
+    font-family: var(--p-mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--p-text-muted);
+    margin-bottom: 8px;
+}
+
+.overhead-printer-tag__rate {
+    font-family: var(--p-mono);
+    font-size: 10px;
+    color: var(--color-text-inactive);
+    font-weight: 600;
+}

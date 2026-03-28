@@ -3,7 +3,15 @@ Zentrale Seitenkonfiguration für Printly
 Neue Seite hinzufügen = nur hier eintragen!
 """
 
-from ..models import PrintlyPrinter, PrintlyFilament, PrintlyElectricityCost
+from ..models import (
+    PrintlyPrinter,
+    PrintlyFilament,
+    PrintlyElectricityCost,
+    PrintlyWorkHours,
+    PrintlyWorkHours,
+    PrintlyOverheadProfile,
+    PrintlyDiscountProfile,
+)
 
 # ============================================================
 # CONTEXT LOADER FUNKTIONEN
@@ -33,7 +41,16 @@ def load_printers_context():
         .order_by(PrintlyPrinter.name)
         .all()
     )
-    return {"all_printers": active, "graveyard_printers": graveyard}
+    active_overhead_profiles = (
+        PrintlyOverheadProfile.query.filter_by(is_active=True)
+        .order_by(PrintlyOverheadProfile.name)
+        .all()
+    )
+    return {
+        "all_printers": active,
+        "graveyard_printers": graveyard,
+        "overhead_profiles": active_overhead_profiles,
+    }
 
 
 def load_filaments_context():
@@ -61,15 +78,68 @@ def load_electricity_costs_context():
 
 
 def load_working_hours_context():
-    return {}
+    active = (
+        PrintlyWorkHours.query.filter_by(is_archived=False)
+        .order_by(PrintlyWorkHours.cost_per_hour.desc())
+        .all()
+    )
+    graveyard = (
+        PrintlyWorkHours.query.filter_by(is_archived=True)
+        .order_by(PrintlyWorkHours.name)
+        .all()
+    )
+    return {
+        "all_work_hours": active,
+        "graveyard_work_hours": graveyard,
+    }
 
 
 def load_overhead_profiles_context():
-    return {}
+    active = (
+        PrintlyOverheadProfile.query.filter_by(is_active=True)
+        .order_by(PrintlyOverheadProfile.name)
+        .all()
+    )
+    inactive = (
+        PrintlyOverheadProfile.query.filter_by(is_active=False)
+        .order_by(PrintlyOverheadProfile.name)
+        .all()
+    )
+    all_printers = (
+        PrintlyPrinter.query.filter_by(is_archived=False)
+        .order_by(PrintlyPrinter.name)
+        .all()
+    )
+    return {
+        "active_profiles": active,
+        "inactive_profiles": inactive,
+        "all_printers": all_printers,  # für Verknüpfungs-Dropdown
+    }
 
 
 def load_discounts_and_surcharges_context():
-    return {}
+    active_discounts = (
+        PrintlyDiscountProfile.query.filter_by(is_active=True, discount_type="discount")
+        .order_by(PrintlyDiscountProfile.percentage.desc())
+        .all()
+    )
+    active_surcharges = (
+        PrintlyDiscountProfile.query.filter_by(
+            is_active=True, discount_type="surcharge"
+        )
+        .order_by(PrintlyDiscountProfile.percentage.desc())
+        .all()
+    )
+    inactive_profiles = (
+        PrintlyDiscountProfile.query.filter_by(is_active=False)
+        .order_by(PrintlyDiscountProfile.discount_type, PrintlyDiscountProfile.name)
+        .all()
+    )
+    return {
+        "active_discounts": active_discounts,
+        "active_surcharges": active_surcharges,
+        "inactive_profiles": inactive_profiles,
+    }
 
 
 # ============================================================

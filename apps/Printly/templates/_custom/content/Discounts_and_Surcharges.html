@@ -1,1 +1,357 @@
-<h4>Aufschläge und Rabatte</h4>
+<div class="discounts-page">
+  <!-- Header -->
+  <div class="discounts-header">
+    <div class="discounts-header__left">
+      <span class="discounts-header__label">PREISANPASSUNGEN</span>
+      <h1 class="discounts-header__title">Aufschläge & Rabatte</h1>
+    </div>
+    <button class="btn-add-discount" onclick="DiscountModal.openAdd()">
+      <span class="btn-add-discount__icon">+</span>
+      <span>Neue Preisanpassung</span>
+    </button>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="discounts-stats">
+    <div class="stat-pill">
+      <span class="stat-pill__value" id="statTotal"
+        >{{ (active_discounts|length) + (active_surcharges|length) }}</span
+      >
+      <span class="stat-pill__label">Total aktiv</span>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-pill__value" id="statDiscounts"
+        >{{ active_discounts|length }}</span
+      >
+      <span class="stat-pill__label">Rabatte</span>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-pill__value" id="statSurcharges"
+        >{{ active_surcharges|length }}</span
+      >
+      <span class="stat-pill__label">Aufschläge</span>
+    </div>
+    {% if inactive_profiles %}
+    <div class="stat-pill stat-pill--graveyard">
+      <span class="stat-pill__value">{{ inactive_profiles|length }}</span>
+      <span class="stat-pill__label">⏸ Inaktiv</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Rabatte -->
+  {% if active_discounts %}
+  <div class="discounts-section-label discounts-section-label--discount">
+    <span class="discounts-section-label__icon">↓</span> Rabatte
+  </div>
+  <div class="discounts-grid" id="discountsGrid">
+    {% for profile in active_discounts %}
+    <div
+      class="discount-card discount-card--discount"
+      data-id="{{ profile.id }}"
+    >
+      <div
+        class="discount-card__header-bar discount-card__header-bar--discount"
+      >
+        <span class="discount-card__percentage"
+          >-{{ "%.1f"|format(profile.percentage) }}%</span
+        >
+        <span class="discount-card__type">Rabatt</span>
+      </div>
+      <div class="discount-card__body">
+        <h3 class="discount-card__name">{{ profile.name }}</h3>
+        <div class="discount-card__factor">
+          <span class="discount-card__factor-label">Berechnungsfaktor</span>
+          <span class="discount-card__factor-value"
+            >× {{ "%.4f"|format(profile.calculation_factor) }}</span
+          >
+        </div>
+        {% if profile.notes %}
+        <p class="discount-card__notes">{{ profile.notes }}</p>
+        {% endif %}
+      </div>
+      <div class="discount-card__footer">
+        <span class="discount-card__creator">{{ profile.created_by }}</span>
+        <div class="discount-card__actions">
+          <button
+            class="btn-edit"
+            data-id="{{ profile.id }}"
+            data-name="{{ profile.name }}"
+            data-type="{{ profile.discount_type }}"
+            data-percentage="{{ profile.percentage }}"
+            data-is-active="{{ profile.is_active|lower }}"
+            data-notes="{{ profile.notes or '' }}"
+            onclick="DiscountModal.openEdit(this.dataset)"
+          >
+            Bearbeiten
+          </button>
+          <button
+            class="btn-toggle btn-toggle--active"
+            onclick="DiscountModal.toggle({{ profile.id }}, '{{ profile.name }}')"
+          >
+            ⏸ Deaktivieren
+          </button>
+          <button
+            class="btn-delete"
+            onclick="DiscountModal.delete({{ profile.id }}, '{{ profile.name }}')"
+          >
+            🗑
+          </button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Aufschläge -->
+  {% if active_surcharges %}
+  <div
+    class="discounts-section-label discounts-section-label--surcharge"
+    style="margin-top: 32px"
+  >
+    <span class="discounts-section-label__icon">↑</span> Aufschläge
+  </div>
+  <div class="discounts-grid" id="surchargesGrid">
+    {% for profile in active_surcharges %}
+    <div
+      class="discount-card discount-card--surcharge"
+      data-id="{{ profile.id }}"
+    >
+      <div
+        class="discount-card__header-bar discount-card__header-bar--surcharge"
+      >
+        <span class="discount-card__percentage"
+          >+{{ "%.1f"|format(profile.percentage) }}%</span
+        >
+        <span class="discount-card__type">Aufschlag</span>
+      </div>
+      <div class="discount-card__body">
+        <h3 class="discount-card__name">{{ profile.name }}</h3>
+        <div class="discount-card__factor">
+          <span class="discount-card__factor-label">Berechnungsfaktor</span>
+          <span class="discount-card__factor-value"
+            >× {{ "%.4f"|format(profile.calculation_factor) }}</span
+          >
+        </div>
+        {% if profile.notes %}
+        <p class="discount-card__notes">{{ profile.notes }}</p>
+        {% endif %}
+      </div>
+      <div class="discount-card__footer">
+        <span class="discount-card__creator">{{ profile.created_by }}</span>
+        <div class="discount-card__actions">
+          <button
+            class="btn-edit"
+            data-id="{{ profile.id }}"
+            data-name="{{ profile.name }}"
+            data-type="{{ profile.discount_type }}"
+            data-percentage="{{ profile.percentage }}"
+            data-is-active="{{ profile.is_active|lower }}"
+            data-notes="{{ profile.notes or '' }}"
+            onclick="DiscountModal.openEdit(this.dataset)"
+          >
+            Bearbeiten
+          </button>
+          <button
+            class="btn-toggle btn-toggle--active"
+            onclick="DiscountModal.toggle({{ profile.id }}, '{{ profile.name }}')"
+          >
+            ⏸ Deaktivieren
+          </button>
+          <button
+            class="btn-delete"
+            onclick="DiscountModal.delete({{ profile.id }}, '{{ profile.name }}')"
+          >
+            🗑
+          </button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Empty State -->
+  {% if not active_discounts and not active_surcharges %}
+  <div class="discounts-empty">
+    <div class="discounts-empty__icon">🏷️</div>
+    <p class="discounts-empty__text">Noch keine Preisanpassungen erfasst.</p>
+    <button class="btn-add-discount" onclick="DiscountModal.openAdd()">
+      <span class="btn-add-discount__icon">+</span>
+      <span>Erste Preisanpassung hinzufügen</span>
+    </button>
+  </div>
+  {% endif %}
+
+  <!-- Inaktive Profile -->
+  {% if inactive_profiles %}
+  <div class="discounts-section-label" style="margin-top: 48px">
+    ⏸ Inaktive Preisanpassungen
+  </div>
+  <div class="discounts-grid discounts-grid--inactive">
+    {% for profile in inactive_profiles %}
+    <div
+      class="discount-card discount-card--inactive"
+      data-id="{{ profile.id }}"
+    >
+      <div
+        class="discount-card__header-bar discount-card__header-bar--{{ profile.discount_type }}"
+      >
+        <span class="discount-card__percentage">
+          {{ "-" if profile.is_discount else "+" }}{{
+          "%.1f"|format(profile.percentage) }}%
+        </span>
+        <span class="discount-card__type"
+          >{{ "Rabatt" if profile.is_discount else "Aufschlag" }}</span
+        >
+      </div>
+      <div class="discount-card__body">
+        <h3 class="discount-card__name">{{ profile.name }}</h3>
+      </div>
+      <div class="discount-card__footer">
+        <span class="discount-card__creator">{{ profile.created_by }}</span>
+        <div class="discount-card__actions">
+          <button
+            class="btn-toggle"
+            onclick="DiscountModal.toggle({{ profile.id }}, '{{ profile.name }}')"
+          >
+            ▶ Aktivieren
+          </button>
+          <button
+            class="btn-delete"
+            onclick="DiscountModal.delete({{ profile.id }}, '{{ profile.name }}')"
+          >
+            🗑
+          </button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Bootstrap Modal -->
+<div
+  class="modal fade"
+  id="discountModal"
+  tabindex="-1"
+  role="dialog"
+  aria-hidden="true"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content printer-modal-content">
+      <div class="modal-header printer-modal-header">
+        <h5 class="modal-title printer-modal-title" id="discountModalLabel">
+          Neue Preisanpassung
+        </h5>
+        <button
+          type="button"
+          class="close printer-modal-close"
+          onclick="$('#discountModal').modal('hide')"
+        >
+          <span aria-hidden="true">✕</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form id="discountForm" onsubmit="DiscountModal.submit(event)">
+          <input type="hidden" id="formDiscountId" value="" />
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="formDiscountName">Name *</label>
+              <input
+                class="form-input"
+                type="text"
+                id="formDiscountName"
+                placeholder="z.B. Stammkunde, Express"
+                required
+              />
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="formDiscountType">Typ *</label>
+              <select
+                class="form-input form-select"
+                id="formDiscountType"
+                required
+              >
+                <option value="discount">↓ Rabatt</option>
+                <option value="surcharge">↑ Aufschlag</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="formPercentage"
+              >Prozentsatz (%) *</label
+            >
+            <input
+              class="form-input"
+              type="number"
+              id="formPercentage"
+              step="0.01"
+              min="0"
+              max="100"
+              placeholder="z.B. 10.00"
+              required
+            />
+          </div>
+
+          <!-- Vorschau -->
+          <div
+            class="discount-preview"
+            id="discountPreview"
+            style="display: none"
+          >
+            <div class="discount-preview__row">
+              <span>Beispiel: 100.00 CHF</span>
+              <span>→</span>
+              <span class="discount-preview__result" id="previewResult">–</span>
+            </div>
+            <div class="discount-preview__factor">
+              Faktor: <span id="previewFactor">–</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="form-check-row">
+              <input
+                type="checkbox"
+                id="formDiscountIsActive"
+                class="form-check-input"
+                checked
+              />
+              <label class="form-check-label" for="formDiscountIsActive"
+                >Aktiv</label
+              >
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="formDiscountNotes">Notizen</label>
+            <textarea
+              class="form-input form-textarea"
+              id="formDiscountNotes"
+              placeholder="Optionale Bemerkungen..."
+            ></textarea>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer printer-modal-footer">
+        <button
+          type="button"
+          class="btn-cancel"
+          onclick="$('#discountModal').modal('hide')"
+        >
+          Abbrechen
+        </button>
+        <button type="submit" form="discountForm" class="btn-save">
+          Speichern
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

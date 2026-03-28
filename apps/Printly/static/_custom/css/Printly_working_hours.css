@@ -1,0 +1,233 @@
+/* ============================================================
+   WorkHours.css – Printly Arbeitszeiten
+   ============================================================ */
+
+.workhours-page {
+    font-family: var(--p-sans);
+    color: var(--p-text);
+    background: var(--p-bg);
+    min-height: 100%;
+    padding: 32px 40px;
+    box-sizing: border-box;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.workhours-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.workhours-header__label {
+    font-family: var(--p-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    color: var(--color-text-inactive);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.workhours-header__title {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0;
+    line-height: 1;
+    color: var(--p-text);
+}
+
+.btn-add-workhours {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--color-sidbar-background-hover);
+    color: var(--color-text-light);
+    border: none;
+    border-radius: var(--p-radius);
+    padding: 10px 20px;
+    font-family: var(--p-sans);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: filter var(--p-transition), transform var(--p-transition);
+}
+
+.btn-add-workhours:hover {
+    filter: brightness(0.9);
+    transform: translateY(-1px);
+}
+
+.btn-add-workhours__icon {
+    font-size: 20px;
+    font-weight: 300;
+    line-height: 1;
+}
+
+/* ============================================================
+   STATS
+   ============================================================ */
+.workhours-stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+}
+
+/* ============================================================
+   SECTION LABEL
+   ============================================================ */
+.workhours-section-label {
+    font-family: var(--p-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--p-text-muted);
+    margin-bottom: 14px;
+}
+
+/* ============================================================
+   GRID
+   ============================================================ */
+.workhours-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 18px;
+}
+
+/* ============================================================
+   CARD
+   ============================================================ */
+.workhours-card {
+    background: var(--p-surface);
+    border: 1px solid var(--p-border);
+    border-radius: var(--p-radius-lg);
+    overflow: hidden;
+    box-shadow: var(--p-shadow);
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow var(--p-transition), transform var(--p-transition);
+    animation: cardIn 0.25s ease both;
+}
+
+.workhours-card:hover {
+    box-shadow: var(--p-shadow-lg);
+    transform: translateY(-2px);
+}
+
+.workhours-card__header-bar {
+    background: var(--color-sidbar-background);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 8px 16px;
+}
+
+.workhours-card__rate {
+    font-family: var(--p-mono);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-inactive);
+}
+
+.workhours-card__body {
+    padding: 16px 18px 12px;
+    flex: 1;
+}
+
+.workhours-card__name {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 12px;
+    color: var(--p-text);
+}
+
+.workhours-card__metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.workhours-card__notes {
+    font-size: 12px;
+    color: var(--p-text-muted);
+    margin: 0;
+    line-height: 1.5;
+    border-left: 2px solid var(--color-text-inactive);
+    padding-left: 10px;
+}
+
+.workhours-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 18px;
+    border-top: 1px solid var(--p-border);
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.workhours-card__creator {
+    font-size: 11px;
+    color: var(--p-text-muted);
+    font-family: var(--p-mono);
+}
+
+.workhours-card__actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+/* ============================================================
+   FRIEDHOF
+   ============================================================ */
+.workhours-card--graveyard {
+    opacity: 0.55;
+    filter: grayscale(0.6);
+    transition: opacity var(--p-transition), filter var(--p-transition);
+}
+
+.workhours-card--graveyard:hover {
+    opacity: 0.85;
+    filter: grayscale(0.2);
+}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.workhours-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 64px 24px;
+    color: var(--p-text-muted);
+}
+
+.workhours-empty__icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.4;
+}
+
+.workhours-empty__text {
+    font-size: 15px;
+    margin-bottom: 24px;
+}
+
+/* ============================================================
+   PREVIEW IM MODAL
+   ============================================================ */
+.workhours-preview {
+    background: var(--p-bg);
+    border: 1px solid var(--p-border);
+    border-radius: var(--p-radius);
+    padding: 10px 16px;
+    display: flex;
+    gap: 24px;
+    margin-bottom: 12px;
+}

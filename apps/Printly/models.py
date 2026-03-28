@@ -43,6 +43,27 @@ class PrintlyPrinter(db.Model):
         """Berechnet die täglichen Maschinenkosten bei 24h Betrieb"""
         return float(self.machine_cost_per_hour) * 24
 
+    @property
+    def overhead_profiles_with_default(self):
+        """Gibt Overhead-Profile mit is_default Flag zurück"""
+        from .models import printly_printer_overhead
+
+        results = []
+        for profile in self.overhead_profiles.all():
+            row = db.session.execute(
+                db.select(printly_printer_overhead).where(
+                    printly_printer_overhead.c.printer_id == self.id,
+                    printly_printer_overhead.c.overhead_id == profile.id,
+                )
+            ).fetchone()
+            results.append(
+                {
+                    "profile": profile,
+                    "is_default": row.is_default if row else False,
+                }
+            )
+        return results
+
     def estimate_print_cost(self, print_time_hours, filament_cost=0):
         """Schätzt die Druckkosten basierend auf Zeit und Filament"""
         machine_cost = float(self.machine_cost_per_hour) * print_time_hours
@@ -313,3 +334,301 @@ class PrintlyElectricityCost(db.Model):
             "Industrie",
             "Andere",
         ]
+
+
+class PrintlyWorkHours(db.Model):
+    __tablename__ = "printly_work_hours"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)  # z.B. "Normaler Stundensatz"
+    cost_per_hour = db.Column(db.Numeric(8, 2), nullable=False)  # CHF/h
+    notes = db.Column(db.Text, nullable=True)
+    is_archived = db.Column(db.Boolean, default=False, nullable=False)
+
+    # Zeitstempel
+    created_at = db.Column(db.DateTime, default=get_current_time, nullable=False)
+    updated_at = db.Column(
+        db.DateTime, default=get_current_time, onupdate=get_current_time, nullable=False
+    )
+    created_by = db.Column(db.String(64), nullable=False)
+
+    def __repr__(self):
+        return f"<PrintlyWorkHours {self.name} ({self.cost_per_hour} CHF/h)>"
+
+    # ----------------------------------------------------------
+    # PROPERTIES
+    # ----------------------------------------------------------
+
+    @property
+    def daily_cost(self):
+        """Tageskosten bei 8h"""
+        return round(float(self.cost_per_hour) * 8, 2)
+
+    @property
+    def monthly_cost(self):
+        """Monatliche Kosten bei 160h (20 Tage × 8h)"""
+        return round(float(self.cost_per_hour) * 160, 2)
+
+    # ----------------------------------------------------------
+    # SERIALISIERUNG
+    # ----------------------------------------------------------
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "cost_per_hour": float(self.cost_per_hour),
+            "daily_cost": self.daily_cost,
+            "monthly_cost": self.monthly_cost,
+            "notes": self.notes,
+            "is_archived": self.is_archived,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "created_by": self.created_by,
+        }
+
+
+# ============================================================
+# MANY-TO-MANY VERKNÜPFUNGSTABELLE
+# ============================================================
+
+printly_printer_overhead = db.Table(
+    "printly_printer_overhead",
+    db.Column(
+        "printer_id", db.Integer, db.ForeignKey("printly_printers.id"), nullable=False
+    ),
+    db.Column(
+        "overhead_id",
+        db.Integer,
+        db.ForeignKey("printly_overhead_profiles.id"),
+        nullable=False,
+    ),
+    db.Column("is_default", db.Boolean, default=False, nullable=False),
+    db.PrimaryKeyConstraint("printer_id", "overhead_id"),
+)
+
+
+# ============================================================
+# OVERHEAD PROFIL
+# ============================================================
+
+
+class PrintlyOverheadProfile(db.Model):
+    __tablename__ = "printly_overhead_profiles"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)  # z.B. "Zuhause", "Hobbyraum"
+    location = db.Column(db.String(200), nullable=True)  # Beschreibung des Standorts
+
+    # Fixkosten pro Monat (CHF)
+    rent_monthly = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+    electricity_monthly = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+    insurance = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+    internet = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+    other_costs = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+
+    # Software-Lizenzen
+    software_cost = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+    software_billing = db.Column(
+        db.String(20), nullable=False, default="monthly"
+    )  # "monthly" / "yearly"
+
+    # Produktionsplanung
+    planned_hours_monthly = db.Column(db.Integer, nullable=False, default=100)
+
+    # Status
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    notes = db.Column(db.Text, nullable=True)
+
+    # Zeitstempel
+    created_at = db.Column(db.DateTime, default=get_current_time, nullable=False)
+    updated_at = db.Column(
+        db.DateTime, default=get_current_time, onupdate=get_current_time, nullable=False
+    )
+    created_by = db.Column(db.String(64), nullable=False)
+
+    # Relationship zu Druckern (via Verknüpfungstabelle)
+    printers = db.relationship(
+        "PrintlyPrinter",
+        secondary=printly_printer_overhead,
+        backref=db.backref("overhead_profiles", lazy="dynamic"),
+        lazy="dynamic",
+    )
+
+    def __repr__(self):
+        return f"<PrintlyOverheadProfile {self.name}>"
+
+    # ----------------------------------------------------------
+    # PROPERTIES
+    # ----------------------------------------------------------
+
+    @property
+    def software_cost_monthly(self):
+        """Software-Kosten normalisiert auf Monat"""
+        if self.software_billing == "yearly":
+            return round(float(self.software_cost) / 12, 2)
+        return round(float(self.software_cost), 2)
+
+    @property
+    def total_monthly_costs(self):
+        """Gesamte monatliche Fixkosten"""
+        return round(
+            float(self.rent_monthly)
+            + float(self.electricity_monthly)
+            + float(self.insurance)
+            + float(self.internet)
+            + float(self.other_costs)
+            + self.software_cost_monthly,
+            2,
+        )
+
+    @property
+    def overhead_per_hour(self):
+        """Overhead-Kosten pro Stunde"""
+        if self.planned_hours_monthly > 0:
+            return round(self.total_monthly_costs / self.planned_hours_monthly, 4)
+        return 0.0
+
+    @property
+    def linked_printers(self):
+        """Gibt verknüpfte Drucker mit is_default zurück"""
+        from sqlalchemy import select
+
+        results = []
+        for printer in self.printers:
+            # is_default aus Verknüpfungstabelle lesen
+            row = db.session.execute(
+                db.select(printly_printer_overhead).where(
+                    printly_printer_overhead.c.printer_id == printer.id,
+                    printly_printer_overhead.c.overhead_id == self.id,
+                )
+            ).fetchone()
+            results.append(
+                {
+                    "printer": printer,
+                    "is_default": row.is_default if row else False,
+                }
+            )
+        return results
+
+    # ----------------------------------------------------------
+    # SERIALISIERUNG
+    # ----------------------------------------------------------
+
+    def to_dict(self, include_printers=False):
+        data = {
+            "id": self.id,
+            "name": self.name,
+            "location": self.location,
+            "rent_monthly": float(self.rent_monthly),
+            "electricity_monthly": float(self.electricity_monthly),
+            "insurance": float(self.insurance),
+            "internet": float(self.internet),
+            "software_cost": float(self.software_cost),
+            "software_billing": self.software_billing,
+            "software_cost_monthly": self.software_cost_monthly,
+            "other_costs": float(self.other_costs),
+            "planned_hours_monthly": self.planned_hours_monthly,
+            "total_monthly_costs": self.total_monthly_costs,
+            "overhead_per_hour": self.overhead_per_hour,
+            "is_active": self.is_active,
+            "notes": self.notes,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "created_by": self.created_by,
+        }
+        if include_printers:
+            data["printers"] = [
+                {
+                    "id": p["printer"].id,
+                    "name": p["printer"].name,
+                    "brand": p["printer"].brand,
+                    "is_default": p["is_default"],
+                }
+                for p in self.linked_printers
+            ]
+        return data
+
+    # ----------------------------------------------------------
+    # STATISCHE HILFSMETHODEN
+    # ----------------------------------------------------------
+
+    @staticmethod
+    def get_software_billing_options():
+        return [("monthly", "Monatlich"), ("yearly", "Jährlich")]
+
+
+class PrintlyDiscountProfile(db.Model):
+    __tablename__ = "printly_discount_profiles"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    discount_type = db.Column(
+        db.String(20), nullable=False, default="discount"
+    )  # "discount" / "surcharge"
+    percentage = db.Column(db.Numeric(5, 2), nullable=False)  # 0.00 – 100.00
+    notes = db.Column(db.Text, nullable=True)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+
+    # Zeitstempel
+    created_at = db.Column(db.DateTime, default=get_current_time, nullable=False)
+    updated_at = db.Column(
+        db.DateTime, default=get_current_time, onupdate=get_current_time, nullable=False
+    )
+    created_by = db.Column(db.String(64), nullable=False)
+
+    def __repr__(self):
+        return f"<PrintlyDiscountProfile {self.name} ({self.discount_type}: {self.percentage}%)>"
+
+    # ----------------------------------------------------------
+    # PROPERTIES
+    # ----------------------------------------------------------
+
+    @property
+    def is_discount(self):
+        return self.discount_type == "discount"
+
+    @property
+    def is_surcharge(self):
+        return self.discount_type == "surcharge"
+
+    @property
+    def calculation_factor(self):
+        """Berechnungsfaktor für Offertenkalkulation"""
+        if self.is_discount:
+            return round(1 - (float(self.percentage) / 100), 6)
+        elif self.is_surcharge:
+            return round(1 + (float(self.percentage) / 100), 6)
+        return 1.0
+
+    def calculate_final_price(self, original_price):
+        """Endpreis nach Anpassung"""
+        return round(float(original_price) * self.calculation_factor, 2)
+
+    # ----------------------------------------------------------
+    # SERIALISIERUNG
+    # ----------------------------------------------------------
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "discount_type": self.discount_type,
+            "percentage": float(self.percentage),
+            "calculation_factor": self.calculation_factor,
+            "is_discount": self.is_discount,
+            "is_surcharge": self.is_surcharge,
+            "is_active": self.is_active,
+            "notes": self.notes,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "created_by": self.created_by,
+        }
+
+    # ----------------------------------------------------------
+    # STATISCHE HILFSMETHODEN
+    # ----------------------------------------------------------
+
+    @staticmethod
+    def get_discount_types():
+        return [("discount", "Rabatt"), ("surcharge", "Aufschlag")]

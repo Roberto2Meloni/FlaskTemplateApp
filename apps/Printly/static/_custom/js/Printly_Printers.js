@@ -32,7 +32,6 @@ const PrinterModal = {
 
   archive(printerId, printerName) {
     const url = APP_URLS.api_printer_archive.replace("/0", `/${printerId}`);
-
     fetch(url, {
       method: "PUT",
       headers: {
@@ -43,12 +42,74 @@ const PrinterModal = {
       .then((r) => r.json())
       .then((data) => {
         if (data.success) {
-          const action = data.is_archived ? "begraben ⚰️" : "wiederbelebt 💚";
+          const action = data.is_archived ? "begraben 🪦" : "wiederbelebt 💚";
           console.log(`[Printers] '${printerName}' wurde ${action}`);
           window.location.reload();
         } else {
           alert("Fehler: " + (data.error || "Unbekannter Fehler"));
         }
+      })
+      .catch((err) => {
+        console.error("[PrinterModal] Fehler:", err);
+        alert("Verbindungsfehler – bitte nochmals versuchen.");
+      });
+  },
+
+  // ----------------------------------------------------------
+  // OVERHEAD VERKNÜPFUNG
+  // ----------------------------------------------------------
+
+  linkOverhead(printerId) {
+    const overheadId = $(`#overheadSelect_${printerId}`).val();
+    const isDefault = $(`#overheadIsDefault_${printerId}`).is(":checked");
+
+    if (!overheadId) {
+      alert("Bitte ein Overhead-Profil wählen.");
+      return;
+    }
+
+    const url = APP_URLS.api_overhead_link_printer.replace(
+      "/0",
+      `/${overheadId}`,
+    );
+    fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      body: JSON.stringify({ printer_id: printerId, is_default: isDefault }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success) window.location.reload();
+        else alert("Fehler: " + (data.error || "Unbekannter Fehler"));
+      })
+      .catch((err) => {
+        console.error("[PrinterModal] Fehler:", err);
+        alert("Verbindungsfehler – bitte nochmals versuchen.");
+      });
+  },
+
+  unlinkOverhead(overheadId, printerId, overheadName) {
+    if (!confirm(`Verknüpfung mit "${overheadName}" entfernen?`)) return;
+
+    const url = APP_URLS.api_overhead_unlink_printer.replace(
+      "/0",
+      `/${overheadId}`,
+    );
+    fetch(url, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      body: JSON.stringify({ printer_id: printerId }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success) window.location.reload();
+        else alert("Fehler: " + (data.error || "Unbekannter Fehler"));
       })
       .catch((err) => {
         console.error("[PrinterModal] Fehler:", err);
@@ -101,7 +162,7 @@ const PrinterModal = {
 };
 
 // ============================================================
-// STATS (nur aktive Drucker)
+// STATS
 // ============================================================
 function updatePrinterStats() {
   const cards = document.querySelectorAll(
@@ -122,26 +183,25 @@ function updatePrinterStats() {
   }
 
   const brands = new Set();
+  let totalCost = 0;
+  let count = 0;
+
   cards.forEach((card) => {
     const brand = card
       .querySelector(".printer-card__brand")
       ?.textContent.trim();
     if (brand) brands.add(brand);
-  });
-  if (elBrands) elBrands.textContent = brands.size;
 
-  let totalCost = 0;
-  let count = 0;
-  cards.forEach((card) => {
     const btn = card.querySelector(".btn-edit");
     if (btn && btn.dataset.cost) {
       totalCost += parseFloat(btn.dataset.cost);
       count++;
     }
   });
-  if (elAvgCost && count > 0) {
+
+  if (elBrands) elBrands.textContent = brands.size;
+  if (elAvgCost && count > 0)
     elAvgCost.textContent = (totalCost / count).toFixed(2);
-  }
 }
 
 document.addEventListener("DOMContentLoaded", updatePrinterStats);

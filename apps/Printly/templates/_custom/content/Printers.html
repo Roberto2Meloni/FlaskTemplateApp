@@ -35,9 +35,7 @@
     {% endif %}
   </div>
 
-  <!-- ==============================
-       AKTIVE DRUCKER
-       ============================== -->
+  <!-- Aktive Drucker -->
   <div class="printers-section-label">Aktive Drucker</div>
   <div class="printers-grid" id="printersGrid">
     {% for printer in all_printers %}
@@ -48,6 +46,7 @@
           >{{ printer.machine_cost_per_hour }} CHF/h</span
         >
       </div>
+
       <div class="printer-card__body">
         <h3 class="printer-card__name">{{ printer.name }}</h3>
         <div class="printer-card__metrics">
@@ -72,10 +71,73 @@
             >
           </div>
         </div>
+
         {% if printer.notes %}
         <p class="printer-card__notes">{{ printer.notes }}</p>
         {% endif %}
+
+        <!-- Verknüpfte Overhead-Profile -->
+        <div class="printer-card__overhead">
+          <div class="printer-card__overhead-label">Overhead Profile</div>
+
+          {% set linked_overheads = printer.overhead_profiles_with_default %} {%
+          if linked_overheads %}
+          <div class="overhead-printer-tags">
+            {% for item in linked_overheads %}
+            <span
+              class="overhead-printer-tag {% if item.is_default %}overhead-printer-tag--default{% endif %}"
+            >
+              {{ item.profile.name }} {% if item.is_default %}
+              <span class="overhead-printer-tag__default">★ Standard</span>
+              {% endif %}
+              <span class="overhead-printer-tag__rate">
+                {{ "%.4f"|format(item.profile.overhead_per_hour) }} CHF/h
+              </span>
+              <button
+                class="overhead-printer-tag__remove"
+                onclick="PrinterModal.unlinkOverhead({{ item.profile.id }}, {{ printer.id }}, '{{ item.profile.name }}')"
+                title="Verknüpfung entfernen"
+              >
+                ✕
+              </button>
+            </span>
+            {% endfor %}
+          </div>
+          {% else %}
+          <span class="overhead-no-printers">Kein Overhead verknüpft</span>
+          {% endif %}
+
+          <div class="overhead-link-form">
+            <select
+              class="form-input form-select overhead-printer-select"
+              id="overheadSelect_{{ printer.id }}"
+            >
+              <option value="">Overhead wählen...</option>
+              {% for profile in overhead_profiles %}
+              <option value="{{ profile.id }}">
+                {{ profile.name }} ({{ "%.4f"|format(profile.overhead_per_hour)
+                }} CHF/h)
+              </option>
+              {% endfor %}
+            </select>
+            <label class="overhead-default-label">
+              <input
+                type="checkbox"
+                id="overheadIsDefault_{{ printer.id }}"
+                class="form-check-input"
+              />
+              Standard
+            </label>
+            <button
+              class="btn-link-printer"
+              onclick="PrinterModal.linkOverhead({{ printer.id }})"
+            >
+              + Verknüpfen
+            </button>
+          </div>
+        </div>
       </div>
+
       <div class="printer-card__footer">
         <span class="printer-card__creator">{{ printer.created_by }}</span>
         <div class="printer-card__actions">
@@ -94,7 +156,6 @@
           <button
             class="btn-bury"
             onclick="PrinterModal.archive({{ printer.id }}, '{{ printer.name }}')"
-            title="Drucker in Friedhof begraben"
           >
             🪦 Begraben
           </button>
@@ -113,9 +174,7 @@
     {% endfor %}
   </div>
 
-  <!-- ==============================
-       FRIEDHOF
-       ============================== -->
+  <!-- Friedhof -->
   {% if graveyard_printers %}
   <div class="graveyard-section">
     <div class="graveyard-section__header">
@@ -147,18 +206,14 @@
               >
             </div>
           </div>
-          {% if printer.notes %}
-          <p class="printer-card__notes">{{ printer.notes }}</p>
-          {% endif %}
         </div>
         <div class="printer-card__footer">
           <span class="printer-card__creator">{{ printer.created_by }}</span>
           <button
             class="btn-revive"
             onclick="PrinterModal.archive({{ printer.id }}, '{{ printer.name }}')"
-            title="Drucker wiederbeleben"
           >
-            Wiederbeleben
+            💚 Wiederbeleben
           </button>
         </div>
       </div>
