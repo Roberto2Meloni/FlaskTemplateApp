@@ -350,7 +350,7 @@ def api_create_overhead_profile():
         name=data["name"],
         location=data.get("location") or None,
         rent_monthly=float(data.get("rent_monthly") or 0),
-        electricity_monthly=float(data.get("electricity_monthly") or 0),
+        # electricity_monthly=float(data.get("electricity_monthly") or 0), wird nicht mehr benötigt
         insurance=float(data.get("insurance") or 0),
         internet=float(data.get("internet") or 0),
         software_cost=float(data.get("software_cost") or 0),

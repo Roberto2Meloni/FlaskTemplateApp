@@ -132,6 +132,7 @@ const PrinterModal = {
       notes: $("#formNotes").val() || null,
     };
 
+    console.log("[PrinterModal] Payload:", JSON.stringify(payload)); // ← NEU
     const url = isEdit
       ? APP_URLS.api_printer_update.replace("/0", `/${id}`)
       : APP_URLS.api_printers;
@@ -205,5 +206,65 @@ function updatePrinterStats() {
 }
 
 document.addEventListener("DOMContentLoaded", updatePrinterStats);
+
+// ============================================================
+// MASCHINENKOSTEN-RECHNER
+// ============================================================
+const MachineCalc = {
+  open() {
+    MachineCalc.calculate();
+    $("#machineCalcModal").modal("show");
+  },
+
+  loadExample() {
+    $("#calcPurchasePrice").val(1099);
+    $("#calcLifetime").val(5000);
+    $("#calcMaintenance").val(0.5);
+    $("#calcRoomCost").val(0.0); // ← Weitere Fixkosten = 0
+    $("#calcFailureRisk").val(15);
+    MachineCalc.calculate();
+  },
+
+  calculate() {
+    const purchase = parseFloat($("#calcPurchasePrice").val()) || 0;
+    const lifetime = parseFloat($("#calcLifetime").val()) || 0;
+    const maintenance = parseFloat($("#calcMaintenance").val()) || 0;
+    const roomCost = parseFloat($("#calcRoomCost").val()) || 0;
+    const failureRisk = parseFloat($("#calcFailureRisk").val()) || 0;
+
+    if (purchase <= 0 || lifetime <= 0) {
+      $(
+        "#resultDepreciation, #resultMaintenance, #resultRoom, #resultFailure, #resultTotal",
+      ).text("– CHF/h");
+      $("#resultDaily, #resultMonthly, #result5h").text("–");
+      $("#btnApplyCalc").prop("disabled", true);
+      return;
+    }
+
+    const depreciation = purchase / lifetime;
+    const baseCost = depreciation + maintenance + roomCost;
+    const failureSurcharge = baseCost * (failureRisk / 100);
+    const total = baseCost + failureSurcharge;
+
+    $("#resultDepreciation").text(`CHF ${depreciation.toFixed(4)}/h`);
+    $("#resultMaintenance").text(`CHF ${maintenance.toFixed(2)}/h`);
+    $("#resultRoom").text(`CHF ${roomCost.toFixed(2)}/h`);
+    $("#resultFailure").text(`CHF ${failureSurcharge.toFixed(4)}/h`);
+    $("#resultTotal").text(`CHF ${total.toFixed(2)}/h`);
+    $("#resultDaily").text(`CHF ${(total * 24).toFixed(2)}`);
+    $("#resultMonthly").text(`CHF ${(total * 720).toFixed(2)}`);
+    $("#result5h").text(`CHF ${(total * 5).toFixed(2)}`);
+
+    $("#btnApplyCalc").prop("disabled", false).data("value", total.toFixed(2));
+  },
+
+  apply() {
+    const value = $("#btnApplyCalc").data("value");
+    if (value) {
+      $("#formCost").val(value);
+      $("#machineCalcModal").modal("hide");
+    }
+  },
+};
 
 console.log("Printers.js geladen");

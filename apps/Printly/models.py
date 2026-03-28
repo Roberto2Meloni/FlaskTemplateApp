@@ -78,6 +78,22 @@ class PrintlyPrinter(db.Model):
             )
         return results
 
+    @property
+    def total_cost_per_hour(self):
+        """Maschinenkosten + Standard-Overhead"""
+        machine = float(self.machine_cost_per_hour)
+        # Standard-Overhead finden
+        default_overhead = next(
+            (
+                p["profile"]
+                for p in self.overhead_profiles_with_default
+                if p["is_default"]
+            ),
+            None,
+        )
+        overhead = float(default_overhead.overhead_per_hour) if default_overhead else 0
+        return round(machine + overhead, 4)
+
     def estimate_print_cost(self, print_time_hours, filament_cost=0):
         """Schätzt die Druckkosten basierend auf Zeit und Filament"""
         machine_cost = float(self.machine_cost_per_hour) * print_time_hours

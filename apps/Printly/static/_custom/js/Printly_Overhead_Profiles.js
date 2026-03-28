@@ -183,7 +183,6 @@ const OverheadModal = {
   // ----------------------------------------------------------
   _updatePreview() {
     const rent = parseFloat($("#formRent").val()) || 0;
-    const electricity = parseFloat($("#formElectricity").val()) || 0;
     const insurance = parseFloat($("#formInsurance").val()) || 0;
     const internet = parseFloat($("#formInternet").val()) || 0;
     const softwareCost = parseFloat($("#formSoftwareCost").val()) || 0;
@@ -193,8 +192,7 @@ const OverheadModal = {
 
     const softwareMonthly =
       softwareBilling === "yearly" ? softwareCost / 12 : softwareCost;
-    const total =
-      rent + electricity + insurance + internet + softwareMonthly + otherCosts;
+    const total = rent + insurance + internet + softwareMonthly + otherCosts;
     const perHour = plannedHours > 0 ? total / plannedHours : 0;
 
     if (total > 0) {

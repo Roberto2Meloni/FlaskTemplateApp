@@ -42,9 +42,10 @@
     <div class="printer-card" data-id="{{ printer.id }}">
       <div class="printer-card__brand-bar">
         <span class="printer-card__brand">{{ printer.brand }}</span>
-        <span class="printer-card__cost"
-          >{{ printer.machine_cost_per_hour }} CHF/h</span
-        >
+        <span class="printer-card__cost">
+          {{ "%.2f"|format(printer.total_cost_per_hour) }} CHF/h
+          <span class="printer-card__cost-hint">Betrieb</span>
+        </span>
       </div>
 
       <div class="printer-card__body">
@@ -200,9 +201,26 @@
           <h3 class="printer-card__name">{{ printer.name }}</h3>
           <div class="printer-card__metrics">
             <div class="metric">
-              <span class="metric__label">Begraben am</span>
+              <span class="metric__label">Maschine</span>
               <span class="metric__value"
-                >{{ printer.updated_at.strftime('%d.%m.%Y') }}</span
+                >{{ printer.machine_cost_per_hour }} CHF/h</span
+              >
+            </div>
+            {% if printer.overhead_profiles_with_default %} {% set default_oh =
+            printer.overhead_profiles_with_default|selectattr('is_default')|first
+            %}
+            <div class="metric">
+              <span class="metric__label">Overhead</span>
+              <span class="metric__value"
+                >{{ "%.4f"|format(default_oh.profile.overhead_per_hour) }}
+                CHF/h</span
+              >
+            </div>
+            {% endif %}
+            <div class="metric">
+              <span class="metric__label">Total/h</span>
+              <span class="metric__value"
+                >{{ "%.4f"|format(printer.total_cost_per_hour) }} CHF/h</span
               >
             </div>
           </div>
@@ -221,6 +239,199 @@
     </div>
   </div>
   {% endif %}
+</div>
+
+<!-- Maschinenkosten-Rechner Modal -->
+<div
+  class="modal fade"
+  id="machineCalcModal"
+  tabindex="-1"
+  role="dialog"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content printer-modal-content">
+      <div class="modal-header printer-modal-header">
+        <h5 class="modal-title printer-modal-title">
+          <i class="bi bi-calculator"></i> Maschinenkosten-Rechner
+        </h5>
+        <button
+          type="button"
+          class="close printer-modal-close"
+          onclick="$('#machineCalcModal').modal('hide')"
+        >
+          <span>✕</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="calc-grid">
+          <div class="calc-section">
+            <div class="calc-section__title">Eingaben</div>
+            <div class="form-group">
+              <label class="form-label" for="calcPurchasePrice"
+                >Anschaffungskosten (CHF)</label
+              >
+              <input
+                class="form-input"
+                type="number"
+                id="calcPurchasePrice"
+                step="1"
+                min="0"
+                placeholder="z.B. 1099"
+                oninput="MachineCalc.calculate()"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="calcLifetime"
+                >Lebensdauer (Stunden)</label
+              >
+              <input
+                class="form-input"
+                type="number"
+                id="calcLifetime"
+                step="100"
+                min="100"
+                placeholder="z.B. 3000"
+                oninput="MachineCalc.calculate()"
+              />
+              <span class="form-hint"
+                >Konservativ: 3000h (~2.5J) | Realistisch: 5000h (~4J) |
+                Optimistisch: 8000h (~7J)</span
+              >
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="calcMaintenance"
+                >Wartungskosten (CHF/h)</label
+              >
+              <input
+                class="form-input"
+                type="number"
+                id="calcMaintenance"
+                step="0.01"
+                min="0"
+                placeholder="z.B. 0.50"
+                oninput="MachineCalc.calculate()"
+              />
+              <span class="form-hint"
+                >Ersatzteile, Düsen, Verschleissteile etc.</span
+              >
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="calcRoomCost"
+                >Weitere Fixkosten (CHF/h)</label
+              >
+              <input
+                class="form-input"
+                type="number"
+                id="calcRoomCost"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                oninput="MachineCalc.calculate()"
+              />
+              <span class="form-hint"
+                >z.B. Versicherung, anteilige Stromgrundgebühr (Overhead separat
+                erfassen)</span
+              >
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="calcFailureRisk"
+                >Ausfallrisiko (%)</label
+              >
+              <input
+                class="form-input"
+                type="number"
+                id="calcFailureRisk"
+                step="1"
+                min="0"
+                max="50"
+                placeholder="z.B. 15"
+                oninput="MachineCalc.calculate()"
+              />
+              <span class="form-hint">Sicherheitszuschlag für Fehldrucke</span>
+            </div>
+            <button
+              type="button"
+              class="btn-load-example"
+              onclick="MachineCalc.loadExample()"
+            >
+              Beispielwerte laden (Core One, 5000h)
+            </button>
+          </div>
+          <div class="calc-section">
+            <div class="calc-section__title">Berechnung</div>
+            <div class="calc-result-rows">
+              <div class="calc-result-row">
+                <span class="calc-result-row__label">Abschreibung</span>
+                <span class="calc-result-row__value" id="resultDepreciation"
+                  >– CHF/h</span
+                >
+              </div>
+              <div class="calc-result-row">
+                <span class="calc-result-row__label">Wartung</span>
+                <span class="calc-result-row__value" id="resultMaintenance"
+                  >– CHF/h</span
+                >
+              </div>
+              <div class="calc-result-row">
+                <span class="calc-result-row__label">Weitere Fixkosten</span>
+                <span class="calc-result-row__value" id="resultRoom"
+                  >– CHF/h</span
+                >
+              </div>
+              <div class="calc-result-row">
+                <span class="calc-result-row__label">Ausfallrisiko</span>
+                <span class="calc-result-row__value" id="resultFailure"
+                  >– CHF/h</span
+                >
+              </div>
+            </div>
+            <div class="calc-total">
+              <div class="calc-total__label">Gesamtkosten</div>
+              <div class="calc-total__value" id="resultTotal">– CHF/h</div>
+            </div>
+            <div class="calc-extra">
+              <div class="calc-extra__title">Weitere Berechnungen</div>
+              <div class="calc-result-row">
+                <span class="calc-result-row__label"
+                  >Tägliche Kosten (24h)</span
+                >
+                <span class="calc-result-row__value" id="resultDaily">–</span>
+              </div>
+              <div class="calc-result-row">
+                <span class="calc-result-row__label"
+                  >Monatliche Kosten (720h)</span
+                >
+                <span class="calc-result-row__value" id="resultMonthly">–</span>
+              </div>
+              <div class="calc-result-row">
+                <span class="calc-result-row__label">Kosten pro 5h Druck</span>
+                <span class="calc-result-row__value" id="result5h">–</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer printer-modal-footer">
+        <button
+          type="button"
+          class="btn-cancel"
+          onclick="$('#machineCalcModal').modal('hide')"
+        >
+          Abbrechen
+        </button>
+        <button
+          type="button"
+          class="btn-save"
+          id="btnApplyCalc"
+          onclick="MachineCalc.apply()"
+          disabled
+        >
+          <i class="bi bi-check-lg"></i> Wert übernehmen
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Bootstrap Modal -->
@@ -282,15 +493,25 @@
               <label class="form-label" for="formCost"
                 >Maschinenkosten (CHF/h) *</label
               >
-              <input
-                class="form-input"
-                type="number"
-                id="formCost"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                required
-              />
+              <div class="input-with-btn">
+                <input
+                  class="form-input"
+                  type="number"
+                  id="formCost"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  required
+                />
+                <button
+                  type="button"
+                  class="btn-calculator"
+                  onclick="MachineCalc.open()"
+                  title="Maschinenkosten berechnen"
+                >
+                  <i class="bi bi-calculator"></i>
+                </button>
+              </div>
             </div>
             <div class="form-group col-6">
               <label class="form-label" for="formEnergy"
