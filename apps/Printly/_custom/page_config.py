@@ -150,7 +150,93 @@ def load_test_context():
 
 
 def load_quote_calculator_context():
-    return {}
+    from ..models import (
+        PrintlyQuote,
+        PrintlyCustomer,
+        PrintlyCompany,
+        PrintlyPrinter,
+        PrintlyWorkHours,
+        PrintlyOverheadProfile,
+        PrintlyFilament,
+        PrintlyDiscountProfile,
+        PrintlyElectricityCost,
+    )
+
+    # Offerten nach Status gruppiert
+    active_quotes = (
+        PrintlyQuote.query.filter(PrintlyQuote.status.in_(["draft", "sent"]))
+        .order_by(PrintlyQuote.created_at.desc())
+        .all()
+    )
+    closed_quotes = (
+        PrintlyQuote.query.filter(
+            PrintlyQuote.status.in_(["accepted", "rejected", "invoiced"])
+        )
+        .order_by(PrintlyQuote.created_at.desc())
+        .all()
+    )
+
+    # Dropdowns
+    customers = (
+        PrintlyCustomer.query.filter_by(is_active=True)
+        .order_by(PrintlyCustomer.last_name)
+        .all()
+    )
+    companies = (
+        PrintlyCompany.query.filter_by(is_active=True)
+        .order_by(PrintlyCompany.company_name)
+        .all()
+    )
+    printers = (
+        PrintlyPrinter.query.filter_by(is_archived=False)
+        .order_by(PrintlyPrinter.name)
+        .all()
+    )
+    work_hours = (
+        PrintlyWorkHours.query.filter_by(is_archived=False)
+        .order_by(PrintlyWorkHours.name)
+        .all()
+    )
+    overhead_profiles = (
+        PrintlyOverheadProfile.query.filter_by(is_active=True)
+        .order_by(PrintlyOverheadProfile.name)
+        .all()
+    )
+    filaments = (
+        PrintlyFilament.query.filter_by(is_archived=False)
+        .order_by(PrintlyFilament.name)
+        .all()
+    )
+    discount_profiles = (
+        PrintlyDiscountProfile.query.filter_by(is_active=True)
+        .order_by(PrintlyDiscountProfile.name)
+        .all()
+    )
+
+    # Aktiver Stromtarif
+    active_energy = PrintlyElectricityCost.query.filter_by(
+        is_active=True, is_current=True
+    ).first()
+
+    return {
+        "active_quotes": active_quotes,
+        "closed_quotes": closed_quotes,
+        "customers": customers,
+        "companies": companies,
+        "printers": printers,
+        "work_hours": work_hours,
+        "overhead_profiles": overhead_profiles,
+        "filaments": filaments,
+        "discount_profiles": discount_profiles,
+        "active_energy": active_energy,
+        "total_active": len(active_quotes),
+        "total_closed": len(closed_quotes),
+    }
+
+
+def load_quote_detail_context():
+    # Leerer Context – wird nur von der manuellen Route mit quote befüllt
+    return load_quote_calculator_context()
 
 
 def load_customers_context():
@@ -420,6 +506,17 @@ PAGES = [
         "admin_only": False,
         "placeholder": False,
         "context_loader": load_discounts_and_surcharges_context,
+    },
+    {
+        "id": "quote_detail_page",
+        "label": "Offerte Detail",
+        "icon": "bi bi-file-earmark-text",
+        "template": "_custom/content/Quote_detail.html",
+        "route": "/quote_detail_placeholder",  # ← unerreichbare Route
+        "show_in_sidebar": False,
+        "admin_only": False,
+        "placeholder": True,
+        "context_loader": load_quote_detail_context,
     },
 ]
 

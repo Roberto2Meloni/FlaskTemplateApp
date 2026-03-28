@@ -15,10 +15,20 @@ from ...models import (
     PrintlyCustomer,
     generate_company_number,
     generate_customer_number,
+    PrintlyQuote,
+    PrintlyQuoteExtraMaterial,
+    PrintlySubOrder,
 )
 from app import db
 
 app_logger.info(f"Starte CUSTOM API Routes für {app_config.app_name}")
+
+
+def get_active_energy_tariff():
+    return PrintlyElectricityCost.query.filter_by(
+        is_active=True, is_current=True
+    ).first()
+
 
 # ----------------------------------------------------------
 # ERSTELLEN - Drucker
@@ -803,6 +813,326 @@ def api_delete_customer(customer_id):
     db.session.commit()
     app_logger.info(f"Customer '{name}' gelöscht")
     return jsonify({"success": True})
+
+
+# =================================================
+# OFFERTEN
+# ============================================================
+
+
+@blueprint.route("/api/quotes", methods=["POST"])
+@enabled_required
+def api_create_quote():
+    data = request.get_json()
+    if not data or not data.get("title"):
+        return jsonify({"error": "Titel ist Pflichtfeld"}), 422
+
+    try:
+        last = PrintlyQuote.query.order_by(PrintlyQuote.id.desc()).first()
+        next_id = (last.id + 1) if last else 1
+        quote_number = f"Q-{next_id:04d}"
+
+        quote = PrintlyQuote(
+            quote_number=quote_number,
+            title=data["title"],
+            customer_id=data.get("customer_id") or None,
+            company_id=data.get("company_id") or None,
+            global_printer_id=data.get("global_printer_id") or None,
+            global_work_hours_id=data.get("global_work_hours_id") or None,
+            global_overhead_profile_id=data.get("global_overhead_profile_id") or None,
+            margin_percentage=data.get("margin_percentage", 30),
+            discount_profile_id=data.get("discount_profile_id") or None,
+            status="draft",
+            valid_until=data.get("valid_until") or None,
+            notes=data.get("notes") or None,
+            created_by=current_user.username,
+        )
+        db.session.add(quote)
+        db.session.commit()
+
+        app_logger.info(f"Quote '{quote.quote_number}' erstellt")
+        return jsonify({"success": True, "quote": quote.to_dict()}), 201
+
+    except Exception as e:
+        db.session.rollback()
+        app_logger.error(f"Fehler Quote erstellen: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@blueprint.route("/api/quotes/<int:quote_id>", methods=["PUT"])
+@enabled_required
+def api_update_quote(quote_id):
+    quote = PrintlyQuote.query.get_or_404(quote_id)
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Keine Daten"}), 400
+
+    try:
+        quote.title = data.get("title", quote.title)
+        quote.customer_id = data.get("customer_id") or None
+        quote.company_id = data.get("company_id") or None
+        quote.global_printer_id = data.get("global_printer_id") or None
+        quote.global_work_hours_id = data.get("global_work_hours_id") or None
+        quote.global_overhead_profile_id = (
+            data.get("global_overhead_profile_id") or None
+        )
+        quote.margin_percentage = data.get("margin_percentage", quote.margin_percentage)
+        quote.discount_profile_id = data.get("discount_profile_id") or None
+        quote.valid_until = data.get("valid_until") or None
+        quote.notes = data.get("notes") or None
+
+        # Neu berechnen
+        energy = get_active_energy_tariff()
+        kwh_rate = float(energy.cost_per_kwh) if energy else 0
+        for sub in quote.suborders.all():
+            sub.calculate(kwh_rate, quote)
+        quote.recalculate()
+
+        db.session.commit()
+        return jsonify({"success": True, "quote": quote.to_dict()})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@blueprint.route("/api/quotes/<int:quote_id>/status", methods=["PUT"])
+@enabled_required
+def api_update_quote_status(quote_id):
+    quote = PrintlyQuote.query.get_or_404(quote_id)
+    data = request.get_json()
+    valid_statuses = ["draft", "sent", "accepted", "rejected", "invoiced"]
+    new_status = data.get("status")
+
+    if new_status not in valid_statuses:
+        return jsonify({"error": f"Ungültiger Status: {new_status}"}), 422
+
+    quote.status = new_status
+    db.session.commit()
+    return jsonify(
+        {
+            "success": True,
+            "status": quote.status,
+            "status_display": quote.status_display,
+        }
+    )
+
+
+@blueprint.route("/api/quotes/<int:quote_id>", methods=["DELETE"])
+@enabled_required
+def api_delete_quote(quote_id):
+    quote = PrintlyQuote.query.get_or_404(quote_id)
+    number = quote.quote_number
+    db.session.delete(quote)
+    db.session.commit()
+    app_logger.info(f"Quote '{number}' gelöscht")
+    return jsonify({"success": True})
+
+
+# ============================================================
+# SUBORDERS
+# ============================================================
+
+
+@blueprint.route("/api/quotes/<int:quote_id>/suborders", methods=["POST"])
+@enabled_required
+def api_create_suborder(quote_id):
+    quote = PrintlyQuote.query.get_or_404(quote_id)
+    data = request.get_json()
+    if not data or not data.get("name"):
+        return jsonify({"error": "Name ist Pflichtfeld"}), 422
+
+    try:
+        # Position bestimmen
+        last_pos = (
+            db.session.query(db.func.max(PrintlySubOrder.position))
+            .filter_by(quote_id=quote_id)
+            .scalar()
+            or 0
+        )
+
+        sub = PrintlySubOrder(
+            quote_id=quote_id,
+            name=data["name"],
+            position=last_pos + 1,
+            filament_id=data.get("filament_id") or None,
+            filament_usage_grams=data.get("filament_usage_grams", 0),
+            print_time_hours=data.get("print_time_hours", 0),
+            work_time_hours=data.get("work_time_hours", 0),
+            quantity=data.get("quantity", 1),
+            printer_id=data.get("printer_id") or None,
+            work_hours_id=data.get("work_hours_id") or None,
+            overhead_profile_id=data.get("overhead_profile_id") or None,
+            margin_percentage=data.get("margin_percentage") or None,
+        )
+        db.session.add(sub)
+        db.session.flush()
+
+        # Berechnen
+        energy = get_active_energy_tariff()
+        kwh_rate = float(energy.cost_per_kwh) if energy else 0
+        sub.calculate(kwh_rate, quote)
+        quote.recalculate()
+
+        db.session.commit()
+        return (
+            jsonify(
+                {"success": True, "suborder": sub.to_dict(), "quote": quote.to_dict()}
+            ),
+            201,
+        )
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@blueprint.route("/api/quotes/<int:quote_id>/suborders/<int:sub_id>", methods=["PUT"])
+@enabled_required
+def api_update_suborder(quote_id, sub_id):
+    quote = PrintlyQuote.query.get_or_404(quote_id)
+    sub = PrintlySubOrder.query.get_or_404(sub_id)
+
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Keine Daten"}), 400
+
+    try:
+        sub.name = data.get("name", sub.name)
+        sub.filament_id = data.get("filament_id") or None
+        sub.filament_usage_grams = data.get(
+            "filament_usage_grams", sub.filament_usage_grams
+        )
+        sub.print_time_hours = data.get("print_time_hours", sub.print_time_hours)
+        sub.work_time_hours = data.get("work_time_hours", sub.work_time_hours)
+        sub.quantity = data.get("quantity", sub.quantity)
+        sub.printer_id = data.get("printer_id") or None
+        sub.work_hours_id = data.get("work_hours_id") or None
+        sub.overhead_profile_id = data.get("overhead_profile_id") or None
+        sub.margin_percentage = data.get("margin_percentage") or None
+
+        energy = get_active_energy_tariff()
+        kwh_rate = float(energy.cost_per_kwh) if energy else 0
+        sub.calculate(kwh_rate, quote)
+        quote.recalculate()
+
+        db.session.commit()
+        return jsonify(
+            {"success": True, "suborder": sub.to_dict(), "quote": quote.to_dict()}
+        )
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@blueprint.route(
+    "/api/quotes/<int:quote_id>/suborders/<int:sub_id>", methods=["DELETE"]
+)
+@enabled_required
+def api_delete_suborder(quote_id, sub_id):
+    quote = PrintlyQuote.query.get_or_404(quote_id)
+    sub = PrintlySubOrder.query.get_or_404(sub_id)
+
+    try:
+        db.session.delete(sub)
+        db.session.flush()
+        quote.recalculate()
+        db.session.commit()
+        return jsonify({"success": True, "quote": quote.to_dict()})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+# ============================================================
+# ZUSATZMATERIALIEN
+# ============================================================
+
+
+@blueprint.route("/api/quotes/<int:quote_id>/extras", methods=["POST"])
+@enabled_required
+def api_create_extra_material(quote_id):
+    quote = PrintlyQuote.query.get_or_404(quote_id)
+    data = request.get_json()
+    if not data or not data.get("name"):
+        return jsonify({"error": "Name ist Pflichtfeld"}), 422
+
+    try:
+        extra = PrintlyQuoteExtraMaterial(
+            quote_id=quote_id,
+            name=data["name"],
+            quantity=data.get("quantity", 1),
+            unit_price=data.get("unit_price", 0),
+            notes=data.get("notes") or None,
+        )
+        extra.calculate()
+        db.session.add(extra)
+        db.session.flush()
+        quote.recalculate()
+        db.session.commit()
+
+        return (
+            jsonify(
+                {"success": True, "extra": extra.to_dict(), "quote": quote.to_dict()}
+            ),
+            201,
+        )
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@blueprint.route("/api/quotes/<int:quote_id>/extras/<int:extra_id>", methods=["PUT"])
+@enabled_required
+def api_update_extra_material(quote_id, extra_id):
+    quote = PrintlyQuote.query.get_or_404(quote_id)
+    extra = PrintlyQuoteExtraMaterial.query.get_or_404(extra_id)
+    data = request.get_json()
+
+    try:
+        extra.name = data.get("name", extra.name)
+        extra.quantity = data.get("quantity", extra.quantity)
+        extra.unit_price = data.get("unit_price", extra.unit_price)
+        extra.notes = data.get("notes") or None
+        extra.calculate()
+        quote.recalculate()
+        db.session.commit()
+
+        return jsonify(
+            {"success": True, "extra": extra.to_dict(), "quote": quote.to_dict()}
+        )
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@blueprint.route("/api/quotes/<int:quote_id>/extras/<int:extra_id>", methods=["DELETE"])
+@enabled_required
+def api_delete_extra_material(quote_id, extra_id):
+    quote = PrintlyQuote.query.get_or_404(quote_id)
+    extra = PrintlyQuoteExtraMaterial.query.get_or_404(extra_id)
+
+    try:
+        db.session.delete(extra)
+        db.session.flush()
+        quote.recalculate()
+        db.session.commit()
+        return jsonify({"success": True, "quote": quote.to_dict()})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@blueprint.route("/api/quotes/<int:quote_id>", methods=["GET"])
+@enabled_required
+def api_get_quote(quote_id):
+    quote = PrintlyQuote.query.get_or_404(quote_id)
+    return jsonify({"success": True, "quote": quote.to_dict()})
 
 
 app_logger.info(f"Ende CUSTOM API Routes für {app_config.app_name}")

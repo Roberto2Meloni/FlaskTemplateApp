@@ -1,1 +1,333 @@
-<h4>Offerten Seite</h4>
+<div class="quotes-page">
+  <!-- Header -->
+  <div class="quotes-header">
+    <div class="quotes-header__left">
+      <span class="quotes-header__label">OFFERTEN</span>
+      <h1 class="quotes-header__title">Offerten</h1>
+    </div>
+    <button class="btn-add-quote" onclick="QuoteModal.openAdd()">
+      <span class="btn-add-quote__icon">+</span>
+      <span>Neue Offerte</span>
+    </button>
+  </div>
+
+  <!-- Stats -->
+  <div class="quotes-stats">
+    <div class="stat-pill">
+      <span class="stat-pill__value">{{ total_active }}</span>
+      <span class="stat-pill__label">Aktiv</span>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-pill__value">{{ total_closed }}</span>
+      <span class="stat-pill__label">Abgeschlossen</span>
+    </div>
+    {% if active_energy %}
+    <div class="stat-pill">
+      <span class="stat-pill__value">{{ active_energy.cost_per_kwh }} CHF</span>
+      <span class="stat-pill__label">CHF/kWh aktiv</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Aktive Offerten -->
+  {% if active_quotes %}
+  <div class="quotes-section-label">Aktive Offerten</div>
+  <div class="quotes-grid">
+    {% for quote in active_quotes %}
+    <div class="quote-card" data-id="{{ quote.id }}">
+      <div class="quote-card__header">
+        <div class="quote-card__header-left">
+          <span class="quote-card__number">{{ quote.quote_number }}</span>
+          <span class="quote-status quote-status--{{ quote.status }}"
+            >{{ quote.status_display }}</span
+          >
+        </div>
+        <span class="quote-card__date"
+          >{{ quote.created_at.strftime('%d.%m.%Y') }}</span
+        >
+      </div>
+      <div class="quote-card__body">
+        <h3 class="quote-card__title">{{ quote.title }}</h3>
+        <div class="quote-card__customer">
+          <i class="bi bi-person"></i>
+          {{ quote.customer_display }}
+        </div>
+        <div class="quote-card__totals">
+          <div class="quote-total-item">
+            <span class="quote-total-item__label">Selbstkosten</span>
+            <span class="quote-total-item__value"
+              >{{ "%.2f"|format(quote.total_self_cost) }} CHF</span
+            >
+          </div>
+          <div class="quote-total-item quote-total-item--selling">
+            <span class="quote-total-item__label">Verkaufspreis</span>
+            <span class="quote-total-item__value"
+              >{{ "%.2f"|format(quote.total_selling_price) }} CHF</span
+            >
+          </div>
+        </div>
+        <div class="quote-card__meta">
+          <span>{{ quote.suborders.count() }} Druckbett(en)</span>
+          {% if quote.margin_percentage %}
+          <span>{{ quote.margin_percentage }}% Marge</span>
+          {% endif %} {% if quote.valid_until %}
+          <span>Gültig bis {{ quote.valid_until.strftime('%d.%m.%Y') }}</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="quote-card__footer">
+        <span class="quote-card__creator">{{ quote.created_by }}</span>
+        <div class="quote-card__actions">
+          <button
+            class="btn-edit"
+            onclick="window.location.href='{{ url_for('Printly.quote_detail_view', quote_id=quote.id) }}'"
+          >
+            Öffnen
+          </button>
+          <button
+            class="btn-delete"
+            onclick="QuoteModal.delete({{ quote.id }}, '{{ quote.quote_number }}')"
+          >
+            🗑
+          </button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Abgeschlossene Offerten -->
+  {% if closed_quotes %}
+  <div class="quotes-section-label" style="margin-top: 40px">Abgeschlossen</div>
+  <div class="quotes-grid quotes-grid--closed">
+    {% for quote in closed_quotes %}
+    <div class="quote-card quote-card--closed" data-id="{{ quote.id }}">
+      <div class="quote-card__header">
+        <div class="quote-card__header-left">
+          <span class="quote-card__number">{{ quote.quote_number }}</span>
+          <span class="quote-status quote-status--{{ quote.status }}"
+            >{{ quote.status_display }}</span
+          >
+        </div>
+        <span class="quote-card__date"
+          >{{ quote.created_at.strftime('%d.%m.%Y') }}</span
+        >
+      </div>
+      <div class="quote-card__body">
+        <h3 class="quote-card__title">{{ quote.title }}</h3>
+        <div class="quote-card__customer">{{ quote.customer_display }}</div>
+        <div class="quote-card__totals">
+          <div class="quote-total-item quote-total-item--selling">
+            <span class="quote-total-item__label">Verkaufspreis</span>
+            <span class="quote-total-item__value"
+              >{{ "%.2f"|format(quote.total_selling_price) }} CHF</span
+            >
+          </div>
+        </div>
+      </div>
+      <div class="quote-card__footer">
+        <span class="quote-card__creator">{{ quote.created_by }}</span>
+        <button
+          class="btn-edit"
+          onclick="window.location.href='{{ url_for('Printly.quote_detail_view', quote_id=quote.id) }}'"
+        >
+          Öffnen
+        </button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %} {% if not active_quotes and not closed_quotes %}
+  <div class="quotes-empty">
+    <div class="quotes-empty__icon">📄</div>
+    <p class="quotes-empty__text">Noch keine Offerten erstellt.</p>
+    <button class="btn-add-quote" onclick="QuoteModal.openAdd()">
+      <span>+</span> Erste Offerte erstellen
+    </button>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Modal: Neue Offerte -->
+<div
+  class="modal fade"
+  id="quoteModal"
+  tabindex="-1"
+  role="dialog"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content printer-modal-content">
+      <div class="modal-header printer-modal-header">
+        <h5 class="modal-title printer-modal-title" id="quoteModalLabel">
+          Neue Offerte
+        </h5>
+        <button
+          type="button"
+          class="close printer-modal-close"
+          onclick="$('#quoteModal').modal('hide')"
+        >
+          <span>✕</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="quoteForm" onsubmit="QuoteModal.submit(event)">
+          <input type="hidden" id="formQuoteId" value="" />
+
+          <div class="form-group">
+            <label class="form-label" for="formQuoteTitle">Titel *</label>
+            <input
+              class="form-input"
+              type="text"
+              id="formQuoteTitle"
+              placeholder="z.B. Gehäuse für Projekt XY"
+              required
+            />
+          </div>
+
+          <!-- Kunde oder Firma -->
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="formQuoteCompany">Firma</label>
+              <select
+                class="form-input form-select"
+                id="formQuoteCompany"
+                onchange="QuoteModal.onCompanyChange()"
+              >
+                <option value="">Keine Firma</option>
+                {% for company in companies %}
+                <option value="{{ company.id }}">
+                  {{ company.company_name }} ({{ company.company_number }})
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="formQuoteCustomer"
+                >Kontaktperson</label
+              >
+              <select class="form-input form-select" id="formQuoteCustomer">
+                <option value="">Kein Kontakt</option>
+                {% for customer in customers %}
+                <option
+                  value="{{ customer.id }}"
+                  data-company="{{ customer.company_id or '' }}"
+                >
+                  {{ customer.full_name }} {% if customer.company %} ({{
+                  customer.company.company_name }}){% endif %}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <!-- Globale Profile -->
+          <div class="form-section-title">
+            Globale Profile (Standard für alle Druckbetten)
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="formQuotePrinter">Drucker</label>
+              <select class="form-input form-select" id="formQuotePrinter">
+                <option value="">Kein Standard</option>
+                {% for printer in printers %}
+                <option value="{{ printer.id }}">
+                  {{ printer.name }} ({{ printer.machine_cost_per_hour }} CHF/h)
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="formQuoteWorkHours"
+                >Stundensatz</label
+              >
+              <select class="form-input form-select" id="formQuoteWorkHours">
+                <option value="">Kein Standard</option>
+                {% for wh in work_hours %}
+                <option value="{{ wh.id }}">
+                  {{ wh.name }} ({{ wh.cost_per_hour }} CHF/h)
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="formQuoteOverhead"
+                >Overhead Profil</label
+              >
+              <select class="form-input form-select" id="formQuoteOverhead">
+                <option value="">Kein Standard (vom Drucker)</option>
+                {% for oh in overhead_profiles %}
+                <option value="{{ oh.id }}">
+                  {{ oh.name }} ({{ "%.4f"|format(oh.overhead_per_hour) }}
+                  CHF/h)
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="formQuoteDiscount">Rabatt</label>
+              <select class="form-input form-select" id="formQuoteDiscount">
+                <option value="">Kein / Kundenrabatt</option>
+                {% for dp in discount_profiles %}
+                <option value="{{ dp.id }}">
+                  {{ dp.name }} ({{ "%.1f"|format(dp.percentage) }}%)
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-4">
+              <label class="form-label" for="formQuoteMargin"
+                >Marge (%) *</label
+              >
+              <input
+                class="form-input"
+                type="number"
+                id="formQuoteMargin"
+                step="0.5"
+                min="0"
+                max="200"
+                value="30"
+                required
+              />
+            </div>
+            <div class="form-group col-4">
+              <label class="form-label" for="formQuoteValidUntil"
+                >Gültig bis</label
+              >
+              <input class="form-input" type="date" id="formQuoteValidUntil" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="formQuoteNotes">Notizen</label>
+            <textarea
+              class="form-input form-textarea"
+              id="formQuoteNotes"
+              placeholder="Optionale Bemerkungen..."
+            ></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer printer-modal-footer">
+        <button
+          type="button"
+          class="btn-cancel"
+          onclick="$('#quoteModal').modal('hide')"
+        >
+          Abbrechen
+        </button>
+        <button type="submit" form="quoteForm" class="btn-save">
+          Erstellen & Öffnen
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

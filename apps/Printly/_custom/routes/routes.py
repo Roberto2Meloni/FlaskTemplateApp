@@ -7,7 +7,8 @@ from flask_login import current_user
 from ... import blueprint, app_logger, app_config, APP_NAME
 from app.decorators import enabled_required
 from app.config import Config
-from ..page_config import PAGES
+from ..page_config import PAGES, load_quote_calculator_context, load_dashboard_context
+from ...models import PrintlyQuote
 
 config = Config()
 app_logger.info(f"Starte Content Routes für {APP_NAME}")
@@ -31,6 +32,7 @@ def is_ajax_request():
 @blueprint.route("/")
 @enabled_required
 def Printly_index():
+    extra_context = load_dashboard_context()
     return render_template(
         "Printly.html",
         user=current_user,
@@ -38,6 +40,7 @@ def Printly_index():
         content="dashboard",
         app_config=app_config,
         pages=PAGES,
+        **extra_context,
     )
 
 
@@ -93,6 +96,33 @@ def register_content_routes():
             return view_func
 
         make_view(page)
+
+
+@blueprint.route("/quote/<int:quote_id>", endpoint="quote_detail_view")
+@enabled_required
+def quote_detail_view(quote_id):
+    quote = PrintlyQuote.query.get_or_404(quote_id)
+    context = load_quote_calculator_context()
+    context["quote"] = quote
+
+    if is_ajax_request():
+        return render_template(
+            "_custom/content/Quote_detail.html",
+            user=current_user,
+            config=config,
+            app_config=app_config,
+            **context,
+        )
+
+    return render_template(
+        "Printly.html",
+        user=current_user,
+        config=config,
+        content="quote_detail_page",
+        app_config=app_config,
+        pages=PAGES,
+        **context,
+    )
 
 
 register_content_routes()

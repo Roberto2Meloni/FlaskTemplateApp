@@ -1,0 +1,779 @@
+{% if not quote %}
+<div style="padding: 40px; text-align: center; color: #999">
+  Keine Offerte ausgewählt.
+</div>
+{% else %}
+
+<div class="quote-detail-page" data-quote-id="{{ quote.id }}">
+  <!-- Header -->
+  <div class="quote-detail-header">
+    <div class="quote-detail-header__left">
+      <button class="btn-back" onclick="window.history.back()">
+        <i class="bi bi-arrow-left"></i>
+      </button>
+      <div>
+        <span class="quote-detail-header__number"
+          >{{ quote.quote_number }}</span
+        >
+        <h1
+          class="quote-detail-header__title"
+          id="quoteTitle"
+          ondblclick="QuoteDetail.editTitle(this)"
+          title="Doppelklick zum Bearbeiten"
+        >
+          {{ quote.title }}
+        </h1>
+      </div>
+    </div>
+    <div class="quote-detail-header__right">
+      <span class="quote-status quote-status--{{ quote.status }}"
+        >{{ quote.status_display }}</span
+      >
+      <div class="quote-status-actions">
+        {% if quote.status == 'draft' %}
+        <button
+          class="btn-status"
+          onclick="QuoteDetail.setStatus({{ quote.id }}, 'sent')"
+        >
+          Senden
+        </button>
+        {% elif quote.status == 'sent' %}
+        <button
+          class="btn-status btn-status--success"
+          onclick="QuoteDetail.setStatus({{ quote.id }}, 'accepted')"
+        >
+          ✓ Angenommen
+        </button>
+        <button
+          class="btn-status btn-status--danger"
+          onclick="QuoteDetail.setStatus({{ quote.id }}, 'rejected')"
+        >
+          ✕ Abgelehnt
+        </button>
+        {% elif quote.status == 'accepted' %}
+        <button
+          class="btn-status btn-status--success"
+          onclick="QuoteDetail.setStatus({{ quote.id }}, 'invoiced')"
+        >
+          Verrechnet
+        </button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Zusammenfassung -->
+  <div class="quote-summary-bar">
+    <div class="quote-summary-item">
+      <span class="quote-summary-item__label">Kunde</span>
+      <span class="quote-summary-item__value"
+        >{{ quote.customer_display }}</span
+      >
+    </div>
+    <div class="quote-summary-item">
+      <span class="quote-summary-item__label">Selbstkosten</span>
+      <span class="quote-summary-item__value"
+        >{{ "%.2f"|format(quote.total_self_cost) }} CHF</span
+      >
+    </div>
+    <div class="quote-summary-item quote-summary-item--highlight">
+      <span class="quote-summary-item__label">Verkaufspreis</span>
+      <span class="quote-summary-item__value"
+        >{{ "%.2f"|format(quote.total_selling_price) }} CHF</span
+      >
+    </div>
+    <div class="quote-summary-item">
+      <span class="quote-summary-item__label">Marge</span>
+      <span class="quote-summary-item__value"
+        >{{ quote.margin_percentage }}%</span
+      >
+    </div>
+    {% if quote.discount_profile %}
+    <div class="quote-summary-item">
+      <span class="quote-summary-item__label">Rabatt</span>
+      <span class="quote-summary-item__value"
+        >{{ quote.discount_profile.name }}</span
+      >
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="quote-detail-body">
+    <!-- LINKE SEITE: Suborders + Extras -->
+    <div class="quote-detail-main">
+      <!-- Druckbetten -->
+      <div class="quote-section">
+        <div class="quote-section__header">
+          <span class="quote-section__title">Druckbetten</span>
+          <button
+            class="btn-add-sub"
+            onclick="SuborderModal.openAdd({{ quote.id }})"
+          >
+            + Druckbett
+          </button>
+        </div>
+
+        {% for sub in quote.suborders.order_by('position').all() %}
+        <div class="suborder-card" data-id="{{ sub.id }}">
+          <div class="suborder-card__header">
+            <div class="suborder-card__header-left">
+              <span class="suborder-card__pos">{{ sub.position }}</span>
+              <span class="suborder-card__name">{{ sub.name }}</span>
+              {% if sub.quantity > 1 %}
+              <span class="suborder-card__qty">× {{ sub.quantity }}</span>
+              {% endif %}
+            </div>
+            <div class="suborder-card__total">
+              {{ "%.2f"|format(sub.self_cost) }} CHF
+            </div>
+          </div>
+          <div class="suborder-card__body">
+            <div class="suborder-card__params">
+              {% if sub.snapshot_printer_name %}
+              <span class="suborder-param">
+                <i class="bi bi-printer"></i> {{ sub.snapshot_printer_name }}
+              </span>
+              {% endif %} {% if sub.filament %}
+              <span class="suborder-param">
+                <i
+                  class="bi bi-circle-fill"
+                  style="color: {{ sub.filament.color or '#888' }}; font-size:8px;"
+                ></i>
+                {{ sub.snapshot_filament_name }} {{ sub.filament_usage_grams }}g
+              </span>
+              {% endif %}
+              <span class="suborder-param">
+                <i class="bi bi-clock"></i> {{
+                "%.2f"|format(sub.print_time_hours) }}h Druck
+              </span>
+              <span class="suborder-param">
+                <i class="bi bi-person-gear"></i> {{
+                "%.2f"|format(sub.work_time_hours) }}h Arbeit
+              </span>
+            </div>
+            <div class="suborder-card__costs">
+              <div class="suborder-cost-item">
+                <span>Maschine</span>
+                <span>{{ "%.2f"|format(sub.machine_cost) }}</span>
+              </div>
+              <div class="suborder-cost-item">
+                <span>Material</span>
+                <span>{{ "%.2f"|format(sub.material_cost) }}</span>
+              </div>
+              <div class="suborder-cost-item">
+                <span>Energie</span>
+                <span>{{ "%.2f"|format(sub.energy_cost) }}</span>
+              </div>
+              <div class="suborder-cost-item">
+                <span>Arbeit</span>
+                <span>{{ "%.2f"|format(sub.work_cost) }}</span>
+              </div>
+              <div class="suborder-cost-item">
+                <span>Overhead</span>
+                <span>{{ "%.2f"|format(sub.overhead_cost) }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="suborder-card__footer">
+            <button
+              class="btn-edit-sub"
+              data-id="{{ sub.id }}"
+              data-name="{{ sub.name }}"
+              data-filament-id="{{ sub.filament_id or '' }}"
+              data-grams="{{ sub.filament_usage_grams }}"
+              data-print-time="{{ sub.print_time_hours }}"
+              data-work-time="{{ sub.work_time_hours }}"
+              data-qty="{{ sub.quantity }}"
+              data-printer-id="{{ sub.printer_id or '' }}"
+              data-work-hours-id="{{ sub.work_hours_id or '' }}"
+              data-overhead-id="{{ sub.overhead_profile_id or '' }}"
+              data-margin="{{ sub.margin_percentage or '' }}"
+              onclick="SuborderModal.openEdit(this.dataset, {{ quote.id }})"
+            >
+              Bearbeiten
+            </button>
+            <button
+              class="btn-delete-sub"
+              onclick="SuborderModal.delete({{ quote.id }}, {{ sub.id }}, '{{ sub.name }}')"
+            >
+              🗑
+            </button>
+          </div>
+        </div>
+        {% else %}
+        <div class="quote-empty-state">Noch keine Druckbetten erfasst.</div>
+        {% endfor %}
+      </div>
+
+      <!-- Zusatzmaterialien -->
+      <div class="quote-section" style="margin-top: 24px">
+        <div class="quote-section__header">
+          <span class="quote-section__title">Zusatzmaterialien</span>
+          <button
+            class="btn-add-sub"
+            onclick="ExtraModal.openAdd({{ quote.id }})"
+          >
+            + Material
+          </button>
+        </div>
+
+        {% for extra in quote.extra_materials.all() %}
+        <div class="extra-card" data-id="{{ extra.id }}">
+          <div class="extra-card__info">
+            <span class="extra-card__name">{{ extra.name }}</span>
+            <span class="extra-card__detail">
+              {{ extra.quantity }} × {{ "%.2f"|format(extra.unit_price) }} CHF
+            </span>
+          </div>
+          <div class="extra-card__right">
+            <span class="extra-card__total"
+              >{{ "%.2f"|format(extra.total_price) }} CHF</span
+            >
+            <button
+              class="btn-edit-sub"
+              data-id="{{ extra.id }}"
+              data-name="{{ extra.name }}"
+              data-qty="{{ extra.quantity }}"
+              data-price="{{ extra.unit_price }}"
+              data-notes="{{ extra.notes or '' }}"
+              onclick="ExtraModal.openEdit(this.dataset, {{ quote.id }})"
+            >
+              ✏
+            </button>
+            <button
+              class="btn-delete-sub"
+              onclick="ExtraModal.delete({{ quote.id }}, {{ extra.id }}, '{{ extra.name }}')"
+            >
+              🗑
+            </button>
+          </div>
+        </div>
+        {% else %}
+        <div class="quote-empty-state">Keine Zusatzmaterialien.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- RECHTE SEITE: Kalkulations-Zusammenfassung -->
+    <div class="quote-detail-sidebar">
+      <div class="quote-calc-summary">
+        <div class="quote-calc-summary__title">Kalkulation</div>
+
+        <div class="quote-calc-row">
+          <span>Druckbetten ({{ quote.suborders.count() }})</span>
+          <span>{{ "%.2f"|format(quote.total_self_cost) }} CHF</span>
+        </div>
+        {% if quote.extra_materials.count() > 0 %}
+        <div class="quote-calc-row">
+          <span>Zusatzmaterialien</span>
+          <span
+            >{% set extras_total = namespace(val=0) %} {% for e in
+            quote.extra_materials.all() %} {% set extras_total.val =
+            extras_total.val + e.total_price|float %} {% endfor %} {{
+            "%.2f"|format(extras_total.val) }} CHF</span
+          >
+        </div>
+        {% endif %}
+
+        <div class="quote-calc-divider"></div>
+
+        <div class="quote-calc-row">
+          <span>Selbstkosten</span>
+          <span>{{ "%.2f"|format(quote.total_self_cost) }} CHF</span>
+        </div>
+        <div class="quote-calc-row">
+          <span>+ Marge {{ quote.margin_percentage }}%</span>
+          <span
+            >{{ "%.2f"|format(quote.total_self_cost|float *
+            quote.margin_percentage|float / 100) }}</span
+          >
+        </div>
+        {% if quote.discount_profile %}
+        <div class="quote-calc-row quote-calc-row--discount">
+          <span>- Rabatt {{ quote.discount_profile.name }}</span>
+          <span
+            >- {{ "%.2f"|format(quote.total_self_cost|float * (1 +
+            quote.margin_percentage|float / 100) * (1 -
+            quote.effective_discount_factor|float)) }} CHF</span
+          >
+        </div>
+        {% endif %}
+
+        <div class="quote-calc-divider quote-calc-divider--thick"></div>
+
+        <div class="quote-calc-total">
+          <span>Verkaufspreis</span>
+          <span>{{ "%.2f"|format(quote.total_selling_price) }} CHF</span>
+        </div>
+      </div>
+
+      <!-- Globale Profile -->
+      <div class="quote-profiles-summary">
+        <div
+          class="quote-calc-summary__title"
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          Globale Profile
+          <button
+            class="btn-edit-profiles"
+            onclick="QuoteModal.openEditProfiles({{ quote.id }})"
+          >
+            <i class="bi bi-pencil-square"></i>
+          </button>
+        </div>
+        <div class="quote-profile-item">
+          <span class="quote-profile-item__label">Drucker</span>
+          <span class="quote-profile-item__value">
+            {{ quote.global_printer.name if quote.global_printer else '–' }}
+          </span>
+        </div>
+        <div class="quote-profile-item">
+          <span class="quote-profile-item__label">Stundensatz</span>
+          <span class="quote-profile-item__value">
+            {{ quote.global_work_hours.name if quote.global_work_hours else '–'
+            }}
+          </span>
+        </div>
+        <div class="quote-profile-item">
+          <span class="quote-profile-item__label">Overhead</span>
+          <span class="quote-profile-item__value">
+            {{ quote.global_overhead_profile.name if
+            quote.global_overhead_profile else 'Vom Drucker' }}
+          </span>
+        </div>
+        <div class="quote-profile-item">
+          <span class="quote-profile-item__label">Stromtarif</span>
+          <span class="quote-profile-item__value">
+            {% if active_energy %}{{ active_energy.cost_per_kwh }} CHF/kWh{%
+            else %}–{% endif %}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Druckbett -->
+<div
+  class="modal fade"
+  id="suborderModal"
+  tabindex="-1"
+  role="dialog"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content printer-modal-content">
+      <div class="modal-header printer-modal-header">
+        <h5 class="modal-title printer-modal-title" id="suborderModalLabel">
+          Neues Druckbett
+        </h5>
+        <button
+          type="button"
+          class="close printer-modal-close"
+          onclick="$('#suborderModal').modal('hide')"
+        >
+          <span>✕</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="suborderForm" onsubmit="SuborderModal.submit(event)">
+          <input type="hidden" id="formSubId" value="" />
+          <input type="hidden" id="formSubQuoteId" value="" />
+
+          <div class="form-row">
+            <div class="form-group col-8">
+              <label class="form-label" for="formSubName">Name *</label>
+              <input
+                class="form-input"
+                type="text"
+                id="formSubName"
+                placeholder="z.B. Gehäuse Unterteil"
+                required
+              />
+            </div>
+            <div class="form-group col-4">
+              <label class="form-label" for="formSubQty">Anzahl</label>
+              <input
+                class="form-input"
+                type="number"
+                id="formSubQty"
+                min="1"
+                value="1"
+              />
+            </div>
+          </div>
+
+          <div class="form-section-title">Druckparameter</div>
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="formSubFilament">Filament</label>
+              <select class="form-input form-select" id="formSubFilament">
+                <option value="">Kein Filament</option>
+                {% for f in filaments %}
+                <option value="{{ f.id }}">
+                  {{ f.name }} ({{ "%.4f"|format(f.price_per_gram) }} CHF/g)
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="formSubGrams"
+                >Filamentverbrauch (g)</label
+              >
+              <input
+                class="form-input"
+                type="number"
+                id="formSubGrams"
+                step="0.1"
+                min="0"
+                placeholder="0"
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="formSubPrintTime"
+                >Druckzeit (h:mm)</label
+              >
+              <input
+                class="form-input"
+                type="text"
+                id="formSubPrintTime"
+                placeholder="z.B. 5:16"
+                pattern="^\d+:[0-5]\d$"
+              />
+              <span class="form-hint">Format: Stunden:Minuten</span>
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="formSubWorkTime"
+                >Arbeitszeit (h:mm)</label
+              >
+              <input
+                class="form-input"
+                type="text"
+                id="formSubWorkTime"
+                placeholder="z.B. 0:15"
+                pattern="^\d+:[0-5]\d$"
+              />
+              <span class="form-hint">Format: Stunden:Minuten</span>
+            </div>
+          </div>
+
+          <div class="form-section-title">Profile überschreiben (optional)</div>
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="formSubPrinter">Drucker</label>
+              <select class="form-input form-select" id="formSubPrinter">
+                <option value="">Global übernehmen</option>
+                {% for printer in printers %}
+                <option value="{{ printer.id }}">{{ printer.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="formSubWorkHours"
+                >Stundensatz</label
+              >
+              <select class="form-input form-select" id="formSubWorkHours">
+                <option value="">Global übernehmen</option>
+                {% for wh in work_hours %}
+                <option value="{{ wh.id }}">{{ wh.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="formSubOverhead"
+                >Overhead Profil</label
+              >
+              <select class="form-input form-select" id="formSubOverhead">
+                <option value="">Global / Vom Drucker</option>
+                {% for oh in overhead_profiles %}
+                <option value="{{ oh.id }}">{{ oh.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="formSubMargin"
+                >Marge % überschreiben</label
+              >
+              <input
+                class="form-input"
+                type="number"
+                id="formSubMargin"
+                step="0.5"
+                min="0"
+                placeholder="Leer = global"
+              />
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer printer-modal-footer">
+        <button
+          type="button"
+          class="btn-cancel"
+          onclick="$('#suborderModal').modal('hide')"
+        >
+          Abbrechen
+        </button>
+        <button type="submit" form="suborderForm" class="btn-save">
+          Speichern
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Zusatzmaterial -->
+<div
+  class="modal fade"
+  id="extraModal"
+  tabindex="-1"
+  role="dialog"
+  aria-hidden="true"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content printer-modal-content">
+      <div class="modal-header printer-modal-header">
+        <h5 class="modal-title printer-modal-title" id="extraModalLabel">
+          Zusatzmaterial
+        </h5>
+        <button
+          type="button"
+          class="close printer-modal-close"
+          onclick="$('#extraModal').modal('hide')"
+        >
+          <span>✕</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="extraForm" onsubmit="ExtraModal.submit(event)">
+          <input type="hidden" id="formExtraId" value="" />
+          <input type="hidden" id="formExtraQuoteId" value="" />
+
+          <div class="form-group">
+            <label class="form-label" for="formExtraName">Name *</label>
+            <input
+              class="form-input"
+              type="text"
+              id="formExtraName"
+              placeholder="z.B. Arduino Nano"
+              required
+            />
+          </div>
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="formExtraQty">Anzahl</label>
+              <input
+                class="form-input"
+                type="number"
+                id="formExtraQty"
+                min="1"
+                value="1"
+              />
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="formExtraPrice"
+                >Stückpreis (CHF)</label
+              >
+              <input
+                class="form-input"
+                type="number"
+                id="formExtraPrice"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+              />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="formExtraNotes">Notizen</label>
+            <input
+              class="form-input"
+              type="text"
+              id="formExtraNotes"
+              placeholder="Optionale Bemerkung..."
+            />
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer printer-modal-footer">
+        <button
+          type="button"
+          class="btn-cancel"
+          onclick="$('#extraModal').modal('hide')"
+        >
+          Abbrechen
+        </button>
+        <button type="submit" form="extraForm" class="btn-save">
+          Speichern
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Modal: Offerte bearbeiten -->
+<div
+  class="modal fade"
+  id="quoteModal"
+  tabindex="-1"
+  role="dialog"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content printer-modal-content">
+      <div class="modal-header printer-modal-header">
+        <h5 class="modal-title printer-modal-title" id="quoteModalLabel">
+          Offerte bearbeiten
+        </h5>
+        <button
+          type="button"
+          class="close printer-modal-close"
+          onclick="$('#quoteModal').modal('hide')"
+        >
+          <span>✕</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="quoteForm" onsubmit="QuoteModal.submit(event)">
+          <input type="hidden" id="formQuoteId" value="" />
+
+          <div class="form-group">
+            <label class="form-label" for="formQuoteTitle">Titel *</label>
+            <input
+              class="form-input"
+              type="text"
+              id="formQuoteTitle"
+              required
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="formQuoteCompany">Firma</label>
+              <select class="form-input form-select" id="formQuoteCompany">
+                <option value="">Keine Firma</option>
+                {% for company in companies %}
+                <option value="{{ company.id }}">
+                  {{ company.company_name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="formQuoteCustomer"
+                >Kontaktperson</label
+              >
+              <select class="form-input form-select" id="formQuoteCustomer">
+                <option value="">Kein Kontakt</option>
+                {% for customer in customers %}
+                <option
+                  value="{{ customer.id }}"
+                  data-company="{{ customer.company_id or '' }}"
+                >
+                  {{ customer.full_name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="form-section-title">Globale Profile</div>
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="formQuotePrinter">Drucker</label>
+              <select class="form-input form-select" id="formQuotePrinter">
+                <option value="">Kein Standard</option>
+                {% for printer in printers %}
+                <option value="{{ printer.id }}">{{ printer.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="formQuoteWorkHours"
+                >Stundensatz</label
+              >
+              <select class="form-input form-select" id="formQuoteWorkHours">
+                <option value="">Kein Standard</option>
+                {% for wh in work_hours %}
+                <option value="{{ wh.id }}">{{ wh.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="formQuoteOverhead"
+                >Overhead Profil</label
+              >
+              <select class="form-input form-select" id="formQuoteOverhead">
+                <option value="">Kein Standard</option>
+                {% for oh in overhead_profiles %}
+                <option value="{{ oh.id }}">{{ oh.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="formQuoteDiscount">Rabatt</label>
+              <select class="form-input form-select" id="formQuoteDiscount">
+                <option value="">Kein Rabatt</option>
+                {% for dp in discount_profiles %}
+                <option value="{{ dp.id }}">{{ dp.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-4">
+              <label class="form-label" for="formQuoteMargin"
+                >Marge (%) *</label
+              >
+              <input
+                class="form-input"
+                type="number"
+                id="formQuoteMargin"
+                step="0.5"
+                min="0"
+                value="30"
+                required
+              />
+            </div>
+            <div class="form-group col-4">
+              <label class="form-label" for="formQuoteValidUntil"
+                >Gültig bis</label
+              >
+              <input class="form-input" type="date" id="formQuoteValidUntil" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="formQuoteNotes">Notizen</label>
+            <textarea
+              class="form-input form-textarea"
+              id="formQuoteNotes"
+            ></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer printer-modal-footer">
+        <button
+          type="button"
+          class="btn-cancel"
+          onclick="$('#quoteModal').modal('hide')"
+        >
+          Abbrechen
+        </button>
+        <button type="submit" form="quoteForm" class="btn-save">
+          Speichern
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}

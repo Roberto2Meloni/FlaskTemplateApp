@@ -21,6 +21,12 @@ def generate_customer_number():
     return f"K-{next_id:04d}"
 
 
+def generate_quote_number():
+    last = PrintlyQuote.query.order_by(PrintlyQuote.id.desc()).first()
+    next_id = (last.id + 1) if last else 1
+    return f"Q-{next_id:04d}"
+
+
 class PrintlyPrinter(db.Model):
     __tablename__ = "printly_printers"
 
@@ -452,7 +458,7 @@ class PrintlyOverheadProfile(db.Model):
 
     # Fixkosten pro Monat (CHF)
     rent_monthly = db.Column(db.Numeric(10, 2), nullable=False, default=0)
-    electricity_monthly = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+    # electricity_monthly = db.Column(db.Numeric(10, 2), nullable=False, default=0) --> wird nicht benötig, da diese im Stromtarif enthalten sind
     insurance = db.Column(db.Numeric(10, 2), nullable=False, default=0)
     internet = db.Column(db.Numeric(10, 2), nullable=False, default=0)
     other_costs = db.Column(db.Numeric(10, 2), nullable=False, default=0)
@@ -504,7 +510,6 @@ class PrintlyOverheadProfile(db.Model):
         """Gesamte monatliche Fixkosten"""
         return round(
             float(self.rent_monthly)
-            + float(self.electricity_monthly)
             + float(self.insurance)
             + float(self.internet)
             + float(self.other_costs)
@@ -551,7 +556,6 @@ class PrintlyOverheadProfile(db.Model):
             "name": self.name,
             "location": self.location,
             "rent_monthly": float(self.rent_monthly),
-            "electricity_monthly": float(self.electricity_monthly),
             "insurance": float(self.insurance),
             "internet": float(self.internet),
             "software_cost": float(self.software_cost),
@@ -891,4 +895,384 @@ class PrintlyCustomer(db.Model):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "created_by": self.created_by,
+        }
+
+
+# ============================================================
+# OFFERTE
+# ============================================================
+
+
+class PrintlyQuote(db.Model):
+    __tablename__ = "printly_quotes"
+
+    id = db.Column(db.Integer, primary_key=True)
+    quote_number = db.Column(db.String(20), unique=True, nullable=False)
+
+    # Kunde / Firma
+    customer_id = db.Column(
+        db.Integer, db.ForeignKey("printly_customers.id"), nullable=True
+    )
+    company_id = db.Column(
+        db.Integer, db.ForeignKey("printly_companies.id"), nullable=True
+    )
+    customer = db.relationship("PrintlyCustomer", backref="quotes")
+    company = db.relationship("PrintlyCompany", backref="quotes")
+
+    # Titel / Beschreibung
+    title = db.Column(db.String(200), nullable=False)
+    notes = db.Column(db.Text, nullable=True)
+
+    # Globale Profile (werden auf alle Suborders angewendet wenn nicht überschrieben)
+    global_printer_id = db.Column(
+        db.Integer, db.ForeignKey("printly_printers.id"), nullable=True
+    )
+    global_work_hours_id = db.Column(
+        db.Integer, db.ForeignKey("printly_work_hours.id"), nullable=True
+    )
+    global_overhead_profile_id = db.Column(
+        db.Integer, db.ForeignKey("printly_overhead_profiles.id"), nullable=True
+    )
+
+    global_printer = db.relationship("PrintlyPrinter", backref="quotes")
+    global_work_hours = db.relationship("PrintlyWorkHours", backref="quotes")
+    global_overhead_profile = db.relationship(
+        "PrintlyOverheadProfile", backref="quotes"
+    )
+
+    # Marge (global, überschreibbar pro Suborder)
+    margin_percentage = db.Column(db.Numeric(5, 2), nullable=False, default=30)
+
+    # Rabatt (wird auf Endpreis nach Marge angewendet)
+    discount_profile_id = db.Column(
+        db.Integer, db.ForeignKey("printly_discount_profiles.id"), nullable=True
+    )
+    discount_profile = db.relationship("PrintlyDiscountProfile", backref="quotes")
+
+    # Berechnete Totals (werden bei jedem Speichern aktualisiert)
+    total_self_cost = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+    total_selling_price = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+
+    # Status
+    status = db.Column(db.String(20), nullable=False, default="draft")
+    # draft → sent → accepted / rejected → invoiced
+
+    valid_until = db.Column(db.Date, nullable=True)
+
+    # Zeitstempel
+    created_at = db.Column(db.DateTime, default=get_current_time, nullable=False)
+    updated_at = db.Column(
+        db.DateTime, default=get_current_time, onupdate=get_current_time, nullable=False
+    )
+    created_by = db.Column(db.String(64), nullable=False)
+
+    # Relationen
+    suborders = db.relationship(
+        "PrintlySubOrder", backref="quote", lazy="dynamic", cascade="all, delete-orphan"
+    )
+    extra_materials = db.relationship(
+        "PrintlyQuoteExtraMaterial",
+        backref="quote",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+    )
+
+    # ----------------------------------------------------------
+    # PROPERTIES
+    # ----------------------------------------------------------
+
+    @property
+    def status_display(self):
+        return {
+            "draft": "Entwurf",
+            "sent": "Gesendet",
+            "accepted": "Angenommen",
+            "rejected": "Abgelehnt",
+            "invoiced": "Verrechnet",
+        }.get(self.status, "Unbekannt")
+
+    @property
+    def customer_display(self):
+        if self.customer:
+            return self.customer.full_name
+        if self.company:
+            return self.company.company_name
+        return "Kein Kunde"
+
+    @property
+    def effective_discount_factor(self):
+        """Rabattfaktor: 1.0 = kein Rabatt, 0.9 = 10% Rabatt"""
+        # Eigener Rabatt auf Offerte hat Vorrang
+        if self.discount_profile:
+            return float(self.discount_profile.calculation_factor)
+        # Sonst Kundenrabatt
+        if self.customer and self.customer.effective_discount:
+            return float(self.customer.effective_discount.calculation_factor)
+        if self.company and self.company.discount_profile:
+            return float(self.company.discount_profile.calculation_factor)
+        return 1.0
+
+    def recalculate(self):
+        """Berechnet alle Totals neu"""
+        from decimal import Decimal
+
+        # Aktiven Stromtarif holen
+        from app.imported_apps.develop_release.Printly.models import (
+            PrintlyElectricityCost,
+        )
+
+        energy_tariff = PrintlyElectricityCost.query.filter_by(
+            is_active=True, is_current=True
+        ).first()
+        kwh_rate = float(energy_tariff.cost_per_kwh) if energy_tariff else 0
+
+        total_self = 0.0
+
+        for sub in self.suborders.all():
+            sub.calculate(kwh_rate, self)
+            total_self += float(sub.self_cost)
+
+        # Zusatzmaterialien
+        for mat in self.extra_materials.all():
+            total_self += float(mat.total_price)
+
+        # Marge anwenden
+        margin = float(self.margin_percentage) / 100
+        selling = total_self * (1 + margin)
+
+        # Rabatt anwenden
+        selling = selling * self.effective_discount_factor
+
+        self.total_self_cost = round(total_self, 2)
+        self.total_selling_price = round(selling, 2)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "quote_number": self.quote_number,
+            "title": self.title,
+            "customer_display": self.customer_display,
+            "customer_id": self.customer_id,
+            "company_id": self.company_id,
+            "global_printer_id": self.global_printer_id,  # ← NEU
+            "global_work_hours_id": self.global_work_hours_id,  # ← NEU
+            "global_overhead_profile_id": self.global_overhead_profile_id,  # ← NEU
+            "margin_percentage": float(self.margin_percentage),
+            "discount_profile_id": self.discount_profile_id,
+            "discount_profile": (
+                self.discount_profile.name if self.discount_profile else None
+            ),
+            "effective_discount_factor": self.effective_discount_factor,
+            "total_self_cost": float(self.total_self_cost),
+            "total_selling_price": float(self.total_selling_price),
+            "status": self.status,
+            "status_display": self.status_display,
+            "valid_until": self.valid_until.isoformat() if self.valid_until else None,
+            "notes": self.notes,
+            "suborders_count": self.suborders.count(),
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "created_by": self.created_by,
+        }
+
+
+# ============================================================
+# SUBORDER (Druckbett)
+# ============================================================
+
+
+class PrintlySubOrder(db.Model):
+    __tablename__ = "printly_suborders"
+
+    id = db.Column(db.Integer, primary_key=True)
+    quote_id = db.Column(db.Integer, db.ForeignKey("printly_quotes.id"), nullable=False)
+
+    name = db.Column(db.String(200), nullable=False)
+    position = db.Column(db.Integer, nullable=False, default=1)
+
+    # Druckparameter
+    filament_id = db.Column(
+        db.Integer, db.ForeignKey("printly_filaments.id"), nullable=True
+    )
+    filament_usage_grams = db.Column(db.Numeric(8, 2), nullable=False, default=0)
+    print_time_hours = db.Column(db.Numeric(8, 4), nullable=False, default=0)
+    work_time_hours = db.Column(db.Numeric(8, 4), nullable=False, default=0)
+    quantity = db.Column(db.Integer, nullable=False, default=1)
+
+    # Individuelle Profile (NULL = globales Profil der Offerte verwenden)
+    printer_id = db.Column(
+        db.Integer, db.ForeignKey("printly_printers.id"), nullable=True
+    )
+    work_hours_id = db.Column(
+        db.Integer, db.ForeignKey("printly_work_hours.id"), nullable=True
+    )
+    overhead_profile_id = db.Column(
+        db.Integer, db.ForeignKey("printly_overhead_profiles.id"), nullable=True
+    )
+
+    # Individuelle Marge (NULL = globale Marge der Offerte)
+    margin_percentage = db.Column(db.Numeric(5, 2), nullable=True)
+
+    # Relationen
+    filament = db.relationship("PrintlyFilament", backref="suborders")
+    printer = db.relationship("PrintlyPrinter", backref="suborders")
+    work_hours = db.relationship("PrintlyWorkHours", backref="suborders")
+    overhead_profile = db.relationship("PrintlyOverheadProfile", backref="suborders")
+
+    # Berechnete Kosten (Snapshot)
+    machine_cost = db.Column(db.Numeric(10, 4), nullable=False, default=0)
+    material_cost = db.Column(db.Numeric(10, 4), nullable=False, default=0)
+    energy_cost = db.Column(db.Numeric(10, 4), nullable=False, default=0)
+    work_cost = db.Column(db.Numeric(10, 4), nullable=False, default=0)
+    overhead_cost = db.Column(db.Numeric(10, 4), nullable=False, default=0)
+    self_cost = db.Column(db.Numeric(10, 4), nullable=False, default=0)
+
+    # Snapshot-Felder (für Historisierung)
+    snapshot_printer_name = db.Column(db.String(100), nullable=True)
+    snapshot_filament_name = db.Column(db.String(200), nullable=True)
+    snapshot_printer_cost_per_hour = db.Column(db.Numeric(8, 4), nullable=True)
+    snapshot_filament_price_per_gram = db.Column(db.Numeric(8, 4), nullable=True)
+    snapshot_energy_kwh_rate = db.Column(db.Numeric(8, 4), nullable=True)
+    snapshot_work_cost_per_hour = db.Column(db.Numeric(8, 2), nullable=True)
+    snapshot_overhead_per_hour = db.Column(db.Numeric(8, 4), nullable=True)
+
+    # ----------------------------------------------------------
+    # EFFEKTIVE PROFILE (global oder individuell)
+    # ----------------------------------------------------------
+
+    def effective_printer(self, quote):
+        return self.printer or quote.global_printer
+
+    def effective_work_hours(self, quote):
+        return self.work_hours or quote.global_work_hours
+
+    def effective_overhead(self, quote):
+        if self.overhead_profile:
+            return self.overhead_profile
+        if quote.global_overhead_profile:
+            return quote.global_overhead_profile
+        # Fallback: Standard-Overhead des Druckers
+        printer = self.effective_printer(quote)
+        if printer:
+            default_oh = next(
+                (x for x in printer.overhead_profiles_with_default if x["is_default"]),
+                None,
+            )
+            return default_oh["profile"] if default_oh else None
+        return None
+
+    def effective_margin(self, quote):
+        if self.margin_percentage is not None:
+            return float(self.margin_percentage)
+        return float(quote.margin_percentage)
+
+    # ----------------------------------------------------------
+    # KALKULATION
+    # ----------------------------------------------------------
+
+    def calculate(self, kwh_rate, quote):
+        printer = self.effective_printer(quote)
+        work_hours = self.effective_work_hours(quote)
+        overhead = self.effective_overhead(quote)
+
+        h = float(self.print_time_hours)
+        w = float(self.work_time_hours)
+        g = float(self.filament_usage_grams)
+
+        # Maschinenkosten
+        machine_rate = float(printer.machine_cost_per_hour) if printer else 0
+        self.machine_cost = round(machine_rate * h, 4)
+
+        # Materialkosten
+        filament_rate = float(self.filament.price_per_gram) if self.filament else 0
+        self.material_cost = round(filament_rate * g, 4)
+
+        # Energiekosten
+        energy_w = (
+            float(printer.energy_consumption)
+            if printer and printer.energy_consumption
+            else 0
+        )
+        self.energy_cost = round((energy_w / 1000) * h * kwh_rate, 4)
+
+        # Arbeitskosten
+        work_rate = float(work_hours.cost_per_hour) if work_hours else 0
+        self.work_cost = round(work_rate * w, 4)
+
+        # Overheadkosten
+        overhead_rate = float(overhead.overhead_per_hour) if overhead else 0
+        self.overhead_cost = round(overhead_rate * h, 4)
+
+        # Selbstkosten total × Anzahl
+        subtotal = (
+            self.machine_cost
+            + self.material_cost
+            + self.energy_cost
+            + self.work_cost
+            + self.overhead_cost
+        )
+        self.self_cost = round(float(subtotal) * int(self.quantity), 4)
+
+        # Snapshots
+        self.snapshot_printer_name = printer.name if printer else None
+        self.snapshot_filament_name = self.filament.name if self.filament else None
+        self.snapshot_printer_cost_per_hour = machine_rate
+        self.snapshot_filament_price_per_gram = filament_rate
+        self.snapshot_energy_kwh_rate = kwh_rate
+        self.snapshot_work_cost_per_hour = work_rate
+        self.snapshot_overhead_per_hour = overhead_rate
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "position": self.position,
+            "filament_id": self.filament_id,
+            "filament_name": self.filament.name if self.filament else None,
+            "filament_usage_grams": float(self.filament_usage_grams),
+            "print_time_hours": float(self.print_time_hours),
+            "work_time_hours": float(self.work_time_hours),
+            "quantity": self.quantity,
+            "printer_id": self.printer_id,
+            "work_hours_id": self.work_hours_id,
+            "overhead_profile_id": self.overhead_profile_id,
+            "margin_percentage": (
+                float(self.margin_percentage) if self.margin_percentage else None
+            ),
+            "machine_cost": float(self.machine_cost),
+            "material_cost": float(self.material_cost),
+            "energy_cost": float(self.energy_cost),
+            "work_cost": float(self.work_cost),
+            "overhead_cost": float(self.overhead_cost),
+            "self_cost": float(self.self_cost),
+        }
+
+
+# ============================================================
+# ZUSATZMATERIALIEN
+# ============================================================
+
+
+class PrintlyQuoteExtraMaterial(db.Model):
+    __tablename__ = "printly_quote_extra_materials"
+
+    id = db.Column(db.Integer, primary_key=True)
+    quote_id = db.Column(db.Integer, db.ForeignKey("printly_quotes.id"), nullable=False)
+
+    name = db.Column(db.String(200), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False, default=1)
+    unit_price = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+    total_price = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+    notes = db.Column(db.String(200), nullable=True)
+
+    def calculate(self):
+        self.total_price = round(float(self.unit_price) * int(self.quantity), 2)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "quantity": self.quantity,
+            "unit_price": float(self.unit_price),
+            "total_price": float(self.total_price),
+            "notes": self.notes,
         }
