@@ -3,7 +3,7 @@ Zentrale Seitenkonfiguration für Printly
 Neue Seite hinzufügen = nur hier eintragen!
 """
 
-from ..models import PrintlyPrinter, PrintlyFilament
+from ..models import PrintlyPrinter, PrintlyFilament, PrintlyElectricityCost
 
 # ============================================================
 # CONTEXT LOADER FUNKTIONEN
@@ -54,7 +54,10 @@ def load_filaments_context():
 
 
 def load_electricity_costs_context():
-    return {}
+    all_costs = PrintlyElectricityCost.query.order_by(
+        PrintlyElectricityCost.is_active.desc(), PrintlyElectricityCost.name
+    ).all()
+    return {"all_energy_costs": all_costs}
 
 
 def load_working_hours_context():

@@ -212,3 +212,104 @@ class PrintlyFilament(db.Model):
     @staticmethod
     def get_diameters():
         return [1.75, 2.85]
+
+
+class PrintlyElectricityCost(db.Model):
+    __tablename__ = "printly_electricity_costs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)  # z.B. "Grundtarif 2024"
+    provider = db.Column(db.String(100), nullable=False)  # z.B. "EWZ", "Axpo"
+    cost_per_kwh = db.Column(db.Numeric(10, 4), nullable=False)  # CHF pro kWh
+    base_fee_monthly = db.Column(
+        db.Numeric(10, 2), nullable=True
+    )  # Monatliche Grundgebühr
+    tariff_type = db.Column(db.String(50), nullable=True)  # "Einfachtarif", etc.
+    valid_from = db.Column(db.Date, nullable=True)
+    valid_until = db.Column(db.Date, nullable=True)
+    night_rate = db.Column(
+        db.Numeric(10, 4), nullable=True
+    )  # Nachttarif falls verfügbar
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    notes = db.Column(db.Text, nullable=True)
+
+    # Zeitstempel
+    created_at = db.Column(db.DateTime, default=get_current_time, nullable=False)
+    updated_at = db.Column(
+        db.DateTime, default=get_current_time, onupdate=get_current_time, nullable=False
+    )
+    created_by = db.Column(db.String(64), nullable=False)
+
+    def __repr__(self):
+        return f"<PrintlyEnergyCost {self.name} ({self.provider})>"
+
+    # ----------------------------------------------------------
+    # PROPERTIES
+    # ----------------------------------------------------------
+
+    @property
+    def annual_base_fee(self):
+        """Jährliche Grundgebühr"""
+        return round(float(self.base_fee_monthly or 0) * 12, 2)
+
+    @property
+    def is_current(self):
+        """Tarif aktuell gültig basierend auf Datum"""
+        today = datetime.now(tz=timezone("Europe/Zurich")).date()
+        if self.valid_from and today < self.valid_from:
+            return False
+        if self.valid_until and today > self.valid_until:
+            return False
+        return True
+
+    @property
+    def status(self):
+        """Status-String für Anzeige"""
+        if not self.is_active:
+            return "inactive"
+        elif not self.is_current:
+            return "expired"
+        else:
+            return "active"
+
+    # ----------------------------------------------------------
+    # SERIALISIERUNG
+    # ----------------------------------------------------------
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "provider": self.provider,
+            "cost_per_kwh": float(self.cost_per_kwh),
+            "base_fee_monthly": (
+                float(self.base_fee_monthly) if self.base_fee_monthly else None
+            ),
+            "annual_base_fee": self.annual_base_fee,
+            "tariff_type": self.tariff_type,
+            "valid_from": self.valid_from.isoformat() if self.valid_from else None,
+            "valid_until": self.valid_until.isoformat() if self.valid_until else None,
+            "night_rate": float(self.night_rate) if self.night_rate else None,
+            "is_active": self.is_active,
+            "is_current": self.is_current,
+            "status": self.status,
+            "notes": self.notes,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "created_by": self.created_by,
+        }
+
+    # ----------------------------------------------------------
+    # STATISCHE HILFSMETHODEN
+    # ----------------------------------------------------------
+
+    @staticmethod
+    def get_tariff_types():
+        return [
+            "Einfachtarif",
+            "Doppeltarif (Tag/Nacht)",
+            "Smart Tarif",
+            "Gewerbe",
+            "Industrie",
+            "Andere",
+        ]

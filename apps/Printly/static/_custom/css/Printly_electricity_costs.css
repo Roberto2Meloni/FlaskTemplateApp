@@ -1,0 +1,322 @@
+/* ============================================================ Energy Costs CSS
+– Printly Stromtarife
+============================================================ */
+/*
+============================================================ PAGE LAYOUT
+============================================================ */
+.energy-page {
+    font-family: var(--p-sans);
+    color: var(--p-text);
+    background: var(--p-bg);
+    min-height: 100%;
+    padding: 32px 40px;
+    box-sizing: border-box;
+}
+
+/*
+============================================================ HEADER
+============================================================ */
+.energy-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.energy-header__label {
+    font-family: var(--p-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    color:
+        var(--color-text-inactive);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.energy-header__title {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing:
+        -0.02em;
+    margin: 0;
+    line-height: 1;
+    color: var(--p-text);
+}
+
+.btn-add-energy {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background:
+        var(--color-sidbar-background-hover);
+    color: var(--color-text-light);
+    border:
+        none;
+    border-radius: var(--p-radius);
+    padding: 10px 20px;
+    font-family:
+        var(--p-sans);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition:
+        filter var(--p-transition), transform var(--p-transition);
+}
+
+.btn-add-energy:hover {
+    filter: brightness(0.9);
+    transform: translateY(-1px);
+}
+
+.btn-add-energy__icon {
+    font-size: 20px;
+    font-weight: 300;
+    line-height: 1;
+}
+
+/*
+============================================================ STATS
+============================================================ */
+.energy-stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+}
+
+/*
+============================================================ SECTION LABEL
+============================================================ */
+.energy-section-label {
+    font-family: var(--p-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color:
+        var(--p-text-muted);
+    margin-bottom: 14px;
+}
+
+/*
+============================================================ GRID
+============================================================ */
+.energy-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 18px;
+}
+
+/* ============================================================
+ENERGY CARD ============================================================ */
+.energy-card {
+    background: var(--p-surface);
+    border: 1px solid var(--p-border);
+    border-radius: var(--p-radius-lg);
+    overflow: hidden;
+    box-shadow:
+        var(--p-shadow);
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow var(--p-transition), transform var(--p-transition);
+    animation: cardIn 0.25s ease both;
+}
+
+.energy-card:hover {
+    box-shadow: var(--p-shadow-lg);
+    transform:
+        translateY(-2px);
+}
+
+.energy-card--inactive {
+    opacity: 0.6;
+}
+
+.energy-card--expired {
+    opacity: 0.75;
+    border-color: #f39c12;
+}
+
+/* Header Bar */
+.energy-card__header-bar {
+    background: var(--color-sidbar-background);
+    display:
+        flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+}
+
+.energy-card__tariff-type {
+    font-family: var(--p-mono);
+    font-size: 10px;
+    color:
+        rgba(255, 255, 255, 0.6);
+}
+
+/* Status Badge */
+.energy-status-badge {
+    font-family:
+        var(--p-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    padding: 3px 8px;
+    border-radius: 4px;
+}
+
+.energy-status-badge--active {
+    background: #2ecc71;
+    color: #fff;
+}
+
+.energy-status-badge--expired {
+    background:
+        #f39c12;
+    color: #fff;
+}
+
+.energy-status-badge--inactive {
+    background: #95a5a6;
+    color: #fff;
+}
+
+/* Card Body */
+.energy-card__body {
+    padding: 16px 18px 12px;
+    flex: 1;
+}
+
+.energy-card__provider {
+    font-family: var(--p-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color:
+        var(--color-text-inactive);
+    margin-bottom: 4px;
+}
+
+.energy-card__name {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 12px;
+    color: var(--p-text);
+}
+
+.energy-card__metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom:
+        10px;
+}
+
+.metric--highlight .metric__value {
+    color: var(--color-text-inactive);
+    font-size: 15px;
+}
+
+.energy-card__notes {
+    font-size: 12px;
+    color:
+        var(--p-text-muted);
+    margin: 0;
+    line-height: 1.5;
+    border-left: 2px solid var(--color-text-inactive);
+    padding-left: 10px;
+}
+
+/* Card Footer */
+.energy-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content:
+        space-between;
+    padding: 10px 18px;
+    border-top: 1px solid var(--p-border);
+}
+
+.energy-card__creator {
+    font-size: 11px;
+    color: var(--p-text-muted);
+    font-family: var(--p-mono);
+}
+
+.energy-card__actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* Toggle Button */
+.btn-toggle {
+    background: transparent;
+    border: 1px solid #95a5a6;
+    color: #95a5a6;
+    border-radius: var(--p-radius);
+    padding: 5px 10px;
+    font-family: var(--p-sans);
+    font-size: 11px;
+    cursor: pointer;
+    transition:
+        background var(--p-transition), color var(--p-transition);
+}
+
+.btn-toggle--active {
+    border-color: #e74c3c;
+    color: #e74c3c;
+}
+
+.btn-toggle--active:hover {
+    background: #e74c3c;
+    color: #fff;
+}
+
+.btn-toggle:not(.btn-toggle--active):hover {
+    background: #2ecc71;
+    color: #fff;
+    border-color: #2ecc71;
+}
+
+/*
+============================================================ EMPTY STATE
+============================================================ */
+.energy-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 64px 24px;
+    color:
+        var(--p-text-muted);
+}
+
+.energy-empty__icon {
+    font-size: 48px;
+    margin-bottom:
+        16px;
+    opacity: 0.4;
+}
+
+.energy-empty__text {
+    font-size: 15px;
+    margin-bottom:
+        24px;
+}
+
+.btn-delete {
+    background: transparent;
+    border: 1px solid #e74c3c;
+    color: #e74c3c;
+    border-radius: var(--p-radius);
+    padding: 5px 10px;
+    font-family: var(--p-sans);
+    font-size: 11px;
+    cursor: pointer;
+    transition: background var(--p-transition), color var(--p-transition);
+}
+
+.btn-delete:hover {
+    background: #e74c3c;
+    color: #fff;
+}

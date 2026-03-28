@@ -1,1 +1,323 @@
-<h4>Stromkosten</h4>
+<div class="energy-page">
+  <!-- Header -->
+  <div class="energy-header">
+    <div class="energy-header__left">
+      <span class="energy-header__label">STROMTARIFE</span>
+      <h1 class="energy-header__title">Energiekosten</h1>
+    </div>
+    <button class="btn-add-energy" onclick="EnergyModal.openAdd()">
+      <span class="btn-add-energy__icon">+</span>
+      <span>Neuer Tarif</span>
+    </button>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="energy-stats">
+    <div class="stat-pill">
+      <span class="stat-pill__value" id="statTotal"
+        >{{ all_energy_costs|length }}</span
+      >
+      <span class="stat-pill__label">Tarife total</span>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-pill__value" id="statActive"
+        >{{ all_energy_costs|selectattr('is_active')|list|length }}</span
+      >
+      <span class="stat-pill__label">Aktiv</span>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-pill__value" id="statAvgKwh">–</span>
+      <span class="stat-pill__label">Ø CHF/kWh</span>
+    </div>
+  </div>
+
+  <!-- Tarife Grid -->
+  <div class="energy-section-label">Stromtarife</div>
+  <div class="energy-grid" id="energyGrid">
+    {% for cost in all_energy_costs %}
+    <div
+      class="energy-card energy-card--{{ cost.status }}"
+      data-id="{{ cost.id }}"
+    >
+      <div class="energy-card__header-bar">
+        <span
+          class="energy-status-badge energy-status-badge--{{ cost.status }}"
+        >
+          {% if cost.status == 'active' %}⚡ Aktiv {% elif cost.status ==
+          'expired' %}⏰ Abgelaufen {% else %}⏸ Inaktiv{% endif %}
+        </span>
+        {% if cost.tariff_type %}
+        <span class="energy-card__tariff-type">{{ cost.tariff_type }}</span>
+        {% endif %}
+      </div>
+
+      <div class="energy-card__body">
+        <div class="energy-card__provider">{{ cost.provider }}</div>
+        <h3 class="energy-card__name">{{ cost.name }}</h3>
+
+        <div class="energy-card__metrics">
+          <div class="metric metric--highlight">
+            <span class="metric__label">CHF/kWh</span>
+            <span class="metric__value"
+              >{{ "%.4f"|format(cost.cost_per_kwh) }}</span
+            >
+          </div>
+          {% if cost.night_rate %}
+          <div class="metric">
+            <span class="metric__label">Nachttarif</span>
+            <span class="metric__value"
+              >{{ "%.4f"|format(cost.night_rate) }}</span
+            >
+          </div>
+          {% endif %} {% if cost.base_fee_monthly %}
+          <div class="metric">
+            <span class="metric__label">Grundgebühr/Mt.</span>
+            <span class="metric__value"
+              >{{ "%.2f"|format(cost.base_fee_monthly) }} CHF</span
+            >
+          </div>
+          <div class="metric">
+            <span class="metric__label">Grundgebühr/Jahr</span>
+            <span class="metric__value"
+              >{{ "%.2f"|format(cost.annual_base_fee) }} CHF</span
+            >
+          </div>
+          {% endif %} {% if cost.valid_from or cost.valid_until %}
+          <div class="metric">
+            <span class="metric__label">Gültig</span>
+            <span class="metric__value">
+              {{ cost.valid_from.strftime('%d.%m.%Y') if cost.valid_from else
+              '–' }} → {{ cost.valid_until.strftime('%d.%m.%Y') if
+              cost.valid_until else '∞' }}
+            </span>
+          </div>
+          {% endif %}
+        </div>
+
+        {% if cost.notes %}
+        <p class="energy-card__notes">{{ cost.notes }}</p>
+        {% endif %}
+      </div>
+
+      <div class="energy-card__footer">
+        <span class="energy-card__creator">{{ cost.created_by }}</span>
+        <div class="energy-card__actions">
+          <button
+            class="btn-edit"
+            data-id="{{ cost.id }}"
+            data-name="{{ cost.name }}"
+            data-provider="{{ cost.provider }}"
+            data-cost="{{ cost.cost_per_kwh }}"
+            data-base-fee="{{ cost.base_fee_monthly or '' }}"
+            data-tariff-type="{{ cost.tariff_type or '' }}"
+            data-valid-from="{{ cost.valid_from.isoformat() if cost.valid_from else '' }}"
+            data-valid-until="{{ cost.valid_until.isoformat() if cost.valid_until else '' }}"
+            data-night-rate="{{ cost.night_rate or '' }}"
+            data-is-active="{{ cost.is_active|lower }}"
+            data-notes="{{ cost.notes or '' }}"
+            onclick="EnergyModal.openEdit(this.dataset)"
+          >
+            Bearbeiten
+          </button>
+          <button
+            class="btn-toggle {% if cost.is_active %}btn-toggle--active{% endif %}"
+            onclick="EnergyModal.toggle({{ cost.id }}, '{{ cost.name }}')"
+          >
+            {% if cost.is_active %}⏸ Deaktivieren{% else %}▶ Aktivieren{% endif
+            %}
+          </button>
+          <button
+            class="btn-delete"
+            onclick="EnergyModal.delete({{ cost.id }}, '{{ cost.name }}')"
+          >
+            🗑 Löschen
+          </button>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="energy-empty">
+      <div class="energy-empty__icon">⚡</div>
+      <p class="energy-empty__text">Noch keine Stromtarife erfasst.</p>
+      <button class="btn-add-energy" onclick="EnergyModal.openAdd()">
+        <span class="btn-add-energy__icon">+</span>
+        <span>Ersten Tarif hinzufügen</span>
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Bootstrap Modal -->
+<div
+  class="modal fade"
+  id="energyModal"
+  tabindex="-1"
+  role="dialog"
+  aria-hidden="true"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content printer-modal-content">
+      <div class="modal-header printer-modal-header">
+        <h5 class="modal-title printer-modal-title" id="energyModalLabel">
+          Neuer Tarif
+        </h5>
+        <button
+          type="button"
+          class="close printer-modal-close"
+          onclick="$('#energyModal').modal('hide')"
+        >
+          <span aria-hidden="true">✕</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form id="energyForm" onsubmit="EnergyModal.submit(event)">
+          <input type="hidden" id="formEnergyId" value="" />
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="formEnergyName">Name *</label>
+              <input
+                class="form-input"
+                type="text"
+                id="formEnergyName"
+                placeholder="z.B. Grundtarif 2024"
+                required
+              />
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="formProvider">Anbieter *</label>
+              <input
+                class="form-input"
+                type="text"
+                id="formProvider"
+                placeholder="z.B. EWZ, Axpo"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="formCostPerKwh">CHF/kWh *</label>
+              <input
+                class="form-input"
+                type="number"
+                id="formCostPerKwh"
+                step="0.0001"
+                min="0"
+                placeholder="0.0000"
+                required
+              />
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="formTariffType">Tariftyp</label>
+              <select class="form-input form-select" id="formTariffType">
+                <option value="">Typ wählen...</option>
+                <option>Einfachtarif</option>
+                <option>Doppeltarif (Tag/Nacht)</option>
+                <option>Smart Tarif</option>
+                <option>Gewerbe</option>
+                <option>Industrie</option>
+                <option>Andere</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row" id="nightRateRow" style="display: none">
+            <div class="form-group col-6">
+              <label class="form-label" for="formNightRate"
+                >Nachttarif CHF/kWh</label
+              >
+              <input
+                class="form-input"
+                type="number"
+                id="formNightRate"
+                step="0.0001"
+                min="0"
+                placeholder="0.0000"
+              />
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="formBaseFee"
+                >Grundgebühr/Mt. (CHF)</label
+              >
+              <input
+                class="form-input"
+                type="number"
+                id="formBaseFee"
+                step="0.01"
+                min="0"
+                placeholder="optional"
+              />
+            </div>
+          </div>
+
+          <div id="nightRateRowHidden">
+            <div class="form-group">
+              <label class="form-label" for="formBaseFeeSimple"
+                >Grundgebühr/Mt. (CHF)</label
+              >
+              <input
+                class="form-input"
+                type="number"
+                id="formBaseFeeSimple"
+                step="0.01"
+                min="0"
+                placeholder="optional"
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="formValidFrom">Gültig ab</label>
+              <input class="form-input" type="date" id="formValidFrom" />
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="formValidUntil">Gültig bis</label>
+              <input class="form-input" type="date" id="formValidUntil" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="form-check-row">
+              <input
+                type="checkbox"
+                id="formIsActive"
+                class="form-check-input"
+                checked
+              />
+              <label class="form-check-label" for="formIsActive"
+                >Tarif aktiv</label
+              >
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="formEnergyNotes">Notizen</label>
+            <textarea
+              class="form-input form-textarea"
+              id="formEnergyNotes"
+              placeholder="Optionale Bemerkungen..."
+            ></textarea>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer printer-modal-footer">
+        <button
+          type="button"
+          class="btn-cancel"
+          onclick="$('#energyModal').modal('hide')"
+        >
+          Abbrechen
+        </button>
+        <button type="submit" form="energyForm" class="btn-save">
+          Speichern
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
