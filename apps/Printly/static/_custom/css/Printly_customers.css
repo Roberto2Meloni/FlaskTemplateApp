@@ -1,0 +1,497 @@
+/* ============================================================
+   Customers.css – Printly Kundenverwaltung
+   ============================================================ */
+
+.customers-page {
+    font-family: var(--p-sans);
+    color: var(--p-text);
+    background: var(--p-bg);
+    min-height: 100%;
+    padding: 32px 40px;
+    box-sizing: border-box;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.customers-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.customers-header__label {
+    font-family: var(--p-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    color: var(--color-text-inactive);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.customers-header__title {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0;
+    line-height: 1;
+    color: var(--p-text);
+}
+
+.btn-add-customer {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--color-sidbar-background-hover);
+    color: var(--color-text-light);
+    border: none;
+    border-radius: var(--p-radius);
+    padding: 10px 20px;
+    font-family: var(--p-sans);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: filter var(--p-transition), transform var(--p-transition);
+}
+
+.btn-add-customer:hover {
+    filter: brightness(0.9);
+    transform: translateY(-1px);
+}
+
+.btn-add-customer__icon {
+    font-size: 20px;
+    font-weight: 300;
+    line-height: 1;
+}
+
+/* ============================================================
+   STATS
+   ============================================================ */
+.customers-stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+}
+
+/* ============================================================
+   SECTION LABEL
+   ============================================================ */
+.customers-section-label {
+    font-family: var(--p-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--p-text-muted);
+    margin-bottom: 14px;
+}
+
+/* ============================================================
+   GRID
+   ============================================================ */
+.customers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 18px;
+}
+
+.customers-grid--inactive {
+    opacity: 0.65;
+}
+
+/* ============================================================
+   CUSTOMER CARD
+   ============================================================ */
+.customer-card {
+    background: var(--p-surface);
+    border: 1px solid var(--p-border);
+    border-radius: var(--p-radius-lg);
+    overflow: hidden;
+    box-shadow: var(--p-shadow);
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow var(--p-transition), transform var(--p-transition);
+    animation: cardIn 0.25s ease both;
+}
+
+.customer-card:hover {
+    box-shadow: var(--p-shadow-lg);
+    transform: translateY(-2px);
+}
+
+.customer-card__header-bar {
+    background: var(--color-sidbar-background);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+}
+
+.customer-card__number {
+    font-family: var(--p-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Type Badge */
+.customer-type-badge {
+    font-family: var(--p-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    padding: 3px 8px;
+    border-radius: 4px;
+}
+
+.customer-type-badge--private {
+    background: #1565C0;
+    color: #fff;
+}
+
+.customer-type-badge--company {
+    background: #6A1B9A;
+    color: #fff;
+}
+
+/* Card Body */
+.customer-card__body {
+    padding: 16px 18px 12px;
+    flex: 1;
+}
+
+.customer-card__company {
+    font-family: var(--p-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-text-inactive);
+    margin-bottom: 4px;
+}
+
+.customer-card__name {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 12px;
+    color: var(--p-text);
+}
+
+/* Contact Info */
+.customer-card__contact-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 12px;
+}
+
+.customer-info-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--p-text-muted);
+}
+
+.customer-info-row__icon {
+    font-size: 12px;
+    width: 14px;
+    flex-shrink: 0;
+    color: var(--color-text-inactive);
+}
+
+/* Discount */
+.customer-card__discount {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    margin-bottom: 10px;
+    padding: 5px 10px;
+    background: rgba(46, 125, 50, 0.08);
+    border: 1px solid rgba(46, 125, 50, 0.2);
+    border-radius: var(--p-radius);
+}
+
+.customer-card__discount-label {
+    color: var(--p-text-muted);
+}
+
+.customer-card__discount-value {
+    font-family: var(--p-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: #2E7D32;
+}
+
+/* Notes */
+.customer-card__notes {
+    font-size: 12px;
+    color: var(--p-text-muted);
+    margin: 0 0 12px;
+    line-height: 1.5;
+    border-left: 2px solid var(--color-text-inactive);
+    padding-left: 10px;
+}
+
+/* ============================================================
+   KONTAKTPERSONEN
+   ============================================================ */
+.customer-card__contacts {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--p-border);
+}
+
+.customer-card__contacts-label {
+    font-family: var(--p-mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--p-text-muted);
+    margin-bottom: 8px;
+}
+
+.customer-contacts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.customer-contact-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 8px 10px;
+    background: var(--p-bg);
+    border: 1px solid var(--p-border);
+    border-radius: var(--p-radius);
+    gap: 8px;
+}
+
+.customer-contact-item--primary {
+    background: rgba(244, 98, 1, 0.05);
+    border-color: rgba(244, 98, 1, 0.3);
+}
+
+.customer-contact-item__info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.customer-contact-item__name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--p-text);
+}
+
+.customer-contact-item--primary .customer-contact-item__name {
+    color: var(--color-text-inactive);
+}
+
+.customer-contact-item__role {
+    font-size: 10px;
+    color: var(--p-text-muted);
+    font-style: italic;
+}
+
+.customer-contact-item__detail {
+    font-size: 11px;
+    color: var(--p-text-muted);
+    font-family: var(--p-mono);
+}
+
+.customer-contact-item__actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.btn-contact-edit, .btn-contact-delete {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 5px;
+    border-radius: 3px;
+    transition: background var(--p-transition);
+    color: var(--p-text-muted);
+}
+
+.btn-contact-edit:hover {
+    background: var(--p-border);
+    color: var(--p-text);
+}
+
+.btn-contact-delete:hover {
+    background: #ffcdd2;
+    color: #b71c1c;
+}
+
+.customer-no-contacts {
+    font-size: 11px;
+    color: var(--p-text-muted);
+    font-style: italic;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.btn-add-contact {
+    background: transparent;
+    border: 1px dashed var(--p-border);
+    color: var(--p-text-muted);
+    border-radius: var(--p-radius);
+    padding: 5px 12px;
+    font-size: 11px;
+    cursor: pointer;
+    width: 100%;
+    transition: border-color var(--p-transition), color var(--p-transition);
+}
+
+.btn-add-contact:hover {
+    border-color: var(--color-active-background);
+    color: var(--color-active-background);
+}
+
+/* Card Footer */
+.customer-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 18px;
+    border-top: 1px solid var(--p-border);
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.customer-card__creator {
+    font-size: 11px;
+    color: var(--p-text-muted);
+    font-family: var(--p-mono);
+}
+
+.customer-card__actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.customers-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 64px 24px;
+    color: var(--p-text-muted);
+}
+
+.customers-empty__icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.4;
+}
+
+.customers-empty__text {
+    font-size: 15px;
+    margin-bottom: 24px;
+}
+
+/* ============================================================
+   MODAL – TYP TOGGLE
+   ============================================================ */
+.customer-type-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    background: var(--p-bg);
+    border: 1px solid var(--p-border);
+    border-radius: var(--p-radius);
+    padding: 4px;
+}
+
+.customer-type-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-radius: calc(var(--p-radius) - 2px);
+    padding: 8px 16px;
+    font-family: var(--p-sans);
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--p-text-muted);
+    transition: background var(--p-transition), color var(--p-transition);
+}
+
+.customer-type-btn--active {
+    background: var(--p-surface);
+    color: var(--p-text);
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================================
+   ZUSÄTZE v2 – Firma + Kontakte Struktur
+   ============================================================ */
+
+.customers-header__actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.btn-add-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: 1px solid var(--color-sidbar-background-hover);
+    color: var(--color-sidbar-background-hover);
+    border-radius: var(--p-radius);
+    padding: 9px 16px;
+    font-family: var(--p-sans);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background var(--p-transition), color var(--p-transition);
+}
+
+.btn-add-secondary:hover {
+    background: var(--color-sidbar-background-hover);
+    color: var(--color-text-light);
+}
+
+.customer-card__contacts-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.customer-contact-item__details {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.customer-company-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(106, 27, 154, 0.08);
+    border: 1px solid rgba(106, 27, 154, 0.25);
+    border-radius: var(--p-radius);
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6A1B9A;
+    margin-bottom: 16px;
+}

@@ -1,0 +1,743 @@
+<div class="customers-page">
+  <!-- Header -->
+  <div class="customers-header">
+    <div class="customers-header__left">
+      <span class="customers-header__label">KUNDENSTAMM</span>
+      <h1 class="customers-header__title">Kunden</h1>
+    </div>
+    <div class="customers-header__actions">
+      <button class="btn-add-secondary" onclick="CompanyModal.openAdd()">
+        🏢 Neue Firma
+      </button>
+      <button class="btn-add-customer" onclick="CustomerModal.openAdd()">
+        <span class="btn-add-customer__icon">+</span>
+        <span>Neuer Kunde</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="customers-stats">
+    <div class="stat-pill">
+      <span class="stat-pill__value">{{ total_companies }}</span>
+      <span class="stat-pill__label">Firmen</span>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-pill__value">{{ total_contacts }}</span>
+      <span class="stat-pill__label">Firmenkontakte</span>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-pill__value">{{ total_private }}</span>
+      <span class="stat-pill__label">Privatkunden</span>
+    </div>
+  </div>
+
+  <!-- ==============================
+       FIRMEN
+       ============================== -->
+  {% if active_companies %}
+  <div class="customers-section-label">🏢 Firmen</div>
+  <div class="customers-grid">
+    {% for company in active_companies %}
+    <div
+      class="customer-card customer-card--company"
+      data-id="{{ company.id }}"
+    >
+      <div class="customer-card__header-bar">
+        <span class="customer-card__number">{{ company.company_number }}</span>
+        <span class="customer-type-badge customer-type-badge--company"
+          >Firma</span
+        >
+      </div>
+
+      <div class="customer-card__body">
+        <h3 class="customer-card__name">{{ company.company_name }}</h3>
+
+        <div class="customer-card__contact-info">
+          {% if company.email %}
+          <div class="customer-info-row">
+            <i class="bi bi-envelope customer-info-row__icon"></i>
+            <span>{{ company.email }}</span>
+          </div>
+          {% endif %} {% if company.phone %}
+          <div class="customer-info-row">
+            <i class="bi bi-telephone customer-info-row__icon"></i>
+            <span>{{ company.phone }}</span>
+          </div>
+          {% endif %} {% if company.website %}
+          <div class="customer-info-row">
+            <i class="bi bi-globe customer-info-row__icon"></i>
+            <span>{{ company.website }}</span>
+          </div>
+          {% endif %} {% if company.full_address %}
+          <div class="customer-info-row">
+            <i class="bi bi-geo-alt customer-info-row__icon"></i>
+            <span>{{ company.full_address }}</span>
+          </div>
+          {% endif %}
+        </div>
+
+        {% if company.discount_profile %}
+        <div class="customer-card__discount">
+          <span class="customer-card__discount-label">Standardrabatt</span>
+          <span class="customer-card__discount-value">
+            -{{ "%.1f"|format(company.discount_profile.percentage) }}% {{
+            company.discount_profile.name }}
+          </span>
+        </div>
+        {% endif %} {% if company.notes %}
+        <p class="customer-card__notes">{{ company.notes }}</p>
+        {% endif %}
+
+        <!-- Kontaktpersonen -->
+        <div class="customer-card__contacts">
+          <div class="customer-card__contacts-header">
+            <div class="customer-card__contacts-label">
+              Kontaktpersonen ({{ company.contacts.count() }})
+            </div>
+            <button
+              class="btn-add-contact"
+              onclick="CustomerModal.openAdd({{ company.id }})"
+            >
+              + Kontakt
+            </button>
+          </div>
+          {% set contacts = company.contacts.filter_by(is_active=True).all() %}
+          {% if contacts %}
+          <div class="customer-contacts-list">
+            {% for contact in contacts %}
+            <div
+              class="customer-contact-item {% if contact.is_primary %}customer-contact-item--primary{% endif %}"
+            >
+              <div class="customer-contact-item__info">
+                <span class="customer-contact-item__name">
+                  {% if contact.is_primary %}★ {% endif %}{{ contact.full_name
+                  }}
+                </span>
+                {% if contact.role %}
+                <span class="customer-contact-item__role"
+                  >{{ contact.role }}</span
+                >
+                {% endif %}
+                <div class="customer-contact-item__details">
+                  {% if contact.email %}
+                  <span class="customer-contact-item__detail"
+                    >{{ contact.email }}</span
+                  >
+                  {% endif %} {% if contact.phone %}
+                  <span class="customer-contact-item__detail"
+                    >{{ contact.phone }}</span
+                  >
+                  {% endif %}
+                </div>
+              </div>
+              <div class="customer-contact-item__actions">
+                <button
+                  class="btn-contact-edit"
+                  data-id="{{ contact.id }}"
+                  data-company-id="{{ company.id }}"
+                  data-first-name="{{ contact.first_name }}"
+                  data-last-name="{{ contact.last_name }}"
+                  data-email="{{ contact.email or '' }}"
+                  data-phone="{{ contact.phone or '' }}"
+                  data-role="{{ contact.role or '' }}"
+                  data-is-primary="{{ contact.is_primary|lower }}"
+                  data-discount-id="{{ contact.discount_profile_id or '' }}"
+                  data-notes="{{ contact.notes or '' }}"
+                  onclick="CustomerModal.openEdit(this.dataset)"
+                  title="Bearbeiten"
+                >
+                  ✏
+                </button>
+                <button
+                  class="btn-contact-delete"
+                  onclick="CustomerModal.delete({{ contact.id }}, '{{ contact.full_name }}')"
+                  title="Löschen"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <span class="customer-no-contacts">Noch keine Kontaktpersonen</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="customer-card__footer">
+        <span class="customer-card__creator">{{ company.created_by }}</span>
+        <div class="customer-card__actions">
+          <button
+            class="btn-edit"
+            data-id="{{ company.id }}"
+            data-company-name="{{ company.company_name }}"
+            data-email="{{ company.email or '' }}"
+            data-phone="{{ company.phone or '' }}"
+            data-website="{{ company.website or '' }}"
+            data-address="{{ company.address or '' }}"
+            data-zip="{{ company.zip_code or '' }}"
+            data-city="{{ company.city or '' }}"
+            data-country="{{ company.country }}"
+            data-discount-id="{{ company.discount_profile_id or '' }}"
+            data-notes="{{ company.notes or '' }}"
+            onclick="CompanyModal.openEdit(this.dataset)"
+          >
+            Bearbeiten
+          </button>
+          <button
+            class="btn-toggle btn-toggle--active"
+            onclick="CompanyModal.toggle({{ company.id }}, '{{ company.company_name }}')"
+          >
+            ⏸ Deaktivieren
+          </button>
+          <button
+            class="btn-delete"
+            onclick="CompanyModal.delete({{ company.id }}, '{{ company.company_name }}')"
+          >
+            🗑
+          </button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ==============================
+       PRIVATKUNDEN
+       ============================== -->
+  <div
+    class="customers-section-label"
+    style="margin-top: {{ '48px' if active_companies else '0' }};"
+  >
+    👤 Privatkunden
+  </div>
+  <div class="customers-grid">
+    {% for customer in active_private %}
+    <div
+      class="customer-card customer-card--private"
+      data-id="{{ customer.id }}"
+    >
+      <div class="customer-card__header-bar">
+        <span class="customer-card__number"
+          >{{ customer.customer_number }}</span
+        >
+        <span class="customer-type-badge customer-type-badge--private"
+          >Privat</span
+        >
+      </div>
+
+      <div class="customer-card__body">
+        <h3 class="customer-card__name">{{ customer.full_name }}</h3>
+
+        <div class="customer-card__contact-info">
+          {% if customer.email %}
+          <div class="customer-info-row">
+            <i class="bi bi-envelope customer-info-row__icon"></i>
+            <span>{{ customer.email }}</span>
+          </div>
+          {% endif %} {% if customer.phone %}
+          <div class="customer-info-row">
+            <i class="bi bi-telephone customer-info-row__icon"></i>
+            <span>{{ customer.phone }}</span>
+          </div>
+          {% endif %} {% if customer.full_address %}
+          <div class="customer-info-row">
+            <i class="bi bi-geo-alt customer-info-row__icon"></i>
+            <span>{{ customer.full_address }}</span>
+          </div>
+          {% endif %}
+        </div>
+
+        {% if customer.effective_discount %}
+        <div class="customer-card__discount">
+          <span class="customer-card__discount-label">Rabatt</span>
+          <span class="customer-card__discount-value">
+            -{{ "%.1f"|format(customer.effective_discount.percentage) }}% {{
+            customer.effective_discount.name }}
+          </span>
+        </div>
+        {% endif %} {% if customer.notes %}
+        <p class="customer-card__notes">{{ customer.notes }}</p>
+        {% endif %}
+      </div>
+
+      <div class="customer-card__footer">
+        <span class="customer-card__creator">{{ customer.created_by }}</span>
+        <div class="customer-card__actions">
+          <button
+            class="btn-edit"
+            data-id="{{ customer.id }}"
+            data-company-id=""
+            data-first-name="{{ customer.first_name }}"
+            data-last-name="{{ customer.last_name }}"
+            data-email="{{ customer.email or '' }}"
+            data-phone="{{ customer.phone or '' }}"
+            data-role=""
+            data-is-primary="false"
+            data-address="{{ customer.address or '' }}"
+            data-zip="{{ customer.zip_code or '' }}"
+            data-city="{{ customer.city or '' }}"
+            data-country="{{ customer.country }}"
+            data-discount-id="{{ customer.discount_profile_id or '' }}"
+            data-notes="{{ customer.notes or '' }}"
+            onclick="CustomerModal.openEdit(this.dataset)"
+          >
+            Bearbeiten
+          </button>
+          <button
+            class="btn-toggle btn-toggle--active"
+            onclick="CustomerModal.toggle({{ customer.id }}, '{{ customer.full_name }}')"
+          >
+            ⏸ Deaktivieren
+          </button>
+          <button
+            class="btn-delete"
+            onclick="CustomerModal.delete({{ customer.id }}, '{{ customer.full_name }}')"
+          >
+            🗑
+          </button>
+        </div>
+      </div>
+    </div>
+    {% else %} {% if not active_companies %}
+    <div class="customers-empty">
+      <div class="customers-empty__icon">👥</div>
+      <p class="customers-empty__text">Noch keine Kunden erfasst.</p>
+      <div style="display: flex; gap: 12px; justify-content: center">
+        <button class="btn-add-secondary" onclick="CompanyModal.openAdd()">
+          🏢 Neue Firma
+        </button>
+        <button class="btn-add-customer" onclick="CustomerModal.openAdd()">
+          + Privatkunde
+        </button>
+      </div>
+    </div>
+    {% else %}
+    <div class="customers-empty" style="padding: 24px">
+      <p class="customers-empty__text">Noch keine Privatkunden erfasst.</p>
+    </div>
+    {% endif %} {% endfor %}
+  </div>
+
+  <!-- Inaktive -->
+  {% if inactive_companies or inactive_private %}
+  <div class="customers-section-label" style="margin-top: 48px">⏸ Inaktiv</div>
+  <div class="customers-grid customers-grid--inactive">
+    {% for company in inactive_companies %}
+    <div
+      class="customer-card customer-card--company"
+      data-id="{{ company.id }}"
+    >
+      <div class="customer-card__header-bar">
+        <span class="customer-card__number">{{ company.company_number }}</span>
+        <span class="customer-type-badge customer-type-badge--company"
+          >Firma</span
+        >
+      </div>
+      <div class="customer-card__body">
+        <h3 class="customer-card__name">{{ company.company_name }}</h3>
+      </div>
+      <div class="customer-card__footer">
+        <span class="customer-card__creator">{{ company.created_by }}</span>
+        <div class="customer-card__actions">
+          <button
+            class="btn-toggle"
+            onclick="CompanyModal.toggle({{ company.id }}, '{{ company.company_name }}')"
+          >
+            ▶ Aktivieren
+          </button>
+          <button
+            class="btn-delete"
+            onclick="CompanyModal.delete({{ company.id }}, '{{ company.company_name }}')"
+          >
+            🗑
+          </button>
+        </div>
+      </div>
+    </div>
+    {% endfor %} {% for customer in inactive_private %}
+    <div
+      class="customer-card customer-card--private"
+      data-id="{{ customer.id }}"
+    >
+      <div class="customer-card__header-bar">
+        <span class="customer-card__number"
+          >{{ customer.customer_number }}</span
+        >
+        <span class="customer-type-badge customer-type-badge--private"
+          >Privat</span
+        >
+      </div>
+      <div class="customer-card__body">
+        <h3 class="customer-card__name">{{ customer.full_name }}</h3>
+      </div>
+      <div class="customer-card__footer">
+        <span class="customer-card__creator">{{ customer.created_by }}</span>
+        <div class="customer-card__actions">
+          <button
+            class="btn-toggle"
+            onclick="CustomerModal.toggle({{ customer.id }}, '{{ customer.full_name }}')"
+          >
+            ▶ Aktivieren
+          </button>
+          <button
+            class="btn-delete"
+            onclick="CustomerModal.delete({{ customer.id }}, '{{ customer.full_name }}')"
+          >
+            🗑
+          </button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Modal: Firma -->
+<div
+  class="modal fade"
+  id="companyModal"
+  tabindex="-1"
+  role="dialog"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content printer-modal-content">
+      <div class="modal-header printer-modal-header">
+        <h5 class="modal-title printer-modal-title" id="companyModalLabel">
+          Neue Firma
+        </h5>
+        <button
+          type="button"
+          class="close printer-modal-close"
+          onclick="$('#companyModal').modal('hide')"
+        >
+          <span>✕</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="companyForm" onsubmit="CompanyModal.submit(event)">
+          <input type="hidden" id="formCompanyId" value="" />
+
+          <div class="form-group">
+            <label class="form-label" for="formCompanyName">Firmenname *</label>
+            <input
+              class="form-input"
+              type="text"
+              id="formCompanyName"
+              placeholder="z.B. Muster AG"
+              required
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="formCompanyEmail">E-Mail</label>
+              <input
+                class="form-input"
+                type="email"
+                id="formCompanyEmail"
+                placeholder="info@firma.ch"
+              />
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="formCompanyPhone">Telefon</label>
+              <input
+                class="form-input"
+                type="text"
+                id="formCompanyPhone"
+                placeholder="+41 56 000 00 00"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="formCompanyWebsite">Website</label>
+            <input
+              class="form-input"
+              type="text"
+              id="formCompanyWebsite"
+              placeholder="www.firma.ch"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="formCompanyAddress">Adresse</label>
+            <input
+              class="form-input"
+              type="text"
+              id="formCompanyAddress"
+              placeholder="Musterstrasse 1"
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-3">
+              <label class="form-label" for="formCompanyZip">PLZ</label>
+              <input
+                class="form-input"
+                type="text"
+                id="formCompanyZip"
+                placeholder="5400"
+              />
+            </div>
+            <div class="form-group col-5">
+              <label class="form-label" for="formCompanyCity">Ort</label>
+              <input
+                class="form-input"
+                type="text"
+                id="formCompanyCity"
+                placeholder="Baden"
+              />
+            </div>
+            <div class="form-group col-4">
+              <label class="form-label" for="formCompanyCountry">Land</label>
+              <input
+                class="form-input"
+                type="text"
+                id="formCompanyCountry"
+                value="CH"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="formCompanyDiscount"
+              >Standardrabatt</label
+            >
+            <select class="form-input form-select" id="formCompanyDiscount">
+              <option value="">Kein Rabatt</option>
+              {% for profile in discount_profiles %}
+              <option value="{{ profile.id }}">
+                {{ profile.name }} (-{{ "%.1f"|format(profile.percentage) }}%)
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="formCompanyNotes">Notizen</label>
+            <textarea
+              class="form-input form-textarea"
+              id="formCompanyNotes"
+              placeholder="Optionale Bemerkungen..."
+            ></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer printer-modal-footer">
+        <button
+          type="button"
+          class="btn-cancel"
+          onclick="$('#companyModal').modal('hide')"
+        >
+          Abbrechen
+        </button>
+        <button type="submit" form="companyForm" class="btn-save">
+          Speichern
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Kunde / Kontakt -->
+<div
+  class="modal fade"
+  id="customerModal"
+  tabindex="-1"
+  role="dialog"
+  aria-hidden="true"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content printer-modal-content">
+      <div class="modal-header printer-modal-header">
+        <h5 class="modal-title printer-modal-title" id="customerModalLabel">
+          Neuer Kunde
+        </h5>
+        <button
+          type="button"
+          class="close printer-modal-close"
+          onclick="$('#customerModal').modal('hide')"
+        >
+          <span>✕</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="customerForm" onsubmit="CustomerModal.submit(event)">
+          <input type="hidden" id="formCustomerId" value="" />
+          <input type="hidden" id="formCustomerCompanyId" value="" />
+
+          <!-- Firma Badge (nur wenn Firmenkontakt) -->
+          <div
+            id="companyBadge"
+            class="customer-company-badge"
+            style="display: none"
+          >
+            <i class="bi bi-building"></i>
+            <span id="companyBadgeName">–</span>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="formCustomerFirstName"
+                >Vorname *</label
+              >
+              <input
+                class="form-input"
+                type="text"
+                id="formCustomerFirstName"
+                placeholder="Max"
+                required
+              />
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="formCustomerLastName"
+                >Nachname *</label
+              >
+              <input
+                class="form-input"
+                type="text"
+                id="formCustomerLastName"
+                placeholder="Muster"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- Rolle + Hauptansprechpartner (nur Firmenkontakt) -->
+          <div id="contactFields" style="display: none">
+            <div class="form-row">
+              <div class="form-group col-8">
+                <label class="form-label" for="formCustomerRole"
+                  >Funktion</label
+                >
+                <input
+                  class="form-input"
+                  type="text"
+                  id="formCustomerRole"
+                  placeholder="z.B. Einkauf, Technik, Geschäftsführung"
+                />
+              </div>
+              <div class="form-group col-4">
+                <label class="form-label">&nbsp;</label>
+                <div class="form-check-row" style="padding-top: 10px">
+                  <input
+                    type="checkbox"
+                    id="formCustomerIsPrimary"
+                    class="form-check-input"
+                  />
+                  <label class="form-check-label" for="formCustomerIsPrimary"
+                    >★ Hauptkontakt</label
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="formCustomerEmail">E-Mail</label>
+              <input
+                class="form-input"
+                type="email"
+                id="formCustomerEmail"
+                placeholder="max@muster.ch"
+              />
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="formCustomerPhone">Telefon</label>
+              <input
+                class="form-input"
+                type="text"
+                id="formCustomerPhone"
+                placeholder="+41 79 000 00 00"
+              />
+            </div>
+          </div>
+
+          <!-- Adresse (nur Privatkunden) -->
+          <div id="addressFields">
+            <div class="form-group">
+              <label class="form-label" for="formCustomerAddress"
+                >Adresse</label
+              >
+              <input
+                class="form-input"
+                type="text"
+                id="formCustomerAddress"
+                placeholder="Musterstrasse 1"
+              />
+            </div>
+            <div class="form-row">
+              <div class="form-group col-3">
+                <label class="form-label" for="formCustomerZip">PLZ</label>
+                <input
+                  class="form-input"
+                  type="text"
+                  id="formCustomerZip"
+                  placeholder="5400"
+                />
+              </div>
+              <div class="form-group col-5">
+                <label class="form-label" for="formCustomerCity">Ort</label>
+                <input
+                  class="form-input"
+                  type="text"
+                  id="formCustomerCity"
+                  placeholder="Baden"
+                />
+              </div>
+              <div class="form-group col-4">
+                <label class="form-label" for="formCustomerCountry">Land</label>
+                <input
+                  class="form-input"
+                  type="text"
+                  id="formCustomerCountry"
+                  value="CH"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="formCustomerDiscount">Rabatt</label>
+            <select class="form-input form-select" id="formCustomerDiscount">
+              <option value="">Kein / Firmenrabatt übernehmen</option>
+              {% for profile in discount_profiles %}
+              <option value="{{ profile.id }}">
+                {{ profile.name }} (-{{ "%.1f"|format(profile.percentage) }}%)
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="formCustomerNotes">Notizen</label>
+            <textarea
+              class="form-input form-textarea"
+              id="formCustomerNotes"
+              placeholder="Optionale Bemerkungen..."
+            ></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer printer-modal-footer">
+        <button
+          type="button"
+          class="btn-cancel"
+          onclick="$('#customerModal').modal('hide')"
+        >
+          Abbrechen
+        </button>
+        <button type="submit" form="customerForm" class="btn-save">
+          Speichern
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

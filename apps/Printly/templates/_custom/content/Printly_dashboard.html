@@ -1,1 +1,231 @@
-<h4>Dies ist die Dashboard Seite</h4>
+<div class="dashboard-page">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div class="dashboard-header__left">
+      <span class="dashboard-header__label">ÜBERSICHT</span>
+      <h1 class="dashboard-header__title">Dashboard</h1>
+    </div>
+  </div>
+
+  <!-- Warnungen -->
+  {% if warnings %}
+  <div class="dashboard-warnings">
+    {% for warning in warnings %}
+    <div class="dashboard-warning dashboard-warning--{{ warning.type }}">
+      <i class="bi {{ warning.icon }} dashboard-warning__icon"></i>
+      <span class="dashboard-warning__message">{{ warning.message }}</span>
+      {% if warning.type == 'error' %}
+      <span class="dashboard-warning__badge">Erforderlich</span>
+      {% elif warning.type == 'warning' %}
+      <span class="dashboard-warning__badge">Empfohlen</span>
+      {% else %}
+      <span class="dashboard-warning__badge">Info</span>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Stats Grid -->
+  <div class="dashboard-stats-grid">
+    <!-- Drucker -->
+    <div
+      class="dashboard-stat-card {% if not active_printers %}dashboard-stat-card--empty{% endif %}"
+    >
+      <div class="dashboard-stat-card__icon">🖨️</div>
+      <div class="dashboard-stat-card__content">
+        <div class="dashboard-stat-card__value">
+          {{ active_printers|length }}
+        </div>
+        <div class="dashboard-stat-card__label">Aktive Drucker</div>
+        {% if graveyard_printers %}
+        <div class="dashboard-stat-card__sub">
+          {{ graveyard_printers|length }} im Friedhof
+        </div>
+        {% endif %} {% if avg_machine_cost > 0 %}
+        <div class="dashboard-stat-card__detail">
+          Ø {{ "%.2f"|format(avg_machine_cost) }} CHF/h
+        </div>
+        {% endif %}
+      </div>
+      {% if not active_printers %}
+      <div class="dashboard-stat-card__empty-hint">
+        Noch keine Drucker erfasst
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Filamente -->
+    <div
+      class="dashboard-stat-card {% if not active_filaments %}dashboard-stat-card--empty{% endif %}"
+    >
+      <div class="dashboard-stat-card__icon">🧵</div>
+      <div class="dashboard-stat-card__content">
+        <div class="dashboard-stat-card__value">
+          {{ active_filaments|length }}
+        </div>
+        <div class="dashboard-stat-card__label">Filamente</div>
+        {% if avg_filament_price_per_kg > 0 %}
+        <div class="dashboard-stat-card__detail">
+          Ø {{ "%.2f"|format(avg_filament_price_per_kg) }} CHF/kg
+        </div>
+        {% endif %} {% if active_filaments %}
+        <div class="dashboard-stat-card__sub">
+          {{ active_filaments|map(attribute='manufacturer')|unique|list|length
+          }} Hersteller
+        </div>
+        {% endif %}
+      </div>
+      {% if not active_filaments %}
+      <div class="dashboard-stat-card__empty-hint">
+        Noch keine Filamente erfasst
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Stromtarif -->
+    <div
+      class="dashboard-stat-card {% if not current_energy %}dashboard-stat-card--warning{% endif %}"
+    >
+      <div class="dashboard-stat-card__icon">⚡</div>
+      <div class="dashboard-stat-card__content">
+        <div class="dashboard-stat-card__value">
+          {{ active_energy_costs|length }}
+        </div>
+        <div class="dashboard-stat-card__label">Stromtarife</div>
+        {% if current_energy %}
+        <div class="dashboard-stat-card__detail">
+          Aktuell: {{ "%.4f"|format(current_energy.cost_per_kwh) }} CHF/kWh
+        </div>
+        <div class="dashboard-stat-card__sub">{{ current_energy.name }}</div>
+        {% else %}
+        <div class="dashboard-stat-card__empty-hint">Kein gültiger Tarif</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Stundensätze -->
+    <div
+      class="dashboard-stat-card {% if not active_work_hours %}dashboard-stat-card--warning{% endif %}"
+    >
+      <div class="dashboard-stat-card__icon">⏱️</div>
+      <div class="dashboard-stat-card__content">
+        <div class="dashboard-stat-card__value">
+          {{ active_work_hours|length }}
+        </div>
+        <div class="dashboard-stat-card__label">Stundensätze</div>
+        {% if active_work_hours %}
+        <div class="dashboard-stat-card__detail">
+          {% set max_rate =
+          active_work_hours|map(attribute='cost_per_hour')|map('float')|max %}
+          {% set min_rate =
+          active_work_hours|map(attribute='cost_per_hour')|map('float')|min %}
+          {{ "%.2f"|format(min_rate) }} – {{ "%.2f"|format(max_rate) }} CHF/h
+        </div>
+        {% else %}
+        <div class="dashboard-stat-card__empty-hint">
+          Noch keine Stundensätze
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Overhead Profile -->
+    <div
+      class="dashboard-stat-card {% if not active_overhead %}dashboard-stat-card--warning{% endif %}"
+    >
+      <div class="dashboard-stat-card__icon">🏭</div>
+      <div class="dashboard-stat-card__content">
+        <div class="dashboard-stat-card__value">
+          {{ active_overhead|length }}
+        </div>
+        <div class="dashboard-stat-card__label">Overhead Profile</div>
+        {% if active_overhead %} {% set avg_overhead =
+        active_overhead|map(attribute='overhead_per_hour')|map('float')|sum /
+        active_overhead|length %}
+        <div class="dashboard-stat-card__detail">
+          Ø {{ "%.4f"|format(avg_overhead) }} CHF/h
+        </div>
+        {% else %}
+        <div class="dashboard-stat-card__empty-hint">Noch keine Profile</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Rabatte & Aufschläge -->
+    <div class="dashboard-stat-card">
+      <div class="dashboard-stat-card__icon">🏷️</div>
+      <div class="dashboard-stat-card__content">
+        <div class="dashboard-stat-card__value">
+          {{ (active_discounts|length) + (active_surcharges|length) }}
+        </div>
+        <div class="dashboard-stat-card__label">Preisanpassungen</div>
+        <div class="dashboard-stat-card__sub">
+          {{ active_discounts|length }} Rabatte · {{ active_surcharges|length }}
+          Aufschläge
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drucker Detail -->
+  {% if active_printers %}
+  <div class="dashboard-section">
+    <div class="dashboard-section__title">Drucker</div>
+    <div class="dashboard-table">
+      <div class="dashboard-table__header">
+        <span>Name</span>
+        <span>Marke</span>
+        <span>CHF/h</span>
+        <span>Overhead</span>
+      </div>
+      {% for printer in active_printers %}
+      <div class="dashboard-table__row">
+        <span class="dashboard-table__name">{{ printer.name }}</span>
+        <span class="dashboard-table__muted">{{ printer.brand }}</span>
+        <span class="dashboard-table__mono"
+          >{{ printer.machine_cost_per_hour }}</span
+        >
+        <span>
+          {% set linked = printer.overhead_profiles.all() %} {% if linked %} {%
+          for oh in linked %}
+          <span class="dashboard-tag dashboard-tag--ok">{{ oh.name }}</span>
+          {% endfor %} {% else %}
+          <span class="dashboard-tag dashboard-tag--warn">Kein Overhead</span>
+          {% endif %}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Filamente Detail -->
+  {% if active_filaments %}
+  <div class="dashboard-section">
+    <div class="dashboard-section__title">Filamente</div>
+    <div class="dashboard-table">
+      <div class="dashboard-table__header">
+        <span>Name</span>
+        <span>Typ</span>
+        <span>Hersteller</span>
+        <span>CHF/kg</span>
+      </div>
+      {% for filament in active_filaments %}
+      <div class="dashboard-table__row">
+        <span class="dashboard-table__name">{{ filament.name }}</span>
+        <span
+          class="filament-type-badge filament-type-badge--{{ filament.filament_type|lower }}"
+        >
+          {{ filament.filament_type }}
+        </span>
+        <span class="dashboard-table__muted">{{ filament.manufacturer }}</span>
+        <span class="dashboard-table__mono"
+          >{{ "%.2f"|format(filament.price_per_kg) }}</span
+        >
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>

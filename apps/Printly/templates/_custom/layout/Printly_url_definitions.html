@@ -1,47 +1,58 @@
 <!-- Hier sind die customs URL-Definitionen -->
 <script>
-  const APP_URLS = {
-    index: "{{ url_for('Printly.Printly_index') }}",
-    app_settings: "{{ url_for('Printly.app_settings') }}",
+      const APP_URLS = {
+        index: "{{ url_for('Printly.Printly_index') }}",
+        app_settings: "{{ url_for('Printly.app_settings') }}",
 
-    // Drucker
-    api_printers: "{{ url_for('Printly.api_create_printer') }}",
-    api_printer_update: "{{ url_for('Printly.api_update_printer', printer_id=0) }}",
-    api_printer_archive: "{{ url_for('Printly.api_archive_printer', printer_id=0) }}",
+        // Drucker
+        api_printers: "{{ url_for('Printly.api_create_printer') }}",
+        api_printer_update: "{{ url_for('Printly.api_update_printer', printer_id=0) }}",
+        api_printer_archive: "{{ url_for('Printly.api_archive_printer', printer_id=0) }}",
 
-    // Filamente
-    api_filaments: "{{ url_for('Printly.api_create_filament') }}",
-    api_filament_update: "{{ url_for('Printly.api_update_filament', filament_id=0) }}",
-    api_filament_archive: "{{ url_for('Printly.api_archive_filament', filament_id=0) }}",
+        // Filamente
+        api_filaments: "{{ url_for('Printly.api_create_filament') }}",
+        api_filament_update: "{{ url_for('Printly.api_update_filament', filament_id=0) }}",
+        api_filament_archive: "{{ url_for('Printly.api_archive_filament', filament_id=0) }}",
 
-    // Strom Tarife
-    api_energy_costs: "{{ url_for('Printly.api_create_energy_cost') }}",
-    api_energy_cost_update: "{{ url_for('Printly.api_update_energy_cost', cost_id=0) }}",
-    api_energy_cost_toggle: "{{ url_for('Printly.api_toggle_energy_cost', cost_id=0) }}",
-    api_energy_cost_delete: "{{ url_for('Printly.api_delete_energy_cost', cost_id=0) }}",
+        // Strom Tarife
+        api_energy_costs: "{{ url_for('Printly.api_create_energy_cost') }}",
+        api_energy_cost_update: "{{ url_for('Printly.api_update_energy_cost', cost_id=0) }}",
+        api_energy_cost_toggle: "{{ url_for('Printly.api_toggle_energy_cost', cost_id=0) }}",
+        api_energy_cost_delete: "{{ url_for('Printly.api_delete_energy_cost', cost_id=0) }}",
 
-    // Arbeitszeiten
-    api_work_hours: "{{ url_for('Printly.api_create_work_hours') }}",
-    api_work_hours_update: "{{ url_for('Printly.api_update_work_hours', rate_id=0) }}",
-    api_work_hours_archive: "{{ url_for('Printly.api_archive_work_hours', rate_id=0) }}",
-    api_work_hours_delete: "{{ url_for('Printly.api_delete_work_hours', rate_id=0) }}",
+        // Arbeitszeiten
+        api_work_hours: "{{ url_for('Printly.api_create_work_hours') }}",
+        api_work_hours_update: "{{ url_for('Printly.api_update_work_hours', rate_id=0) }}",
+        api_work_hours_archive: "{{ url_for('Printly.api_archive_work_hours', rate_id=0) }}",
+        api_work_hours_delete: "{{ url_for('Printly.api_delete_work_hours', rate_id=0) }}",
 
-    // Overhead Profile
-    api_overhead_profiles:        "{{ url_for('Printly.api_create_overhead_profile') }}",
-    api_overhead_profile_update:  "{{ url_for('Printly.api_update_overhead_profile', profile_id=0) }}",
-    api_overhead_profile_toggle:  "{{ url_for('Printly.api_toggle_overhead_profile', profile_id=0) }}",
-    api_overhead_profile_delete:  "{{ url_for('Printly.api_delete_overhead_profile', profile_id=0) }}",
-    api_overhead_link_printer:    "{{ url_for('Printly.api_link_printer_to_overhead', profile_id=0) }}",
-    api_overhead_unlink_printer:  "{{ url_for('Printly.api_unlink_printer_from_overhead', profile_id=0) }}",
+        // Overhead Profile
+        api_overhead_profiles:        "{{ url_for('Printly.api_create_overhead_profile') }}",
+        api_overhead_profile_update:  "{{ url_for('Printly.api_update_overhead_profile', profile_id=0) }}",
+        api_overhead_profile_toggle:  "{{ url_for('Printly.api_toggle_overhead_profile', profile_id=0) }}",
+        api_overhead_profile_delete:  "{{ url_for('Printly.api_delete_overhead_profile', profile_id=0) }}",
+        api_overhead_link_printer:    "{{ url_for('Printly.api_link_printer_to_overhead', profile_id=0) }}",
+        api_overhead_unlink_printer:  "{{ url_for('Printly.api_unlink_printer_from_overhead', profile_id=0) }}",
 
-    // Discount Profile
-    api_discount_profiles:        "{{ url_for('Printly.api_create_discount_profile') }}",
-    api_discount_profile_update:  "{{ url_for('Printly.api_update_discount_profile', profile_id=0) }}",
-    api_discount_profile_toggle:  "{{ url_for('Printly.api_toggle_discount_profile', profile_id=0) }}",
-    api_discount_profile_delete:  "{{ url_for('Printly.api_delete_discount_profile', profile_id=0) }}",
+        // Discount Profile
+        api_discount_profiles:        "{{ url_for('Printly.api_create_discount_profile') }}",
+        api_discount_profile_update:  "{{ url_for('Printly.api_update_discount_profile', profile_id=0) }}",
+        api_discount_profile_toggle:  "{{ url_for('Printly.api_toggle_discount_profile', profile_id=0) }}",
+        api_discount_profile_delete:  "{{ url_for('Printly.api_delete_discount_profile', profile_id=0) }}",
 
-    {% for page in pages %}
-    {{ page.id }}: "{{ url_for('Printly.' + page.id) }}",
-    {% endfor %}
-  };
+        // Customers und Companies
+       api_companies:              "{{ url_for('Printly.api_create_company') }}",
+  api_company_update:         "{{ url_for('Printly.api_update_company', company_id=0) }}",
+  api_company_toggle:         "{{ url_for('Printly.api_toggle_company', company_id=0) }}",
+  api_company_delete:         "{{ url_for('Printly.api_delete_company', company_id=0) }}",
+  // Kunden
+  api_customers:              "{{ url_for('Printly.api_create_customer') }}",
+  api_customer_update:        "{{ url_for('Printly.api_update_customer',customer_id=0) }}",
+  api_customer_toggle:        "{{ url_for('Printly.api_toggle_customer', customer_id=0) }}",
+  api_customer_delete:        "{{ url_for('Printly.api_delete_customer', customer_id=0) }}",
+
+        {% for page in pages %}
+        {{ page.id }}: "{{ url_for('Printly.' + page.id) }}",
+        {% endfor %}
+      };
 </script>

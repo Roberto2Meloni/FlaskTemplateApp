@@ -11,6 +11,10 @@ from ...models import (
     PrintlyOverheadProfile,
     printly_printer_overhead,
     PrintlyDiscountProfile,
+    PrintlyCompany,
+    PrintlyCustomer,
+    generate_company_number,
+    generate_customer_number,
 )
 from app import db
 
@@ -572,6 +576,211 @@ def api_delete_discount_profile(profile_id):
     db.session.commit()
 
     app_logger.info(f"DiscountProfile '{name}' gelöscht von {current_user.username}")
+    return jsonify({"success": True})
+
+
+# ============================================================
+# FIRMEN
+# ============================================================
+
+
+@blueprint.route("/api/companies", methods=["POST"])
+@enabled_required
+def api_create_company():
+    data = request.get_json()
+    if not data or not data.get("company_name"):
+        return jsonify({"error": "Firmenname ist Pflichtfeld"}), 422
+
+    try:
+        # Firmennummer inline berechnen
+        last = PrintlyCompany.query.order_by(PrintlyCompany.id.desc()).first()
+        next_id = (last.id + 1) if last else 1
+        company_number = f"F-{next_id:04d}"
+
+        company = PrintlyCompany(
+            company_number=company_number,
+            company_name=data["company_name"],
+            email=data.get("email") or None,
+            phone=data.get("phone") or None,
+            website=data.get("website") or None,
+            address=data.get("address") or None,
+            zip_code=data.get("zip_code") or None,
+            city=data.get("city") or None,
+            country=data.get("country", "CH"),
+            discount_profile_id=data.get("discount_profile_id") or None,
+            is_active=data.get("is_active", True),
+            notes=data.get("notes") or None,
+            created_by=current_user.username,
+        )
+        db.session.add(company)
+        db.session.commit()
+
+        app_logger.info(
+            f"Company '{company.company_name}' ({company.company_number}) erstellt"
+        )
+        return jsonify({"success": True, "company": company.to_dict()}), 201
+
+    except Exception as e:
+        db.session.rollback()
+        app_logger.error(f"Fehler Company erstellen: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@blueprint.route("/api/companies/<int:company_id>", methods=["PUT"])
+@enabled_required
+def api_update_company(company_id):
+    company = PrintlyCompany.query.get_or_404(company_id)
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Keine Daten"}), 400
+
+    company.company_name = data.get("company_name", company.company_name)
+    company.email = data.get("email") or None
+    company.phone = data.get("phone") or None
+    company.website = data.get("website") or None
+    company.address = data.get("address") or None
+    company.zip_code = data.get("zip_code") or None
+    company.city = data.get("city") or None
+    company.country = data.get("country", company.country)
+    company.discount_profile_id = data.get("discount_profile_id") or None
+    company.is_active = data.get("is_active", company.is_active)
+    company.notes = data.get("notes") or None
+    db.session.commit()
+
+    return jsonify({"success": True, "company": company.to_dict()})
+
+
+@blueprint.route("/api/companies/<int:company_id>/toggle", methods=["PUT"])
+@enabled_required
+def api_toggle_company(company_id):
+    company = PrintlyCompany.query.get_or_404(company_id)
+    company.is_active = not company.is_active
+    db.session.commit()
+    return jsonify({"success": True, "is_active": company.is_active})
+
+
+@blueprint.route("/api/companies/<int:company_id>", methods=["DELETE"])
+@enabled_required
+def api_delete_company(company_id):
+    company = PrintlyCompany.query.get_or_404(company_id)
+    name = company.company_name
+    db.session.delete(company)
+    db.session.commit()
+    app_logger.info(f"Company '{name}' gelöscht")
+    return jsonify({"success": True})
+
+
+# ============================================================
+# KUNDEN (Privat + Firmenkontakte)
+# ============================================================
+
+
+@blueprint.route("/api/customers", methods=["POST"])
+@enabled_required
+def api_create_customer():
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Keine Daten"}), 400
+
+    if not data.get("first_name") or not data.get("last_name"):
+        return jsonify({"error": "Vor- und Nachname sind Pflichtfelder"}), 422
+
+    try:
+        # Kundennummer direkt hier berechnen
+        last = PrintlyCustomer.query.order_by(PrintlyCustomer.id.desc()).first()
+        next_id = (last.id + 1) if last else 1
+        customer_number = f"K-{next_id:04d}"
+
+        company_id = data.get("company_id") or None
+        if company_id and data.get("is_primary"):
+            PrintlyCustomer.query.filter_by(
+                company_id=company_id, is_primary=True
+            ).update({"is_primary": False})
+
+        customer = PrintlyCustomer(
+            customer_number=customer_number,
+            company_id=company_id,
+            first_name=data["first_name"],
+            last_name=data["last_name"],
+            role=data.get("role") or None,
+            is_primary=data.get("is_primary", False),
+            email=data.get("email") or None,
+            phone=data.get("phone") or None,
+            address=data.get("address") or None,
+            zip_code=data.get("zip_code") or None,
+            city=data.get("city") or None,
+            country=data.get("country", "CH"),
+            discount_profile_id=data.get("discount_profile_id") or None,
+            is_active=data.get("is_active", True),
+            notes=data.get("notes") or None,
+            created_by=current_user.username,
+        )
+        db.session.add(customer)
+        db.session.flush()  # ← NEU: wirft den echten Fehler
+        db.session.commit()
+
+        return jsonify({"success": True, "customer": customer.to_dict()}), 201
+
+    except Exception as e:
+        db.session.rollback()
+        import traceback
+
+        tb = traceback.format_exc()
+        app_logger.error(f"Fehler Customer erstellen: {tb}")
+        print(tb)
+        return jsonify({"error": tb}), 500
+
+
+@blueprint.route("/api/customers/<int:customer_id>", methods=["PUT"])
+@enabled_required
+def api_update_customer(customer_id):
+    customer = PrintlyCustomer.query.get_or_404(customer_id)
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Keine Daten"}), 400
+
+    # is_primary → alle anderen in der Firma auf False
+    if data.get("is_primary") and customer.company_id:
+        PrintlyCustomer.query.filter(
+            PrintlyCustomer.company_id == customer.company_id,
+            PrintlyCustomer.id != customer_id,
+        ).update({"is_primary": False})
+
+    customer.first_name = data.get("first_name", customer.first_name)
+    customer.last_name = data.get("last_name", customer.last_name)
+    customer.role = data.get("role") or None
+    customer.is_primary = data.get("is_primary", customer.is_primary)
+    customer.email = data.get("email") or None
+    customer.phone = data.get("phone") or None
+    customer.address = data.get("address") or None
+    customer.zip_code = data.get("zip_code") or None
+    customer.city = data.get("city") or None
+    customer.country = data.get("country", customer.country)
+    customer.discount_profile_id = data.get("discount_profile_id") or None
+    customer.is_active = data.get("is_active", customer.is_active)
+    customer.notes = data.get("notes") or None
+    db.session.commit()
+
+    return jsonify({"success": True, "customer": customer.to_dict()})
+
+
+@blueprint.route("/api/customers/<int:customer_id>/toggle", methods=["PUT"])
+@enabled_required
+def api_toggle_customer(customer_id):
+    customer = PrintlyCustomer.query.get_or_404(customer_id)
+    customer.is_active = not customer.is_activeF
+    db.session.commit()
+    return jsonify({"success": True, "is_active": customer.is_active})
+
+
+@blueprint.route("/api/customers/<int:customer_id>", methods=["DELETE"])
+@enabled_required
+def api_delete_customer(customer_id):
+    customer = PrintlyCustomer.query.get_or_404(customer_id)
+    name = customer.full_name
+    db.session.delete(customer)
+    db.session.commit()
+    app_logger.info(f"Customer '{name}' gelöscht")
     return jsonify({"success": True})
 
 

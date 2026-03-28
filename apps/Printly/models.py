@@ -7,6 +7,20 @@ def get_current_time():
     return datetime.now(tz=timezone("Europe/Zurich")).replace(second=0, microsecond=0)
 
 
+def generate_company_number():
+    """Generiert automatische Firmennummer F-XXXX"""
+    last = PrintlyCompany.query.order_by(PrintlyCompany.id.desc()).first()
+    next_id = (last.id + 1) if last else 1
+    return f"F-{next_id:04d}"
+
+
+def generate_customer_number():
+    """Generiert automatische Kundennummer K-XXXX"""
+    last = PrintlyCustomer.query.order_by(PrintlyCustomer.id.desc()).first()
+    next_id = (last.id + 1) if last else 1
+    return f"K-{next_id:04d}"
+
+
 class PrintlyPrinter(db.Model):
     __tablename__ = "printly_printers"
 
@@ -632,3 +646,227 @@ class PrintlyDiscountProfile(db.Model):
     @staticmethod
     def get_discount_types():
         return [("discount", "Rabatt"), ("surcharge", "Aufschlag")]
+
+
+# ============================================================
+# FIRMA
+# ============================================================
+
+
+class PrintlyCompany(db.Model):
+    __tablename__ = "printly_companies"
+
+    id = db.Column(db.Integer, primary_key=True)
+    company_number = db.Column(db.String(20), unique=True, nullable=False)
+    company_name = db.Column(db.String(150), nullable=False)
+
+    # Kontakt
+    email = db.Column(db.String(150), nullable=True)
+    phone = db.Column(db.String(50), nullable=True)
+    website = db.Column(db.String(200), nullable=True)
+
+    # Adresse
+    address = db.Column(db.String(200), nullable=True)
+    zip_code = db.Column(db.String(20), nullable=True)
+    city = db.Column(db.String(100), nullable=True)
+    country = db.Column(db.String(50), nullable=False, default="CH")
+
+    # Standard Rabatt
+    discount_profile_id = db.Column(
+        db.Integer, db.ForeignKey("printly_discount_profiles.id"), nullable=True
+    )
+    discount_profile = db.relationship("PrintlyDiscountProfile", backref="companies")
+
+    # Status
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    notes = db.Column(db.Text, nullable=True)
+
+    # Zeitstempel
+    created_at = db.Column(db.DateTime, default=get_current_time, nullable=False)
+    updated_at = db.Column(
+        db.DateTime, default=get_current_time, onupdate=get_current_time, nullable=False
+    )
+    created_by = db.Column(db.String(64), nullable=False)
+
+    # Kontaktpersonen
+    contacts = db.relationship(
+        "PrintlyCustomer",
+        backref="company",
+        lazy="dynamic",
+        foreign_keys="PrintlyCustomer.company_id",
+    )
+
+    def __repr__(self):
+        return f"<PrintlyCompany {self.company_number} {self.company_name}>"
+
+    @property
+    def primary_contact(self):
+        return self.contacts.filter_by(is_primary=True).first()
+
+    @property
+    def full_address(self):
+        parts = []
+        if self.address:
+            parts.append(self.address)
+        if self.zip_code or self.city:
+            parts.append(f"{self.zip_code or ''} {self.city or ''}".strip())
+        if self.country and self.country != "CH":
+            parts.append(self.country)
+        return ", ".join(parts) if parts else None
+
+    def to_dict(self, include_contacts=False):
+        data = {
+            "id": self.id,
+            "company_number": self.company_number,
+            "company_name": self.company_name,
+            "email": self.email,
+            "phone": self.phone,
+            "website": self.website,
+            "address": self.address,
+            "zip_code": self.zip_code,
+            "city": self.city,
+            "country": self.country,
+            "full_address": self.full_address,
+            "discount_profile_id": self.discount_profile_id,
+            "discount_profile": (
+                self.discount_profile.name if self.discount_profile else None
+            ),
+            "is_active": self.is_active,
+            "notes": self.notes,
+            "contact_count": self.contacts.count(),
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "created_by": self.created_by,
+        }
+        if include_contacts:
+            data["contacts"] = [c.to_dict() for c in self.contacts.all()]
+        return data
+
+
+# ============================================================
+# KUNDE / KONTAKTPERSON
+# ============================================================
+
+
+class PrintlyCustomer(db.Model):
+    __tablename__ = "printly_customers"
+
+    id = db.Column(db.Integer, primary_key=True)
+    customer_number = db.Column(db.String(20), unique=True, nullable=False)
+
+    # Verknüpfung zur Firma (optional – bei Privatkunden leer)
+    company_id = db.Column(
+        db.Integer, db.ForeignKey("printly_companies.id"), nullable=True
+    )
+
+    # Person
+    first_name = db.Column(db.String(100), nullable=False)
+    last_name = db.Column(db.String(100), nullable=False)
+
+    # Rolle in der Firma
+    role = db.Column(db.String(100), nullable=True)
+    is_primary = db.Column(db.Boolean, default=False, nullable=False)
+
+    # Kontakt
+    email = db.Column(db.String(150), nullable=True)
+    phone = db.Column(db.String(50), nullable=True)
+
+    # Adresse (nur bei Privatkunden relevant)
+    address = db.Column(db.String(200), nullable=True)
+    zip_code = db.Column(db.String(20), nullable=True)
+    city = db.Column(db.String(100), nullable=True)
+    country = db.Column(db.String(50), nullable=False, default="CH")
+
+    # Rabatt (überschreibt Firmenrabatt falls gesetzt)
+    discount_profile_id = db.Column(
+        db.Integer, db.ForeignKey("printly_discount_profiles.id"), nullable=True
+    )
+    discount_profile = db.relationship("PrintlyDiscountProfile", backref="customers")
+
+    # Status
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    notes = db.Column(db.Text, nullable=True)
+
+    # Zeitstempel
+    created_at = db.Column(db.DateTime, default=get_current_time, nullable=False)
+    updated_at = db.Column(
+        db.DateTime, default=get_current_time, onupdate=get_current_time, nullable=False
+    )
+    created_by = db.Column(db.String(64), nullable=False)
+
+    def __repr__(self):
+        return f"<PrintlyCustomer {self.customer_number} {self.full_name}>"
+
+    # ----------------------------------------------------------
+    # PROPERTIES
+    # ----------------------------------------------------------
+
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
+
+    @property
+    def is_company_contact(self):
+        return self.company_id is not None
+
+    @property
+    def is_private(self):
+        return self.company_id is None
+
+    @property
+    def effective_discount(self):
+        """Eigener Rabatt hat Vorrang, sonst Firmenrabatt"""
+        if self.discount_profile:
+            return self.discount_profile
+        if self.company and self.company.discount_profile:
+            return self.company.discount_profile
+        return None
+
+    @property
+    def full_address(self):
+        parts = []
+        if self.address:
+            parts.append(self.address)
+        if self.zip_code or self.city:
+            parts.append(f"{self.zip_code or ''} {self.city or ''}".strip())
+        if self.country and self.country != "CH":
+            parts.append(self.country)
+        return ", ".join(parts) if parts else None
+
+    # ----------------------------------------------------------
+    # SERIALISIERUNG
+    # ----------------------------------------------------------
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "customer_number": self.customer_number,
+            "company_id": self.company_id,
+            "company_name": self.company.company_name if self.company else None,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "full_name": self.full_name,
+            "role": self.role,
+            "is_primary": self.is_primary,
+            "email": self.email,
+            "phone": self.phone,
+            "address": self.address,
+            "zip_code": self.zip_code,
+            "city": self.city,
+            "country": self.country,
+            "full_address": self.full_address,
+            "discount_profile_id": self.discount_profile_id,
+            "discount_profile": (
+                self.discount_profile.name if self.discount_profile else None
+            ),
+            "effective_discount": (
+                self.effective_discount.name if self.effective_discount else None
+            ),
+            "is_company_contact": self.is_company_contact,
+            "is_private": self.is_private,
+            "is_active": self.is_active,
+            "notes": self.notes,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "created_by": self.created_by,
+        }
